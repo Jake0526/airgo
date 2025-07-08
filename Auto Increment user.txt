@@ -1,0 +1,5 @@
+SET @num := 0;
+
+UPDATE user SET id = @num := (@num+1);
+
+ALTER TABLE user AUTO_INCREMENT =1;
