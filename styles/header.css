@@ -1,0 +1,110 @@
+/* Header Styles */
+:root {
+    --primary-color: #07353f;
+    --secondary-color: #3cd5ed;
+    --background-color: #d0f0ff;
+    --text-color: #344047;
+    --card-bg: #e9f0f1;
+    --card-shadow: rgba(7, 53, 63, 0.1);
+    --spacing-unit: clamp(0.5rem, 2vw, 1rem);
+    --button-height: 36px;
+    --button-padding: 0.75rem 1.2rem;
+}
+
+.header {
+    background: var(--primary-color);
+    padding: 0.75rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.container {
+    width: min(90%, 1200px);
+    margin: 0 auto;
+    padding: 0 var(--spacing-unit);
+}
+
+.header nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.logo h1 {
+    color: white;
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    letter-spacing: 1px;
+    font-size: 1.8rem;
+    margin: 0;
+    line-height: 1;
+}
+
+.logo h1 span {
+    color: var(--secondary-color);
+    font-style: italic;
+}
+
+/* Common button styles */
+.header-button {
+    display: flex;
+    align-items: center;
+}
+
+.header-button a {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+    font-weight: 600;
+    border-radius: 50px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: 2px solid var(--secondary-color);
+    height: var(--button-height);
+    white-space: nowrap;
+    min-width: 100px;
+    justify-content: center;
+    line-height: 1;
+}
+
+.header-button a:hover {
+    background: transparent;
+    color: var(--secondary-color);
+    transform: translateY(-2px);
+}
+
+.btn-icon {
+    transition: transform 0.3s ease;
+    font-size: 1rem;
+    line-height: 1;
+    margin-top: 1px;
+}
+
+.header-button a:hover .btn-icon {
+    transform: translateX(5px);
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    .header {
+        padding: 0.5rem 0;
+    }
+    
+    .header-button a {
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+        height: 32px;
+        min-width: 90px;
+    }
+    
+    .logo h1 {
+        font-size: 1.5rem;
+    }
+} 

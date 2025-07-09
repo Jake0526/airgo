@@ -510,26 +510,25 @@ CREATE TABLE `user` (
   `lname` varchar(50) NOT NULL,
   `username` varchar(25) NOT NULL,
   `email` varchar(50) NOT NULL,
-  `password` varchar(50) NOT NULL,
-  `confirm_password` varchar(50) NOT NULL,
+  `password` varchar(255) NOT NULL,
   `contact` varchar(20) NOT NULL,
   `city` varchar(100) NOT NULL,
   `district` varchar(50) NOT NULL,
   `barangay` varchar(50) NOT NULL,
   `zipcode` varchar(15) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `reset_token` varchar(255) NOT NULL,
-  `reset_expire` datetime NOT NULL
+  `reset_token` varchar(255),
+  `reset_expire` datetime
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `user`
 --
 
-INSERT INTO `user` (`id`, `fname`, `lname`, `username`, `email`, `password`, `confirm_password`, `contact`, `city`, `district`, `barangay`, `zipcode`, `created_at`, `reset_token`, `reset_expire`) VALUES
-(1, 'admin', 'admin', 'admin', 'admin@gmail.com', 'admin', '', '', '', '', '', '', '2025-07-07 02:36:43', '', '2025-07-07 04:36:14'),
-(13, 'Virdel', 'Lubaton', 'vdelccna', 'vdelccna@gmail.com', '$2y$10$B25MsOa8b9lIUxpiDkwA1.8GstgJCjsT3WjOKeDOj5r', '$2y$10$B25MsOa8b9lIUxpiDkwA1.8GstgJCjsT3WjOKeDOj5r', '+639753634122', 'Davao City', 'Poblacion', '37-D', '8000', '2025-07-07 03:55:12', '', '0000-00-00 00:00:00'),
-(14, 'Girlie', 'Dela Pinas', 'girlie', 'girlie@gmail.com', '$2y$10$GFmQmJGXSHkhSBUQq7ECWOjREkG5qn6zls97lcjziId', '$2y$10$B25MsOa8b9lIUxpiDkwA1.8GstgJCjsT3WjOKeDOj5r', '+6397324324234', 'Davao City', 'Buhangin', 'Acacia', '8000', '2025-07-07 04:02:15', '', '0000-00-00 00:00:00');
+INSERT INTO `user` (`id`, `fname`, `lname`, `username`, `email`, `password`, `contact`, `city`, `district`, `barangay`, `zipcode`, `created_at`, `reset_token`, `reset_expire`) VALUES
+(1, 'admin', 'admin', 'admin', 'admin@gmail.com', 'admin', '', '', '', '', '', '2025-07-07 02:36:43', '', '2025-07-07 04:36:14'),
+(13, 'Virdel', 'Lubaton', 'vdelccna', 'vdelccna@gmail.com', '$2y$10$B25MsOa8b9lIUxpiDkwA1.8GstgJCjsT3WjOKeDOj5r', '+639753634122', 'Davao City', 'Poblacion', '37-D', '8000', '2025-07-07 03:55:12', '', '0000-00-00 00:00:00'),
+(14, 'Girlie', 'Dela Pinas', 'girlie', 'girlie@gmail.com', '$2y$10$GFmQmJGXSHkhSBUQq7ECWOjREkG5qn6zls97lcjziId', '+6397324324234', 'Davao City', 'Buhangin', 'Acacia', '8000', '2025-07-07 04:02:15', '', '0000-00-00 00:00:00');
 
 -- --------------------------------------------------------
 

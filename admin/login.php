@@ -1,17 +1,9 @@
 <?php    
+// Include the database connection
+include('../db_connection.php');
+
+// Start the session
 session_start();
-
-// Database connection
-$servername = "localhost";
-$db_username = "root";
-$db_password = "";
-$dbname = "airgo";
-
-$conn = new mysqli($servername, $db_username, $db_password, $dbname);
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
 
 $error_message = '';
 
@@ -54,35 +46,57 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AirGo Admin Login</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin Login - Airgo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #07353f;
+            --secondary-color: #3cd5ed;
+            --background-color: #d0f0ff;
+            --text-color: #344047;
+            --card-bg: #e9f0f1;
+            --card-shadow: rgba(7, 53, 63, 0.1);
+            --spacing-unit: clamp(0.5rem, 2vw, 1rem);
+        }
+
+        * {
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box;
+        }
+
         body {
-            margin: 0;
-            padding: 0;
-            background-color:  #4c7273;
             font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--background-color), #fff);
+            color: var(--text-color);
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
-            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
         }
 
         header {
-            background-color: #07353f;
-            padding: 10px 0;
-            text-align: left ;
-            color: #CACBBB;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-            padding-left: 2in;
+            background-color: var(--primary-color);
+            padding: var(--spacing-unit);
+            box-shadow: 0 2px 10px var(--card-shadow);
         }
 
         header h1 {
-            margin: 0;
-            font-size: 2em;
-            font-weight: 600;
+            color: white;
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            text-align: center;
+        }
+
+        header h1 span {
+            color: var(--secondary-color);
+            font-style: italic;
         }
 
         #login {
@@ -90,130 +104,142 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 15px 5px;
+            padding: clamp(2rem, 5vw, 4rem) 0;
         }
 
         .login-form {
-    background: #CACBBB;
-    padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2),
-                0 0 15px rgba(255, 255, 255, 0.8); /* Added white shadow */
-    width: 90%;
-    max-width: 250px;
-    text-align: center;
-    animation: fadeIn 0.8s ease-in-out;
-}
-
+            background: rgba(255, 255, 255, 0.9);
+            padding: clamp(2rem, 5vw, 3rem);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px var(--card-shadow);
+            width: min(90%, 400px);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .login-form h2 {
-            margin-bottom: 10px;
-            color: #07353f;
+            font-size: clamp(1.5rem, 3vw, 1.8rem);
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            position: relative;
+        }
+
+        .login-form h2::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: var(--secondary-color);
+            border-radius: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            font-weight: 500;
+            color: var(--text-color);
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        input[type="text"], 
+        input[type="password"] {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border-radius: 12px;
+            border: 2px solid var(--card-bg);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+            color: var(--text-color);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        input[type="text"]:focus, 
+        input[type="password"]:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 4px rgba(60, 213, 237, 0.1);
+        }
+
+        button {
+            width: 100%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 50px;
+            font-size: 1rem;
             font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        button:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px var(--card-shadow);
         }
 
         .error {
-            color: red;
-            background-color: #ffe6e6;
-            padding: 8px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            font-weight: bold;
+            background: #fee;
+            color: #e44;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        .login-form label {
-            display: block;
-            text-align: left;
-            margin-top: 10px;
-            font-weight: 400;
-        }
-
-        .login-form input {
-            width: 90%;
-            padding: 5px;
-            margin-top: 5px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            font-size: 1em;
-        }
-
-        .login-form button {
-            width: 70%;
-            padding: 10px;
-            margin-top: 25px;
-            background-color: #07353f;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1em;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s ease;
-        }
-
-        .login-form button:hover {
-            background-color: skyblue;
-            color: #07353f;
-        }
-
-        .login-form a {
-            display: inline-block;
-            margin-top: 10px;
-            text-decoration: none;
-            color: #07353f;
-            font-size: 0.9em;
-            transition: 0.3s;
-        }
-
-        .login-form a:hover {
-            text-decoration: underline;
-            color:  #CACBBB;
-        }
-
-        footer {
-            background-color: #07353f;
-            color: skyblue;
-            text-align: center;
-            padding: 15px 10px;
-            font-size: 0.9em;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .error::before {
+            content: '⚠️';
         }
     </style>
 </head>
 <body>
-
     <header>
-        <h1>AirGo Admin</h1>
+        <h1>Air<span>go</span> Admin</h1>
     </header>
 
     <section id="login">
         <div class="login-form">
-            <h2>Login</h2>
+            <h2>Admin Login</h2>
 
-            <!-- Show error message directly under the title -->
             <?php if (!empty($error_message)) : ?>
-                <p class="error"><?php echo $error_message; ?></p>
+                <div class="error"><?php echo $error_message; ?></div>
             <?php endif; ?>
 
             <form action="login.php" method="POST">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
 
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password">
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
 
                 <button type="submit">Login</button>
-
+            </form>
         </div>
     </section>
 </body>
 </html>
-
-<?php
-$conn->close();
-?>

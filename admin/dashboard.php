@@ -6,15 +6,8 @@ if (!isset($_SESSION['admin_logged_in'])) {
     exit();
 }
 
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "airgo";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+// Include the database connection
+include('../db_connection.php');
 
 $total_bookings = $conn->query("SELECT COUNT(*) AS count FROM bookings")->fetch_assoc()['count'];
 $pending_approvals = $conn->query("SELECT COUNT(*) AS count FROM bookings WHERE status = 'Pending'")->fetch_assoc()['count'];
@@ -32,22 +25,28 @@ $recent = $conn->query("
 if (!$recent) {
     die("Query failed: " . $conn->error);
 }
-$conn->close();
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>AirGo Admin Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirGo Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg: #4c7273;
-            --main: #07353f;
-            --accent: #CACBBB;
-            --light: #ffffff;
-            --shadow: rgba(0, 0, 0, 0.1);
+            --primary-color: #07353f;
+            --secondary-color: #3cd5ed;
+            --background-color: #d0f0ff;
+            --text-color: #344047;
+            --card-bg: #ffffff;
+            --card-shadow: rgba(7, 53, 63, 0.1);
+            --accent-light: #f0f9ff;
+            --spacing-unit: clamp(0.5rem, 2vw, 1rem);
         }
 
         * {
@@ -57,59 +56,112 @@ $conn->close();
         }
 
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background: var(--bg);
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--background-color), #fff);
+            color: var(--text-color);
             display: flex;
+            min-height: 100vh;
         }
 
         .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 250px;
             height: 100vh;
-            background: var(--main);
-            color: var(--light);
-            padding: 30px 20px;
-            position: fixed;
-            display: flex;
-            flex-direction: column;
+            background: linear-gradient(180deg, var(--primary-color), #052830);
+            padding: 2rem 1.5rem;
+            color: white;
+            box-shadow: 4px 0 20px var(--card-shadow);
+            transition: all 0.3s ease;
+            z-index: 1000;
         }
 
         .sidebar h2 {
-            font-size: 24px;
-            margin-bottom: 30px;
-            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            letter-spacing: 1px;
+        }
+
+        .sidebar h2 span {
+            color: var(--secondary-color);
+            font-style: italic;
         }
 
         .sidebar a {
-            color: var(--light);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 1rem 0;
+            color: rgba(255, 255, 255, 0.9);
             text-decoration: none;
-            margin: 12px 0;
-            padding: 10px 15px;
-            border-radius: 10px;
-            transition: background 0.3s ease;
+            padding: 12px 16px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--secondary-color);
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.3s ease;
+            z-index: -1;
+            border-radius: 12px;
         }
 
         .sidebar a:hover {
-            background: var(--accent);
-            color: #000;
+            color: var(--primary-color);
+            transform: translateX(5px);
+        }
+
+        .sidebar a:hover::before {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+
+        .sidebar a i {
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar a:hover i {
+            transform: scale(1.1);
         }
 
         .main {
-            margin-left: 250px;
-            padding: 40px;
-            width: calc(100% - 250px);
+            margin-left: 280px;
+            padding: 2.5rem;
+            width: calc(100% - 280px);
         }
 
         .main h1 {
-            margin-bottom: 30px;
-            color: var(--main);
-            font-size: 25px;
+            margin-bottom: 2rem;
+            color: var(--primary-color);
+            font-size: 2rem;
+            font-family: 'Playfair Display', serif;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
         }
 
         .card-link {
@@ -119,67 +171,96 @@ $conn->close();
         }
 
         .card {
-            background: var(--light);
-            padding: 15px;
-            border-radius: 15px;
-            box-shadow: 3px 3px 6px var(--shadow), -3px -3px 6px #ffffff;
-            transition: transform 0.3s ease;
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px var(--card-shadow);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
         }
 
         .card:hover {
             transform: translateY(-5px);
-            cursor: pointer;
+            box-shadow: 0 15px 30px var(--card-shadow);
         }
 
         .card h3 {
-            font-size: 15px;
-            color: #777;
-            margin-bottom: 10px;
+            font-size: 1rem;
+            color: var(--text-color);
+            margin-bottom: 1rem;
+            font-weight: 500;
         }
 
         .card p {
-            font-size: 20px;
-            font-weight: bold;
-            color: var(--main);
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
         }
 
         table {
             width: 100%;
-            background: var(--light);
-            border-radius: 15px;
-            box-shadow: 3px 3px 6px var(--shadow), -3px -3px 6px #ffffff;
-            border-collapse: collapse;
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 10px 20px var(--card-shadow);
+            border-collapse: separate;
+            border-spacing: 0;
             overflow: hidden;
         }
 
         th, td {
-            padding: 15px 20px;
+            padding: 1.2rem 1.5rem;
             text-align: left;
         }
 
         th {
-            background: var(--main);
-            color: var(--light);
+            background: var(--primary-color);
+            color: var(--card-bg);
             font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         tr:nth-child(even) {
-            background: #f9f9f9;
+            background: var(--accent-light);
         }
 
         tr:hover {
-            background: #e0f7f7;
+            background: var(--background-color);
+        }
+
+        td {
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 240px;
+            }
+            .main {
+                margin-left: 240px;
+                width: calc(100% - 240px);
+            }
         }
 
         @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                padding: 1rem;
+            }
             .main {
                 margin-left: 0;
-                padding: 20px;
                 width: 100%;
+                padding: 1.5rem;
             }
-
-            .sidebar {
-                display: none;
+            .grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -187,17 +268,17 @@ $conn->close();
 <body>
 
 <div class="sidebar">
-    <h2>AirGo Admin</h2>
-    <a href="dashboard.php">Dashboard</a>
-    <a href="admin_bookings.php">Bookings</a>
-    <a href="admin_employees.php">Employees</a>
-    <a href="booking_history.php">Booking History</a>
-	<a href="admin_register.php">Administrator</a>
-    <a href="login.php">Logout</a>
+    <h2>Air<span>go</span></h2>
+    <a href="dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a>
+    <a href="admin_bookings.php"><i class="fas fa-calendar-alt"></i> Bookings</a>
+    <a href="admin_employees.php"><i class="fas fa-users"></i> Employees</a>
+    <a href="booking_history.php"><i class="fas fa-history"></i> Booking History</a>
+    <a href="admin_register.php"><i class="fas fa-user-shield"></i> Administrator</a>
+    <a href="login.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
 </div>
 
 <div class="main">
-    <h1>Welcome👋</h1>
+    <h1>Welcome Back 👋</h1>
 
     <div class="grid">
         <a href="admin_bookings.php" class="card-link">
@@ -208,7 +289,7 @@ $conn->close();
         </a>
         <a href="admin_bookings.php?tab=pending" class="card-link">
             <div class="card">
-                <h3>Total Pending</h3>
+                <h3>Pending Approvals</h3>
                 <p><?php echo $pending_approvals; ?></p>
             </div>
         </a>
@@ -220,7 +301,8 @@ $conn->close();
         </a>
     </div>
 
-    <div class="card" style="padding: 0;">
+    <div class="card">
+        <h3>Recent Bookings</h3>
         <table>
             <thead>
                 <tr>
@@ -231,7 +313,6 @@ $conn->close();
                 </tr>
             </thead>
             <tbody>
-                
                 <?php while ($row = $recent->fetch_assoc()): ?>
                     <tr>
                         <td><?php echo htmlspecialchars($row['user_name'] ?? 'N/A'); ?></td>

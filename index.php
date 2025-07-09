@@ -5,27 +5,148 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="description" content="Airgo - Your reliable booking platform for all your aircon services needs" />
+    <meta name="theme-color" content="#07353f" />
     <title>Airgo - Booking System</title>
 
-    <!-- Inline CSS -->
+    <!-- Preload fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Header styles -->
+    <link rel="stylesheet" href="styles/header.css">
+
+    <!-- Base styles -->
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
+        :root {
+            --primary-color: #07353f;
+            --secondary-color: #3cd5ed;
+            --background-color: #d0f0ff;
+            --text-color: #344047;
+            --card-bg: #e9f0f1;
+            --card-shadow: rgba(7, 53, 63, 0.1);
+            --spacing-unit: clamp(0.5rem, 2vw, 1rem);
+        }
+
+        * {
             margin: 0;
             padding: 0;
-            background-color:  #d0f0ff;
-            color: #333;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: min(90%, 1200px);
+            margin: 0 auto;
+            padding: 0 var(--spacing-unit);
+        }
+
+        @media (max-width: 768px) {
+        .container {
+                width: 95%;
+                padding: 0 calc(var(--spacing-unit) / 2);
+            }
+        }
+
+        /* Responsive typography */
+        h1 { font-size: clamp(1.5rem, 4vw, 2.5rem); }
+        h2 { font-size: clamp(1.3rem, 3vw, 2rem); }
+        h3 { font-size: clamp(1.1rem, 2.5vw, 1.75rem); }
+        p { font-size: clamp(0.9rem, 2vw, 1.1rem); }
+
+        /* Responsive images */
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Responsive grid system */
+        .grid {
+            display: grid;
+            gap: var(--spacing-unit);
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+        }
+
+        /* Responsive flex layouts */
+        .flex {
+            display: flex;
+            gap: var(--spacing-unit);
+            flex-wrap: wrap;
+        }
+
+        .flex-center {
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Responsive spacing */
+        section {
+            padding: clamp(2rem, 5vw, 4rem) 0;
+        }
+
+        /* Responsive cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: clamp(1rem, 3vw, 2rem);
+            box-shadow: 0 8px 20px var(--card-shadow);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Responsive buttons */
+        .btn {
+            display: inline-block;
+            padding: clamp(0.5rem, 2vw, 1rem) clamp(1rem, 4vw, 2rem);
+            border-radius: 5px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        /* Responsive navigation */
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+
+        /* Responsive video */
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+        }
+
+        .video-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         a {
             text-decoration: none;
             color: inherit;
-        }
-
-        .container {
-            margin-left: 2in;
-            margin-right: 2in;
         }
 
         header {
@@ -49,14 +170,20 @@
         header .login-button a {
             background-color: #3cd5ed;
             padding: 10px 70px;
-            border-radius: 1.8px;
+            border-radius: 50px;
             color: white;
             font-weight: bold;
-            transition: background-color 0.3s ease;
+            transition: all 0.3s ease;
+            border: 2px solid #3cd5ed;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         header .login-button a:hover {
-            background-color: #07353f;
+            background-color: transparent;
+            color: #3cd5ed;
+            transform: translateY(-2px);
         }
 
         #business {
@@ -277,29 +404,28 @@
 <body>
 
     <!-- Header -->
-<header style="background: #07353f; padding: 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
-  <nav class="container" style="display: flex; justify-content: space-between; align-items: center; max-width: 1100px; margin: 0 auto; padding: 0 24px;">
+<header class="header">
+  <nav class="container flex flex-center">
     <div class="logo">
-      <h1 style="
-        color: #CACBBB; 
-        font-family: 'Playfair Display', Georgia, serif; 
-        font-weight: 100; 
-        font-style: normal; 
-        letter-spacing: 3px; 
-        font-size: 1.3rem; 
-        margin: 0; 
-        cursor: default;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-        text-transform: uppercase;
-        ">
-        Airgo
-      </h1>
+      <h1>Air<span>go</span></h1>
     </div>
-    <div class="login-button">
-      <a href="login.php" class="btn-login" style="position: relative; color: #07353f; background-color:  #d0f0ff; padding: 10px 26px; border-radius: 25px; font-weight: 600; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 1.2px; text-decoration: none; overflow: hidden; display: inline-block; transition: background-color 0.3s ease;">
-        Login
-        <span class="underline"></span>
-      </a>
+    <button class="burger-menu" aria-label="Toggle navigation menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <div class="nav-menu">
+      <div class="nav-links">
+        <a href="#services" class="nav-link">Services</a>
+        <a href="#how-it-works" class="nav-link">How It Works</a>
+        <a href="#testimonials" class="nav-link">Testimonials</a>
+        <div class="mobile-login">
+          <a href="login.php" class="btn-primary">Login <span class="btn-icon">→</span></a>
+        </div>
+      </div>
+    </div>
+    <div class="header-button desktop-only">
+      <a href="login.php">Login <span class="btn-icon">→</span></a>
     </div>
   </nav>
 </header>
@@ -307,33 +433,230 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600&family=Playfair+Display:wght@900&display=swap');
 
-  .btn-login {
+  .header {
+    background: var(--primary-color);
+    padding: 1rem 0;
+    position: relative;
+  }
+
+  .header nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+  }
+
+  .burger-menu {
+    display: none;
+    background: none;
+    border: none;
     cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 24px;
+    position: relative;
+    z-index: 1001;
   }
 
-  .btn-login .underline {
-    position: absolute;
-    bottom: 8px;
-    left: 20%;
-    width: 60%;
-    height: 3px;
-    background-color: #07353f;
+  .burger-menu span {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background-color: var(--secondary-color);
+    margin: 6px 0;
+    transition: 0.4s;
     border-radius: 2px;
+  }
+
+  .logo h1 {
+    color: white;
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    letter-spacing: 1px;
+    font-size: clamp(1.8rem, 3vw, 2.2rem);
+    margin: 0;
+  }
+
+  .logo h1 span {
+    color: var(--secondary-color);
+    font-style: italic;
+  }
+
+  .nav-menu {
+    display: flex;
+    align-items: center;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: clamp(2rem, 4vw, 3rem);
+    margin: 0 2rem;
+    align-items: center;
+  }
+
+  .nav-link {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+    position: relative;
+    padding: 0.5rem;
+    font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+    transition: color 0.3s ease;
+  }
+
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--secondary-color);
     transform: scaleX(0);
-    transform-origin: center;
-    transition: transform 0.35s ease;
+    transform-origin: right;
+    transition: transform 0.3s ease;
   }
 
-  .btn-login:hover {
-    background-color: #d6cec6;
-    color: #07353f;
+  .nav-link:hover {
+    color: var(--secondary-color);
   }
 
-  .btn-login:hover .underline {
+  .nav-link:hover::after {
     transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  .mobile-login {
+    display: none;
+  }
+
+  /* Mobile navigation */
+  @media (max-width: 768px) {
+    .header nav {
+      padding: 0 1rem;
+    }
+
+    .burger-menu {
+      display: block;
+      order: 2;
+      margin-left: auto;
+    }
+
+    .logo {
+      order: 1;
+    }
+
+    .nav-menu {
+      order: 3;
+      position: fixed;
+      top: 0;
+      left: -100%;
+      width: 80%;
+      height: 100vh;
+      background: var(--primary-color);
+      padding: 5rem 2rem;
+      transition: left 0.3s ease;
+      z-index: 1000;
+    }
+
+    .nav-menu.active {
+      left: 0;
+    }
+
+    .nav-links {
+      flex-direction: column;
+      align-items: flex-start;
+      margin: 0;
+      width: 100%;
+    }
+
+    .nav-link {
+      width: 100%;
+      padding: 1rem 0;
+      font-size: 1.1rem;
+    }
+
+    .mobile-login {
+      display: block;
+      margin-top: 2rem;
+      width: 100%;
+    }
+
+    .mobile-login .btn-primary {
+      width: 100%;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .desktop-only {
+      display: none;
+    }
+
+    .burger-menu.active span:nth-child(1) {
+      transform: rotate(-45deg) translate(-5px, 6px);
+    }
+
+    .burger-menu.active span:nth-child(2) {
+      opacity: 0;
+    }
+
+    .burger-menu.active span:nth-child(3) {
+      transform: rotate(45deg) translate(-5px, -6px);
+    }
+
+    /* Add overlay when menu is open */
+    .nav-menu::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 20%;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .nav-menu.active::before {
+      opacity: 1;
+      visibility: visible;
+    }
   }
 </style>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const burgerMenu = document.querySelector('.burger-menu');
+  const navMenu = document.querySelector('.nav-menu');
+
+  burgerMenu.addEventListener('click', function() {
+    this.classList.toggle('active');
+    navMenu.classList.toggle('active');
+    document.body.style.overflow = navMenu.classList.contains('active') ? 'hidden' : '';
+  });
+
+  // Close menu when clicking outside
+  document.addEventListener('click', function(event) {
+    const isClickInside = navMenu.contains(event.target) || 
+                         burgerMenu.contains(event.target);
+    
+    if (!isClickInside && navMenu.classList.contains('active')) {
+      burgerMenu.classList.remove('active');
+      navMenu.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  });
+
+  // Close menu when clicking a nav link
+  navMenu.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      burgerMenu.classList.remove('active');
+      navMenu.classList.remove('active');
+      document.body.style.overflow = '';
+    });
+  });
+});
+</script>
 
   <!-- Business Section -->
 <section id="business" style="padding: 20px 5px; background:  #d0f0ff; text-align: center; font-family: 'Poppins', Arial, sans-serif;">
@@ -389,239 +712,331 @@
 
 
 <!-- Video Section -->
-<section id="service-video" class="container" style="margin-top: 40px; max-width: 640px; margin-left: auto; margin-right: auto;">
-  <div style="position: relative; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 20px rgba(7, 53, 63, 0.3); cursor: pointer;">
+<section id="service-video" class="video-section">
+  <div class="container">
+    <div class="video-wrapper">
     <video
       id="serviceVideo"
-      width="100%"
-      height="360"
       muted
       playsinline
-      style="object-fit: cover; display: block; transition: filter 0.3s ease;"
+      autoplay
       controls
-      preload="metadata"
+      preload="auto"
+      poster="video-thumbnail.jpg"
     >
       <source src="video.mp4" type="video/mp4" />
       Your browser does not support the video tag.
     </video>
-    <div
-      id="playOverlay"
-      style="
+      <div class="play-overlay">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="#fff">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .video-section {
+    padding: clamp(3rem, 8vw, 6rem) 0;
+    background: linear-gradient(to bottom, var(--background-color), white);
+  }
+
+  .video-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(7, 53, 63, 0.15);
+    aspect-ratio: 16 / 9;
+    background: var(--primary-color);
+  }
+
+  .video-wrapper video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.3s ease;
+  }
+
+  .play-overlay {
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
         width: 80px;
         height: 80px;
-        background: rgba(7, 53, 63, 0.7);
+    background: rgba(7, 53, 63, 0.8);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0;
+  }
+
+  .play-overlay:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+    background: var(--secondary-color);
+  }
+
+  .video-wrapper.playing .play-overlay {
+    opacity: 0;
         pointer-events: none;
-        transition: opacity 0.3s ease;
-      "
-    >
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="#fff" xmlns="http://www.w3.org/2000/svg">
-        <path d="M8 5v14l11-7z"/>
-      </svg>
-    </div>
-  </div>
-</section>
+  }
+
+  @media (max-width: 768px) {
+    .video-wrapper {
+      border-radius: 10px;
+      margin: 0 1rem;
+    }
+
+    .play-overlay {
+      width: 60px;
+      height: 60px;
+    }
+
+    .play-overlay svg {
+      width: 24px;
+      height: 24px;
+    }
+  }
+</style>
 
 <script>
   const video = document.getElementById('serviceVideo');
-  const playOverlay = document.getElementById('playOverlay');
+  const wrapper = video.closest('.video-wrapper');
+  const playOverlay = wrapper.querySelector('.play-overlay');
 
-  // Hide play overlay when video is playing
-  video.addEventListener('play', () => {
-    playOverlay.style.opacity = '0';
-  });
-  // Show overlay when paused or ended
-  video.addEventListener('pause', () => {
-    playOverlay.style.opacity = '1';
-  });
-  video.addEventListener('ended', () => {
-    playOverlay.style.opacity = '1';
+  // Auto-play when the page loads
+  document.addEventListener('DOMContentLoaded', () => {
+    video.play().catch(error => {
+      console.log("Auto-play failed:", error);
+    });
+    wrapper.classList.add('playing');
   });
 
-  // Clicking overlay toggles play/pause
-  playOverlay.parentElement.addEventListener('click', () => {
+  // Play/pause on overlay click
+  playOverlay.addEventListener('click', () => {
     if (video.paused) {
       video.play();
+      wrapper.classList.add('playing');
     } else {
       video.pause();
+      wrapper.classList.remove('playing');
     }
   });
+
+  // Show/hide overlay based on video state
+  video.addEventListener('play', () => wrapper.classList.add('playing'));
+  video.addEventListener('pause', () => wrapper.classList.remove('playing'));
+  video.addEventListener('ended', () => {
+    wrapper.classList.remove('playing');
+    video.play(); // Auto-replay when ended
+  });
+
+  // Intersection Observer for autoplay
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting && !video.paused) {
+          video.pause();
+        } else if (entry.isIntersecting && video.paused) {
+          video.play().catch(error => {
+            console.log("Auto-play failed:", error);
+          });
+        }
+      });
+    },
+    { threshold: 0.5 }
+  );
+
+  observer.observe(video);
 </script>
 
 
 
     <!-- Available Services -->
-<section id="available-officers" class="container" style="padding: 20px 5px; background: #; font-family: 'Poppins', sans-serif;">
-  <h2 style="
-    text-align: center;
-    font-size: 1.8rem;
-    color: #07353f;
-    margin-bottom: 30px;
-    font-weight: 400;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
-  ">Available Services</h2>
-
-  <div style="
-    display: flex;
-    justify-content: space-around;
-    flex-wrap: wrap;
-    gap: 20px;
-    max-width: 900px;
-    margin: 0 auto;
-  ">
-    <!-- Service Card Template -->
-    <div class="officer-category" style="
-      background: linear-gradient(145deg, #e9f0f1, #c9d6d8);
-      flex: 1 1 220px;
-      border-radius: 18px;
-      box-shadow: 8px 8px 20px #b1babf, -8px -8px 20px #ffffff;
-      padding: 25px 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative;
-    " onmouseover="this.style.transform='scale(1.06)'; this.style.boxShadow='12px 12px 28px #a2abb0, -12px -12px 28px #ffffff';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='8px 8px 20px #b1babf, -8px -8px 20px #ffffff';">
-      <h3 style="
-        font-size: 1.8rem;
-        color: #07353f;
-        margin-bottom: 15px;
-        position: relative;
-        font-weight: 700;
-      ">
-        <!-- Icon placeholder before text -->
-        <span style="font-size: 2.5rem; position: absolute; left: 20px; top: 10px;">🧹</span>
-        Cleaning
-      </h3>
-      <ul class="officer-list" style="list-style: none; padding-left: 0; margin-top: 10px; color: #344047; font-weight: 500;">
+<section id="services" class="services">
+  <div class="container">
+    <h2 class="section-title">Available Services</h2>
+    <div class="services-grid">
+      <!-- Service Card 1 -->
+      <div class="service-card">
+        <div class="service-icon">🧹</div>
+        <h3>Cleaning</h3>
+        <ul class="service-list">
         <li>Aircon filter cleaning</li>
         <li>Coil cleaning</li>
         <li>Vent cleaning</li>
       </ul>
     </div>
 
-    <div class="officer-category" style="
-      background: linear-gradient(145deg, #e9f0f1, #c9d6d8);
-      flex: 1 1 220px;
-      border-radius: 18px;
-      box-shadow: 8px 8px 20px #b1babf, -8px -8px 20px #ffffff;
-      padding: 25px 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative;
-    " onmouseover="this.style.transform='scale(1.06)'; this.style.boxShadow='12px 12px 28px #a2abb0, -12px -12px 28px #ffffff';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='8px 8px 20px #b1babf, -8px -8px 20px #ffffff';">
-      <h3 style="
-        font-size: 1.8rem;
-        color: #07353f;
-        margin-bottom: 15px;
-        position: relative;
-        font-weight: 700;
-      ">
-        <span style="font-size: 2.5rem; position: absolute; left: 20px; top: 10px;">🔍</span>
-        Check-up
-      </h3>
-      <ul class="officer-list" style="list-style: none; padding-left: 0; margin-top: 10px; color: #344047; font-weight: 500;">
+      <!-- Service Card 2 -->
+      <div class="service-card">
+        <div class="service-icon">🔍</div>
+        <h3>Check-up</h3>
+        <ul class="service-list">
         <li>Performance diagnostics</li>
         <li>Leak inspection</li>
         <li>Energy efficiency check</li>
       </ul>
     </div>
 
-    <div class="officer-category" style="
-      background: linear-gradient(145deg, #e9f0f1, #c9d6d8);
-      flex: 1 1 220px;
-      border-radius: 18px;
-      box-shadow: 8px 8px 20px #b1babf, -8px -8px 20px #ffffff;
-      padding: 25px 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative;
-    " onmouseover="this.style.transform='scale(1.06)'; this.style.boxShadow='12px 12px 28px #a2abb0, -12px -12px 28px #ffffff';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='8px 8px 20px #b1babf, -8px -8px 20px #ffffff';">
-      <h3 style="
-        font-size: 1.8rem;
-        color: #07353f;
-        margin-bottom: 15px;
-        position: relative;
-        font-weight: 700;
-      ">
-        <span style="font-size: 2.5rem; position: absolute; left: 20px; top: 10px;">⚙️</span>
-        Installation
-      </h3>
-      <ul class="officer-list" style="list-style: none; padding-left: 0; margin-top: 10px; color: #344047; font-weight: 500;">
+      <!-- Service Card 3 -->
+      <div class="service-card">
+        <div class="service-icon">⚙️</div>
+        <h3>Installation</h3>
+        <ul class="service-list">
         <li>New unit installation</li>
         <li>System setup</li>
         <li>Calibration</li>
       </ul>
     </div>
 
-    <div class="officer-category" style="
-      background: linear-gradient(145deg, #e9f0f1, #c9d6d8);
-      flex: 1 1 220px;
-      border-radius: 18px;
-      box-shadow: 8px 8px 20px #b1babf, -8px -8px 20px #ffffff;
-      padding: 25px 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative;
-    " onmouseover="this.style.transform='scale(1.06)'; this.style.boxShadow='12px 12px 28px #a2abb0, -12px -12px 28px #ffffff';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='8px 8px 20px #b1babf, -8px -8px 20px #ffffff';">
-      <h3 style="
-        font-size: 1.8rem;
-        color: #07353f;
-        margin-bottom: 15px;
-        position: relative;
-        font-weight: 700;
-      ">
-        <span style="font-size: 2.5rem; position: absolute; left: 20px; top: 10px;">🚚</span>
-        Relocations
-      </h3>
-      <ul class="officer-list" style="list-style: none; padding-left: 0; margin-top: 10px; color: #344047; font-weight: 500;">
+      <!-- Service Card 4 -->
+      <div class="service-card">
+        <div class="service-icon">🚚</div>
+        <h3>Relocations</h3>
+        <ul class="service-list">
         <li>Unit moving</li>
         <li>Re-installation</li>
         <li>Safety check</li>
       </ul>
     </div>
 
-    <div class="officer-category" style="
-      background: linear-gradient(145deg, #e9f0f1, #c9d6d8);
-      flex: 1 1 220px;
-      border-radius: 18px;
-      box-shadow: 8px 8px 20px #b1babf, -8px -8px 20px #ffffff;
-      padding: 25px 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative;
-    " onmouseover="this.style.transform='scale(1.06)'; this.style.boxShadow='12px 12px 28px #a2abb0, -12px -12px 28px #ffffff';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='8px 8px 20px #b1babf, -8px -8px 20px #ffffff';">
-      <h3 style="
-        font-size: 1.8rem;
-        color: #07353f;
-        margin-bottom: 15px;
-        position: relative;
-        font-weight: 700;
-      ">
-        <span style="font-size: 2.5rem; position: absolute; left: 20px; top: 10px;">🔧</span>
-        Repair
-      </h3>
-      <ul class="officer-list" style="list-style: none; padding-left: 0; margin-top: 10px; color: #344047; font-weight: 500;">
+      <!-- Service Card 5 -->
+      <div class="service-card">
+        <div class="service-icon">🔧</div>
+        <h3>Repair</h3>
+        <ul class="service-list">
         <li>Leak repairs</li>
         <li>Component replacement</li>
         <li>Emergency service</li>
       </ul>
     </div>
-
+    </div>
   </div>
 </section>
+
+<style>
+  .services {
+    background: var(--background-color);
+    padding: clamp(3rem, 8vw, 6rem) 0;
+  }
+
+  .section-title {
+    text-align: center;
+    color: var(--primary-color);
+    margin-bottom: clamp(2rem, 5vw, 4rem);
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    position: relative;
+  }
+
+  .section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: var(--secondary-color);
+    border-radius: 2px;
+  }
+
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    gap: clamp(1.5rem, 4vw, 2.5rem);
+    padding: 1rem;
+  }
+
+  .service-card {
+    background: white;
+    border-radius: 20px;
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+    box-shadow: 0 10px 30px rgba(7, 53, 63, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .service-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: var(--secondary-color);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+
+  .service-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(7, 53, 63, 0.15);
+  }
+
+  .service-card:hover::before {
+    transform: scaleX(1);
+  }
+
+  .service-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    display: inline-block;
+    padding: 1rem;
+    background: var(--background-color);
+    border-radius: 15px;
+  }
+
+  .service-card h3 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+
+  .service-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .service-list li {
+    padding: 0.5rem 0;
+    color: var(--text-color);
+    position: relative;
+    padding-left: 1.5rem;
+  }
+
+  .service-list li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--secondary-color);
+  }
+
+  @media (max-width: 768px) {
+    .services-grid {
+      grid-template-columns: 1fr;
+      padding: 0.5rem;
+    }
+
+    .service-card {
+      padding: 1.5rem;
+    }
+  }
+</style>
 
 
 
@@ -650,321 +1065,621 @@
 
 
 
-  <section id="how-it-works" style="background:  #d0f0ff; padding: 20px 5px; font-family: 'Montserrat', sans-serif; margin-left: 2in; margin-right: 2in;"> 
-  <div class="container" style="max-width: 900px; margin: auto; position: relative;">
-    <h2 style="
-      text-align: center;
-      font-size: 1.8rem;
-      color: #07353f;
-      margin-bottom: 30px;
-      font-weight: 400;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-    ">How It Works</h2>
-
-    <div class="steps" style="display: flex; justify-content: space-between; gap: 40px; position: relative; z-index: 1; flex-wrap: wrap;">
-
+  <section id="how-it-works" class="how-it-works">
+  <div class="container">
+    <h2 class="section-title">How It Works</h2>
+    <div class="steps-grid">
       <!-- Step 1 -->
-      <div class="step" style="
-        background: linear-gradient(145deg, #e9f0f1, #c9d6d8);
-        flex: 1 1 280px;
-        padding: 30px 25px 35px;
-        border-radius: 15px;
-        box-shadow: 7px 7px 15px #a8b0b2, -7px -7px 15px #ffffff;
-        text-align: center;
-        position: relative;
-        transition: all 0.35s ease;
-        cursor: pointer;
-      "
-      onmouseover="this.style.transform='scale(1.08)'; this.style.boxShadow='10px 10px 20px #9bb0b2, -10px -10px 20px #ffffff';"
-      onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='7px 7px 15px #a8b0b2, -7px -7px 15px #ffffff';"
-      >
-        <div style="
-          width: 50px;
-          height: 50px;
-          background: #07353f;
-          border-radius: 50%;
-          color: #fff;
-          font-weight: 500;
-          font-size: 1.8rem;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          position: absolute;
-          top: -20px;
-          left: 50%;
-          transform: translateX(-50%);
-          box-shadow: 0 0 12px #07353f88;
-        ">1</div>
-        <h3 style="margin-top: 40px; font-size: 1.7rem; color: #07353f;">Create Account</h3>
-        <p style="color: #2f3e44; font-weight: 300; margin-top: 15px; font-size: 1.1rem;">
-          Sign up for an account and log in securely.
-        </p>
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <div class="step-icon">👤</div>
+        <h3>Create Account</h3>
+        <p>Sign up for an account and log in securely to access our services.</p>
       </div>
 
       <!-- Step 2 -->
-      <div class="step" style="
-        background: linear-gradient(145deg, #e9f0f1, #c9d6d8);
-        flex: 1 1 280px;
-        padding: 30px 25px 35px;
-        border-radius: 15px;
-        box-shadow: 7px 7px 15px #a8b0b2, -7px -7px 15px #ffffff;
-        text-align: center;
-        position: relative;
-        transition: all 0.35s ease;
-        cursor: pointer;
-      "
-      onmouseover="this.style.transform='scale(1.08)'; this.style.boxShadow='10px 10px 20px #9bb0b2, -10px -10px 20px #ffffff';"
-      onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='7px 7px 15px #a8b0b2, -7px -7px 15px #ffffff';"
-      >
-        <div style="
-          width: 50px;
-          height: 50px;
-          background: #07353f;
-          border-radius: 50%;
-          color: #fff;
-          font-weight: 500;
-          font-size: 1.8rem;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          position: absolute;
-          top: -20px;
-          left: 50%;
-          transform: translateX(-50%);
-          box-shadow: 0 0 12px #07353f88;
-        ">2</div>
-        <h3 style="margin-top: 40px; font-size: 1.7rem; color: #07353f;">Browse Services</h3>
-        <p style="color: #2f3e44; font-weight: 300; margin-top: 15px; font-size: 1.1rem;">
-          Search for available aircon services easily.
-        </p>
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <div class="step-icon">🔍</div>
+        <h3>Browse Services</h3>
+        <p>Search and explore our wide range of aircon services easily.</p>
       </div>
 
       <!-- Step 3 -->
-      <div class="step" style="
-        background: linear-gradient(145deg, #e9f0f1, #c9d6d8);
-        flex: 1 1 280px;
-        padding: 30px 25px 35px;
-        border-radius: 15px;
-        box-shadow: 7px 7px 15px #a8b0b2, -7px -7px 15px #ffffff;
-        text-align: center;
-        position: relative;
-        transition: all 0.35s ease;
-        cursor: pointer;
-      "
-      onmouseover="this.style.transform='scale(1.08)'; this.style.boxShadow='10px 10px 20px #9bb0b2, -10px -10px 20px #ffffff';"
-      onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='7px 7px 15px #a8b0b2, -7px -7px 15px #ffffff';"
-      >
-        <div style="
-          width: 50px;
-          height: 50px;
-          background: #07353f;
-          border-radius: 50%;
-          color: #fff;
-          font-weight: 500;
-          font-size: 1.8rem;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          position: absolute;
-          top: -20px;
-          left: 50%;
-          transform: translateX(-50%);
-          box-shadow: 0 0 12px #07353f88;
-        ">3</div>
-        <h3 style="margin-top: 40px; font-size: 1.7rem; color: #07353f;">Book & Confirm</h3>
-        <p style="color: #2f3e44; font-weight: 300; margin-top: 15px; font-size: 1.1rem;">
-          Book your services and get instant confirmation.
-        </p>
+      <div class="step-card">
+        <div class="step-number">3</div>
+        <div class="step-icon">📅</div>
+        <h3>Book & Confirm</h3>
+        <p>Schedule your service and get instant confirmation.</p>
       </div>
-
     </div>
   </div>
 </section>
 
+<style>
+  .how-it-works {
+    background: linear-gradient(to bottom, var(--background-color), white);
+    padding: clamp(4rem, 10vw, 8rem) 0;
+  }
 
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    gap: clamp(2rem, 5vw, 4rem);
+    margin-top: clamp(3rem, 8vw, 5rem);
+  }
 
-   <!-- Facebook Page -->
-<section id="facebook-page" class="container" style="margin: 40px 2in 0 2in; font-family: 'Poppins', sans-serif;">
-  <!-- Header Box -->
-  <div style="
+  .step-card {
+    background: white;
+    border-radius: 20px;
+    padding: clamp(2rem, 5vw, 3rem);
     text-align: center;
-    background: linear-gradient(135deg, #29487D, #07353f);
-    color: #f0f4ff;
-    padding: 22px 20px;
-    border-radius: 12px;
-    margin-bottom: 30px;
-    box-shadow:
-      0 3px 8px rgba(41, 72, 125, 0.6),
-      0 0 20px rgba(7, 53, 63, 0.4);
-    font-size: 1.8rem;
-    font-weight: 500;
-    letter-spacing: 1.5 em;
-    text-transform: uppercase;
-    transition: background 0.4s ease;
-    cursor: pointer;
-  " onmouseover="this.style.background='linear-gradient(135deg, #07353f, #29487D)'" onmouseout="this.style.background='linear-gradient(135deg, #29487D, #07353f)'">
-    Visit Our Facebook Page for More Details
-  </div>
-</section>
+    position: relative;
+    box-shadow: 0 10px 30px rgba(7, 53, 63, 0.1);
+    transition: all 0.3s ease;
+    overflow: hidden;
+  }
 
-  <!-- Content Box -->
-  <div style="
+  .step-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: var(--secondary-color);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+
+  .step-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(7, 53, 63, 0.15);
+  }
+
+  .step-card:hover::before {
+    transform: scaleX(1);
+  }
+
+  .step-number {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 40px;
+    height: 40px;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 50%;
     display: flex;
+    align-items: center;
     justify-content: center;
-    align-items: flex-start;
-    gap: 42px;
-    background-color: #fff;
-    border-radius: 14px;
-    padding: 28px 30px;
-    box-shadow:
-      0 12px 25px rgba(7, 53, 63, 0.07),
-      0 6px 10px rgba(7, 53, 63, 0.04);
-    max-width: 740px;
-    margin: 0 auto;
-  ">
-    <!-- Image -->
-    <div class="image" style="flex: none; width: 280px; height: 280px; border-radius: 14px; overflow: hidden; box-shadow: 0 8px 20px rgba(41, 72, 125, 0.3);">
-      <img src="page.png" alt="Airgo Page" style="width: 100%; height: 100%; object-fit: cover; border-radius: 14px; transition: transform 0.5s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'"/>
-    </div>
+    font-weight: 600;
+    font-size: 1.2rem;
+    box-shadow: 0 5px 15px rgba(7, 53, 63, 0.2);
+  }
 
-    <!-- Info -->
-    <div class="info" style="max-width: 420px; color: #07353f; font-size: 1.1rem; line-height: 1.65;">
-      <p>
-        <a href="https://web.facebook.com/messages/t/111830037044299" target="_blank" style="
-          color: #29487D;
-          text-decoration: none;
-          font-weight: 700;
+  .step-icon {
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+    display: inline-block;
+    padding: 1rem;
+    background: var(--background-color);
+    border-radius: 20px;
+    transition: transform 0.3s ease;
+  }
+
+  .step-card:hover .step-icon {
+    transform: scale(1.1) rotate(5deg);
+  }
+
+  .step-card h3 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-size: clamp(1.2rem, 3vw, 1.5rem);
+  }
+
+  .step-card p {
+    color: var(--text-color);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  @media (max-width: 768px) {
+    .steps-grid {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      padding: 0 1rem;
+    }
+
+    .step-card {
+      padding: 2rem;
+    }
+
+    .step-icon {
+      font-size: 2.5rem;
+    }
+  }
+
+  @media (min-width: 769px) {
+    .steps-grid {
           position: relative;
-          padding-bottom: 2px;
-          transition: color 0.35s ease;
-        " onmouseover="this.style.color='#07353f'" onmouseout="this.style.color='#29487D'">
-          📩 Message Us on Facebook
-          <span style="
+    }
+
+    .steps-grid::after {
             content: '';
             position: absolute;
+      top: 40%;
             left: 0;
-            bottom: 0;
             width: 100%;
             height: 2px;
-            background: #29487D;
-            border-radius: 2px;
-            transform: scaleX(0);
-            transform-origin: right;
-            transition: transform 0.35s ease;
-          "></span>
-        </a>
-      </p>
-      <p style="margin-top: 16px; font-weight: 600; letter-spacing: 0.03em;">Open Hours:</p>
-      <ul style="padding-left: 24px; margin: 8px 0 18px; list-style-type: square; color: #415a7d;">
-        <li>Monday - Sunday: 24 hours</li>
+      background: var(--secondary-color);
+      opacity: 0.2;
+      z-index: -1;
+    }
+  }
+</style>
+
+
+   <!-- Social Media Section -->
+<section id="social-media" class="social-media">
+  <div class="container">
+    <div class="social-card">
+      <div class="social-header">
+        <div class="social-icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+          </svg>
+        </div>
+        <h2>Connect With Us</h2>
+      </div>
+      <div class="social-content">
+        <div class="social-info">
+          <h3>Visit Our Facebook Page</h3>
+          <p>Follow us for updates, tips, and special offers!</p>
+          <ul class="contact-info">
+            <li>
+              <span class="icon">📱</span>
+              <span>Sun# 09430510783 / 09976189915</span>
+            </li>
+            <li>
+              <span class="icon">🕒</span>
+              <span>Open 24/7</span>
+            </li>
+            <li>
+              <span class="icon">💬</span>
+              <span>Fast Response Time</span>
+            </li>
       </ul>
-      <p style="font-weight: 600;">Contact: <span style="color: #07353f;">Sun# 09430510783 / 09976189915</span></p>
+          <a href="https://web.facebook.com/messages/t/111830037044299" target="_blank" class="btn btn-facebook">
+            Message Us on Facebook
+          </a>
+        </div>
+        <div class="social-image">
+          <img src="page.png" alt="Airgo Facebook Page" loading="lazy">
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
+<style>
+  .social-media {
+    padding: clamp(3rem, 8vw, 6rem) 0;
+    background: linear-gradient(to bottom, white, var(--background-color));
+  }
+
+  .social-card {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(7, 53, 63, 0.1);
+  }
+
+  .social-header {
+    background: var(--primary-color);
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: white;
+  }
+
+  .social-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--secondary-color);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+  }
+
+  .social-header h2 {
+    margin: 0;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+  }
+
+  .social-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(2rem, 5vw, 4rem);
+    padding: clamp(2rem, 5vw, 4rem);
+  }
+
+  .social-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .social-info h3 {
+    color: var(--primary-color);
+    font-size: clamp(1.2rem, 3vw, 1.8rem);
+    margin-bottom: 1rem;
+  }
+
+  .social-info p {
+    color: var(--text-color);
+    margin-bottom: 2rem;
+  }
+
+  .contact-info {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 2rem;
+  }
+
+  .contact-info li {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+  }
+
+  .contact-info .icon {
+    font-size: 1.5rem;
+    color: var(--secondary-color);
+  }
+
+  .btn-facebook {
+    background: #1877f2;
+    color: white;
+    border-radius: 30px;
+    padding: 1rem 2rem;
+    font-weight: 600;
+    text-align: center;
+    transition: all 0.3s ease;
+    display: inline-block;
+    margin-top: auto;
+  }
+
+  .btn-facebook:hover {
+    background: #0d6efd;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(13, 110, 253, 0.2);
+  }
+
+  .social-image {
+    position: relative;
+    border-radius: 15px;
+    overflow: hidden;
+    aspect-ratio: 4/3;
+  }
+
+  .social-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .social-image:hover img {
+    transform: scale(1.05);
+  }
+
+  @media (max-width: 768px) {
+    .social-content {
+      grid-template-columns: 1fr;
+      padding: 1.5rem;
+    }
+
+    .social-image {
+      order: -1;
+      aspect-ratio: 16/9;
+    }
+
+    .social-header {
+      padding: 1.5rem;
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .btn-facebook {
+      width: 100%;
+    }
+  }
+</style>
 
 
-   <!-- Testimonials --> 
-<section id="testimonials" style="background: transparent; padding: 20px 5px; font-family: 'Poppins', sans-serif; color: #07353f;">
-  <div class="container" style="max-width: 900px; margin: 0 auto; text-align: center;">
-    <h2 style="
-      font-size: 1.8rem;
-      margin-bottom: 30px;
-      font-weight: 400;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: #0e5a64;
-      text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
-    ">
-      What Our Customers Say
-    </h2>
-    <!-- Example Airgo styled text -->
-    <p style="
-      font-weight: 400;
-      font-size: 1.8rem;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: #0e5a64;
-      text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
-      margin-bottom: 30px;
-    ">
-    </p>
-  </div>
-</section>
-
-
-    <div style="display: flex; flex-wrap: wrap; gap: 30px; justify-content: center;">
-      
-      <div style="
-        background: linear-gradient(145deg, #e9f0f1, #c9d6d8);
-        border-radius: 20px;
-        padding: 30px 40px;
-        max-width: 400px;
-        box-shadow: 8px 8px 15px #a8b0b2, -8px -8px 15px #ffffff;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        cursor: default;
-      " 
-      onmouseover="this.style.transform='translateY(-8px) scale(1.03)'; this.style.boxShadow='12px 12px 20px #8a99a0, -12px -12px 20px #f2f5f7';" 
-      onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='8px 8px 15px #a8b0b2, -8px -8px 15px #ffffff';"
-      >
-        <p style="font-style: italic; font-size: 1.2rem; line-height: 1.6; color: #2f3e44; margin-bottom: 20px;">
-          "Airgo made booking so easy! I will definitely use it again."
-        </p>
-        <h4 style="
-          font-weight: 700;
-          font-size: 1.1rem;
-          color: #07353f;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
-        ">- John Doe</h4>
+   <!-- Testimonials -->
+<section id="testimonials" class="testimonials">
+  <div class="container">
+    <h2 class="section-title">What Our Customers Say</h2>
+    <div class="testimonials-grid">
+      <!-- Testimonial 1 -->
+      <div class="testimonial-card">
+        <div class="testimonial-content">
+          <div class="quote-icon">❝</div>
+          <p>"Airgo made booking so easy! The service was professional and efficient. I will definitely use it again."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">JD</div>
+            <div class="author-info">
+              <h4>John Doe</h4>
+              <span>Satisfied Customer</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div style="
-        background: linear-gradient(145deg, #e9f0f1, #c9d6d8);
-        border-radius: 20px;
-        padding: 30px 40px;
-        max-width: 400px;
-        box-shadow: 8px 8px 15px #a8b0b2, -8px -8px 15px #ffffff;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        cursor: default;
-      " 
-      onmouseover="this.style.transform='translateY(-8px) scale(1.03)'; this.style.boxShadow='12px 12px 20px #8a99a0, -12px -12px 20px #f2f5f7';" 
-      onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='8px 8px 15px #a8b0b2, -8px -8px 15px #ffffff';"
-      >
-        <p style="font-style: italic; font-size: 1.2rem; line-height: 1.6; color: #2f3e44; margin-bottom: 20px;">
-          "Great platform with amazing service! Highly recommend."
-        </p>
-        <h4 style="
-          font-weight: 700;
-          font-size: 1.1rem;
-          color: #07353f;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
-        ">- Jane Smith</h4>
+      <!-- Testimonial 2 -->
+      <div class="testimonial-card">
+        <div class="testimonial-content">
+          <div class="quote-icon">❝</div>
+          <p>"Great platform with amazing service! The technicians were knowledgeable and professional. Highly recommend."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">JS</div>
+            <div class="author-info">
+              <h4>Jane Smith</h4>
+              <span>Happy Client</span>
+            </div>
+          </div>
+        </div>
       </div>
 
+      <!-- Testimonial 3 -->
+      <div class="testimonial-card">
+        <div class="testimonial-content">
+          <div class="quote-icon">❝</div>
+          <p>"The best aircon service I've ever used. Quick response time and excellent customer service!"</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">MJ</div>
+            <div class="author-info">
+              <h4>Mike Johnson</h4>
+              <span>Regular Customer</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
+
+<style>
+  .testimonials {
+    background: linear-gradient(to bottom, white, var(--background-color));
+    padding: clamp(3rem, 8vw, 6rem) 0;
+  }
+
+  .testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr));
+    gap: clamp(1.5rem, 4vw, 2.5rem);
+    padding: 1rem;
+  }
+
+  .testimonial-card {
+    background: white;
+    border-radius: 20px;
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+    box-shadow: 0 10px 30px rgba(7, 53, 63, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .testimonial-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(7, 53, 63, 0.15);
+  }
+
+  .testimonial-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .quote-icon {
+    font-size: 4rem;
+    color: var(--secondary-color);
+    opacity: 0.2;
+    position: absolute;
+    top: -2rem;
+    left: -1rem;
+    z-index: -1;
+  }
+
+  .testimonial-content p {
+    font-style: italic;
+    color: var(--text-color);
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+    position: relative;
+  }
+
+  .testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .author-avatar {
+    width: 50px;
+    height: 50px;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.2rem;
+  }
+
+  .author-info h4 {
+    color: var(--primary-color);
+    margin: 0;
+    font-size: 1.1rem;
+  }
+
+  .author-info span {
+    color: var(--text-color);
+    opacity: 0.8;
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 768px) {
+    .testimonials-grid {
+      grid-template-columns: 1fr;
+      padding: 0.5rem;
+    }
+
+    .testimonial-card {
+      padding: 1.5rem;
+    }
+
+    .quote-icon {
+      font-size: 3rem;
+      top: -1.5rem;
+    }
+  }
+</style>
 
 
     <!-- Footer -->
-<footer style="
-  background-color: #07353f;
-  color: #f0f4ff;
-  text-align: center;
-  padding: 20px 10px;
-  font-family: 'Poppins', sans-serif;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  font-size: 1rem;
-  box-shadow: 0 -3px 8px rgba(7, 53, 63, 0.3);
-">
+<footer class="footer">
+  <div class="container">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h3>About Airgo</h3>
+        <p>Your reliable booking platform for all your aircon services needs. Professional, efficient, and trusted service.</p>
+      </div>
+      <div class="footer-section">
+        <h3>Quick Links</h3>
+        <ul>
+          <li><a href="#services">Services</a></li>
+          <li><a href="#how-it-works">How It Works</a></li>
+          <li><a href="#testimonials">Testimonials</a></li>
+          <li><a href="login.php">Login</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h3>Contact Us</h3>
+        <ul>
+          <li>📱 Sun# 09430510783</li>
+          <li>📱 09976189915</li>
+          <li>🕒 Open 24/7</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
   <p>&copy; 2025 Airgo | All Rights Reserved</p>
+    </div>
+  </div>
 </footer>
+
+<style>
+  .footer {
+    background: var(--primary-color);
+    color: white;
+    padding: clamp(3rem, 6vw, 5rem) 0 1.5rem;
+    margin-top: clamp(3rem, 8vw, 6rem);
+  }
+
+  .footer-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: clamp(2rem, 5vw, 4rem);
+    margin-bottom: 3rem;
+  }
+
+  .footer-section h3 {
+    color: var(--secondary-color);
+    margin-bottom: 1.5rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    position: relative;
+  }
+
+  .footer-section h3::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 40px;
+    height: 2px;
+    background: var(--secondary-color);
+    border-radius: 2px;
+  }
+
+  .footer-section p {
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.6;
+  }
+
+  .footer-section ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .footer-section ul li {
+    margin-bottom: 0.8rem;
+  }
+
+  .footer-section ul li a {
+    color: rgba(255, 255, 255, 0.8);
+    transition: all 0.3s ease;
+    display: inline-block;
+  }
+
+  .footer-section ul li a:hover {
+    color: var(--secondary-color);
+    transform: translateX(5px);
+  }
+
+  .footer-bottom {
+    text-align: center;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .footer-bottom p {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 768px) {
+    .footer {
+      padding: 3rem 0 1rem;
+    }
+
+    .footer-content {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      text-align: center;
+    }
+
+    .footer-section h3::after {
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .footer-section ul li a:hover {
+      transform: translateX(0) scale(1.05);
+    }
+  }
+</style>
 
     <!-- Slideshow JS -->
     <script>

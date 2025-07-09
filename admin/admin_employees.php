@@ -5,16 +5,8 @@ if (!isset($_SESSION['admin_logged_in'])) {
     exit();
 }
 
-// DB Connection
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "airgo";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+// Include the database connection
+include('../db_connection.php');
 
 $message = "";
 
@@ -62,237 +54,488 @@ $employees = [];
 while ($row = $result_employees->fetch_assoc()) {
     $employees[] = $row;
 }
-
-$conn->close();
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>AirGo Admin - Employees</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<style>
-:root {
-    --bg: #4c7273;
-    --main: #07353f;
-    --accent: #CACBBB;
-    --light: #ffffff;
-    --shadow: rgba(0,0,0,0.1);
-}
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:'Segoe UI',sans-serif; background:var(--bg); display:flex; }
-.sidebar {
-    width:250px;
-    height:100vh;
-    background:var(--main);
-    color:var(--light);
-    padding:30px 20px;
-    position:fixed;
-    display:flex;
-    flex-direction:column;
-}
-.sidebar h2 { font-size:24px; margin-bottom:30px; text-align:center; }
-.sidebar a {
-    color:var(--light);
-    text-decoration:none;
-    margin:12px 0;
-    padding:10px 15px;
-    border-radius:10px;
-    transition:background 0.3s ease;
-}
-.sidebar a:hover { background:var(--accent); color:#000; }
-.main-content {
-    margin-left:300px;
-    padding:40px;
-    width:calc(100% - 300px);
-}
-.main-content h1 { margin-bottom:30px; color:white; font-size:20px; }
-.form-container {
-    background:var(--light);
-    padding:20px;
-    border-radius:15px;
-    box-shadow:3px 3px 6px var(--shadow), -3px -3px 6px #fff;
-    margin-bottom:20px;
-}
-.form-container h2 { margin-bottom:10px; color:var(--main); }
-.form-row {
-    display:flex;
-    flex-wrap:wrap;
-    gap:15px;
-    margin-bottom:15px;
-    position:relative;
-}
-.form-row input, .form-row select {
-    flex:1;
-    padding:10px;
-    border-radius:8px;
-    border:1px solid #ccc;
-}
-.password-container {
-    position: relative;
-    flex:1;
-}
-.password-container input {
-    width:100%;
-    padding-right:40px;
-}
-.password-container .toggle-password {
-    position:absolute;
-    top:50%;
-    right:10px;
-    transform:translateY(-50%);
-    cursor:pointer;
-    font-size:18px;
-    color:#555;
-}
-button[type="submit"] {
-    background-color:#07353f;
-    color:white;
-    padding:10px 20px;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-}
-button[type="submit"]:hover { background-color:#094c5d; }
-table {
-    width:100%;
-    background:var(--light);
-    border-radius:10px;
-    box-shadow:3px 3px 6px var(--shadow), -3px -3px 6px #fff;
-    border-collapse:collapse;
-}
-th, td {
-    padding:10px 15px;
-    text-align:left;
-}
-th {
-    background:var(--main);
-    color:var(--light);
-}
-tr:nth-child(even) { background:#f9f9f9; }
-tr:hover { background:#e0f7f7; }
-.edit-btn {
-    display:inline-block;
-    background-color:#07353f;
-    color:white;
-    padding:6px 14px;
-    border-radius:8px;
-    font-size:12px;
-    text-decoration:none;
-}
-.edit-btn:hover { background-color:#094c5d; }
-.delete-btn {
-    background-color:#721c24;
-    margin-left:5px;
-}
-.delete-btn:hover { background-color:#a71d2a; }
-.message {
-    padding:10px 20px;
-    margin-bottom:20px;
-    border-radius:8px;
-    font-weight:bold;
-}
-.success { background:#d4edda; color:#155724; }
-.error { background:#f8d7da; color:#721c24; }
-@media(max-width:768px){
-    .main-content{ margin-left:0; padding:20px; width:100%; }
-    .sidebar{ display:none; }
-    .form-row{ flex-direction:column; }
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirGo Admin - Employees</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #07353f;
+            --secondary-color: #3cd5ed;
+            --background-color: #d0f0ff;
+            --text-color: #344047;
+            --card-bg: #ffffff;
+            --card-shadow: rgba(7, 53, 63, 0.1);
+            --spacing-unit: clamp(0.5rem, 2vw, 1rem);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--background-color), #fff);
+            color: var(--text-color);
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100vh;
+            background: linear-gradient(180deg, var(--primary-color), #052830);
+            padding: 2rem 1.5rem;
+            color: white;
+            box-shadow: 4px 0 20px var(--card-shadow);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .sidebar h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            letter-spacing: 1px;
+        }
+
+        .sidebar h2 span {
+            color: var(--secondary-color);
+            font-style: italic;
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 1rem 0;
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            padding: 12px 16px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--secondary-color);
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.3s ease;
+            z-index: -1;
+            border-radius: 12px;
+        }
+
+        .sidebar a:hover {
+            color: var(--primary-color);
+            transform: translateX(5px);
+        }
+
+        .sidebar a:hover::before {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+
+        .sidebar a i {
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar a:hover i {
+            transform: scale(1.1);
+        }
+
+        .main {
+            margin-left: 250px;
+            padding: 2.5rem;
+            width: calc(100% - 250px);
+        }
+
+        .main h1 {
+            margin-bottom: 2rem;
+            color: var(--primary-color);
+            font-size: 2rem;
+            font-family: 'Playfair Display', serif;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-container {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px var(--card-shadow);
+            margin-bottom: 2rem;
+        }
+
+        .form-container h2 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            flex: 1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 2px solid var(--background-color);
+            border-radius: 12px;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 4px rgba(60, 213, 237, 0.1);
+        }
+
+        .password-container {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: var(--text-color);
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .toggle-password:hover {
+            opacity: 1;
+        }
+
+        button[type="submit"] {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button[type="submit"]:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px var(--card-shadow);
+        }
+
+        table {
+            width: 100%;
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 10px 20px var(--card-shadow);
+            border-collapse: separate;
+            border-spacing: 0;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1.2rem 1.5rem;
+            text-align: left;
+        }
+
+        th {
+            background: var(--primary-color);
+            color: var(--card-bg);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tr:nth-child(even) {
+            background: var(--background-color);
+        }
+
+        tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        tbody tr:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            color: var(--primary-color);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-button {
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .edit-btn {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px var(--card-shadow);
+        }
+
+        .message {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .success {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #842029;
+        }
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 240px;
+            }
+            .main {
+                margin-left: 240px;
+                width: calc(100% - 240px);
+            }
+            .form-row {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                padding: 1rem;
+            }
+            .main {
+                margin-left: 0;
+                width: 100%;
+                padding: 1.5rem;
+            }
+            .form-row {
+                flex-direction: column;
+            }
+            th, td {
+                padding: 0.8rem;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
 </head>
 <body>
-<div class="sidebar">
-    <h2>AirGo Admin</h2>
-    <a href="dashboard.php">Dashboard</a>
-    <a href="admin_bookings.php">Bookings</a>
-    <a href="admin_employees.php">Employees</a>
-    <a href="booking_history.php">Booking History</a>
-    <a href="index.php">Logout</a>
-</div>
-<div class="main-content">
-    <h1>Employees List</h1>
-    <?php if (!empty($message)): ?>
-        <div class="message <?php echo (strpos($message, '✅') !== false) ? 'success' : 'error'; ?>">
-            <?php echo $message; ?>
-        </div>
-    <?php endif; ?>
-    <div class="form-container">
-        <h2>Add New Employee</h2>
-        <form method="POST">
-            <div class="form-row">
-                <input type="text" name="name" placeholder="Employee Name" required />
-                <input type="email" name="email" placeholder="Employee Email" required />
-            </div>
-            <div class="form-row">
-                <input type="text" name="position" placeholder="Position" required />
-                <input type="date" name="hire_date" required />
-            </div>
-            <div class="form-row">
-                <div class="password-container">
-                    <input type="password" name="password" id="password" placeholder="Password" required />
-                    <span class="toggle-password" onclick="togglePassword('password', this)">👁️</span>
-                </div>
-                <div class="password-container">
-                    <input type="password" name="confirm_password" id="confirm_password" placeholder="Confirm Password" required />
-                    <span class="toggle-password" onclick="togglePassword('confirm_password', this)">👁️</span>
-                </div>
-            </div>
-            <div class="form-row">
-                <select name="status" required>
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                </select>
-            </div>
-            <button type="submit" name="add_employee">Add Employee</button>
-        </form>
+    <div class="sidebar">
+        <h2>Air<span>go</span></h2>
+        <a href="dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a>
+        <a href="admin_bookings.php"><i class="fas fa-calendar-alt"></i> Bookings</a>
+        <a href="admin_employees.php"><i class="fas fa-users"></i> Employees</a>
+        <a href="booking_history.php"><i class="fas fa-history"></i> Booking History</a>
+        <a href="admin_register.php"><i class="fas fa-user-shield"></i> Administrator</a>
+        <a href="login.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
-    <table>
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Position</th>
-            <th>Hire Date</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-        </thead>
-        <tbody>
-        <?php if (count($employees) > 0): ?>
-            <?php foreach ($employees as $employee): ?>
-            <tr>
-                <td><?php echo htmlspecialchars($employee['id']); ?></td>
-                <td><?php echo htmlspecialchars($employee['name']); ?></td>
-                <td><?php echo htmlspecialchars($employee['email']); ?></td>
-                <td><?php echo htmlspecialchars($employee['position']); ?></td>
-                <td><?php echo htmlspecialchars($employee['hire_date']); ?></td>
-                <td><?php echo htmlspecialchars($employee['status']); ?></td>
-                <td>
-                    <a href="edit_employee.php?id=<?php echo $employee['id']; ?>" class="edit-btn">✏️ Edit</a>
-                    <a href="admin_employees.php?delete_id=<?php echo $employee['id']; ?>" class="edit-btn delete-btn" onclick="return confirm('Are you sure you want to delete this employee?');">🗑️ Delete</a>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <tr><td colspan="7">No employees found.</td></tr>
+
+    <div class="main">
+        <h1><i class="fas fa-users"></i> Manage Employees</h1>
+
+        <?php if (!empty($message)): ?>
+            <div class="message <?php echo (strpos($message, '✅') !== false) ? 'success' : 'error'; ?>">
+                <?php echo $message; ?>
+            </div>
         <?php endif; ?>
-        </tbody>
-    </table>
-</div>
-<script>
-function togglePassword(fieldId, icon) {
-    const input = document.getElementById(fieldId);
-    if (input.type === "password") {
-        input.type = "text";
-        icon.textContent = "🙈";
-    } else {
-        input.type = "password";
-        icon.textContent = "👁️";
-    }
-}
-</script>
+
+        <div class="form-container">
+            <h2>Add New Employee</h2>
+            <form method="POST">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name">Employee Name</label>
+                        <input type="text" id="name" name="name" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" required />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="position">Position</label>
+                        <input type="text" id="position" name="position" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="hire_date">Hire Date</label>
+                        <input type="date" id="hire_date" name="hire_date" required />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <div class="password-container">
+                            <input type="password" id="password" name="password" required />
+                            <span class="toggle-password" onclick="togglePassword('password', this)">
+                                <i class="fas fa-eye"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm_password">Confirm Password</label>
+                        <div class="password-container">
+                            <input type="password" id="confirm_password" name="confirm_password" required />
+                            <span class="toggle-password" onclick="togglePassword('confirm_password', this)">
+                                <i class="fas fa-eye"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select id="status" name="status" required>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" name="add_employee">
+                    <i class="fas fa-plus"></i> Add Employee
+                </button>
+            </form>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Position</th>
+                    <th>Hire Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (count($employees) > 0): ?>
+                    <?php foreach ($employees as $employee): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($employee['id'] ?? '') ?></td>
+                            <td><?= htmlspecialchars($employee['name'] ?? '') ?></td>
+                            <td><?= htmlspecialchars($employee['email'] ?? '') ?></td>
+                            <td><?= htmlspecialchars($employee['position'] ?? '') ?></td>
+                            <td><?= htmlspecialchars($employee['hire_date'] ?? '') ?></td>
+                            <td><?= htmlspecialchars($employee['status'] ?? '') ?></td>
+                            <td class="action-buttons">
+                                <a href="edit_employee.php?id=<?= $employee['id'] ?? '' ?>" class="action-button edit-btn">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <a href="admin_employees.php?delete_id=<?= $employee['id'] ?? '' ?>" 
+                                   class="action-button delete-btn" 
+                                   onclick="return confirm('Are you sure you want to delete this employee?');">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="7" style="text-align: center;">No employees found.</td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function togglePassword(fieldId, icon) {
+            const input = document.getElementById(fieldId);
+            const i = icon.querySelector('i');
+            if (input.type === "password") {
+                input.type = "text";
+                i.classList.remove('fa-eye');
+                i.classList.add('fa-eye-slash');
+            } else {
+                input.type = "password";
+                i.classList.remove('fa-eye-slash');
+                i.classList.add('fa-eye');
+            }
+        }
+    </script>
 </body>
 </html>

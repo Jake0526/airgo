@@ -7,26 +7,31 @@ if (!isset($_SESSION['admin_logged_in'])) {
     exit();
 }
 
-// Database connection
-$conn = new mysqli('localhost', 'root', '', 'airgo');
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+// Include the database connection
+include('../db_connection.php');
 
 // Archive past completed, done, rejected, or cancelled bookings
 $archiveSQL = "
     INSERT IGNORE INTO booking_history (
-        user_id, full_name, email, service, location, appointment_date, appointment_time,
+        user_id, name, email, service, location, appointment_date, appointment_time,
         phone_number, technician, status
     )
     SELECT 
-        user_id, full_name, email, service, location, appointment_date, appointment_time,
-        phone_number, 
-        COALESCE(NULLIF(technician, ''), 'Unassigned'),
-        status
-    FROM bookings
-    WHERE status IN ('completed', 'done', 'rejected', 'cancelled')
-      AND appointment_date < CURDATE()
+        b.user_id,
+        CONCAT(u.fname, ' ', u.lname) as name,
+        u.email,
+        b.service,
+        b.location,
+        b.appointment_date,
+        b.appointment_time,
+        b.phone, 
+        COALESCE(e.name, 'Unassigned') as technician,
+        b.status
+    FROM bookings b
+    LEFT JOIN user u ON b.user_id = u.id
+    LEFT JOIN employees e ON b.employee_id = e.id
+    WHERE b.status IN ('Completed', 'Done', 'Rejected', 'Cancelled')
+      AND b.appointment_date < CURDATE()
 ";
 
 if (!$conn->query($archiveSQL)) {
@@ -36,7 +41,7 @@ if (!$conn->query($archiveSQL)) {
 // Delete old bookings after archiving
 $deleteSQL = "
     DELETE FROM bookings
-    WHERE status IN ('completed', 'done', 'rejected', 'cancelled')
+    WHERE status IN ('Completed', 'Done', 'Rejected', 'Cancelled')
       AND appointment_date < CURDATE()
 ";
 
@@ -50,7 +55,7 @@ $sql = "SELECT * FROM booking_history";
 
 if ($search !== '') {
     $search = $conn->real_escape_string($search);
-    $sql .= " WHERE full_name LIKE '%$search%'
+    $sql .= " WHERE name LIKE '%$search%'
               OR email LIKE '%$search%'
               OR service LIKE '%$search%'
               OR location LIKE '%$search%'
@@ -72,15 +77,15 @@ $history = $result->fetch_all(MYSQLI_ASSOC);
 // Export to CSV if requested
 if (isset($_GET['export']) && $_GET['export'] === 'csv') {
     header('Content-Type: text/csv');
-    header('Content-Disposition: attachment;filefull_name=booking_history.csv');
+    header('Content-Disposition: attachment;filename=booking_history.csv');
     
     $output = fopen('php://output', 'w');
-    fputcsv($output, ['full_name', 'Email', 'Service', 'Location', 'Appointment Date', 'Appointment Time', 'Phone', 'Technician', 'Status']);
+    fputcsv($output, ['Name', 'Email', 'Service', 'Location', 'Appointment Date', 'Appointment Time', 'Phone', 'Technician', 'Status']);
 
     foreach ($history as $row) {
         $formattedTime = date("g:i A", strtotime($row['appointment_time']));
         fputcsv($output, [
-            $row['full_name'], $row['email'], $row['service'], $row['location'],
+            $row['name'], $row['email'], $row['service'], $row['location'],
             $row['appointment_date'], $formattedTime, $row['phone_number'],
             $row['technician'], $row['status']
         ]);
@@ -91,218 +96,380 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
 }
 ?>
 
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AirGo Admin - Booking History</title>
-    <meta full_name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --bg: #4c7273;
-            --main: #07353f;
-            --accent: #CACBBB;
-            --light: #ffffff;
+            --primary-color: #07353f;
+            --secondary-color: #3cd5ed;
+            --background-color: #d0f0ff;
+            --text-color: #344047;
+            --card-bg: #ffffff;
+            --card-shadow: rgba(7, 53, 63, 0.1);
+            --spacing-unit: clamp(0.5rem, 2vw, 1rem);
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background: var(--bg);
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--background-color), #fff);
+            color: var(--text-color);
             display: flex;
+            min-height: 100vh;
         }
+
         .sidebar {
-            width: 250px; height: 100vh;
-            background: var(--main);
-            color: var(--light);
-            padding: 30px 20px;
             position: fixed;
-            display: flex;
-            flex-direction: column;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100vh;
+            background: linear-gradient(180deg, var(--primary-color), #052830);
+            padding: 2rem 1.5rem;
+            color: white;
+            box-shadow: 4px 0 20px var(--card-shadow);
+            transition: all 0.3s ease;
+            z-index: 1000;
         }
+
         .sidebar h2 {
-            font-size: 24px; margin-bottom: 30px; text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            letter-spacing: 1px;
         }
+
+        .sidebar h2 span {
+            color: var(--secondary-color);
+            font-style: italic;
+        }
+
         .sidebar a {
-            color: var(--light); text-decoration: none;
-            margin: 12px 0; padding: 10px 15px;
-            border-radius: 10px;
-            transition: background 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 1rem 0;
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            padding: 12px 16px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
         }
+
+        .sidebar a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--secondary-color);
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.3s ease;
+            z-index: -1;
+            border-radius: 12px;
+        }
+
         .sidebar a:hover {
-            background: var(--accent); color: #000;
+            color: var(--primary-color);
+            transform: translateX(5px);
         }
+
+        .sidebar a:hover::before {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+
+        .sidebar a i {
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar a:hover i {
+            transform: scale(1.1);
+        }
+
         .main {
             margin-left: 250px;
-            padding: 40px;
+            padding: 2.5rem;
             width: calc(100% - 250px);
         }
-        .header {
-            font-size: 2em;
-            margin-bottom: 30px;
-            color: white;
-        }
-        .search-form {
+
+        .main h1 {
+            margin-bottom: 2rem;
+            color: var(--primary-color);
+            font-size: 2rem;
+            font-family: 'Playfair Display', serif;
             display: flex;
-            justify-content: flex-end;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 25px;
+            gap: 0.5rem;
         }
+
+        .search-form {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px var(--card-shadow);
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
         .search-form input {
-            width: 200px;
-            padding: 8px 12px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
+            flex: 1;
+            min-width: 200px;
+            padding: 0.8rem 1rem;
+            border: 2px solid var(--background-color);
+            border-radius: 12px;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s ease;
         }
-        .search-form button {
-            background-color: var(--main);
+
+        .search-form input:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 4px rgba(60, 213, 237, 0.1);
+        }
+
+        .button {
+            background: var(--primary-color);
             color: white;
-            padding: 8px 12px;
             border: none;
-            border-radius: 8px;
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
         }
-        .search-form button:hover {
-            background-color: #0b4c58;
+
+        .button:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px var(--card-shadow);
         }
+
         .history-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 10px 20px var(--card-shadow);
             overflow: hidden;
-            margin-bottom: 20px;
+            margin-bottom: 2rem;
         }
+
         .date-header {
-            background: var(--main);
+            background: var(--primary-color);
             color: white;
-            padding: 12px 20px;
-            font-weight: bold;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
+
         table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
         }
+
         th, td {
-            padding: 14px 16px;
+            padding: 1.2rem 1.5rem;
             text-align: left;
-            border-bottom: 1px solid #ddd;
         }
+
         th {
-            background-color: #ffffffc9;
-            font-weight: bold;
-            color: #07353f;
-        }
-        tr:hover {
-            background-color: #e0f0f8;
-        }
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.9em;
+            background: var(--primary-color);
+            color: var(--card-bg);
             font-weight: 600;
-            text-transform: capitalize;
-            color: white;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
+
+        tr:nth-child(even) {
+            background: var(--background-color);
+        }
+
+        tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        tbody tr:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            color: var(--primary-color);
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: capitalize;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
         .status-badge.completed,
         .status-badge.done {
-            background-color: #28a745;
+            background: #28a745;
+            color: white;
         }
+
         .status-badge.rejected {
-            background-color: #dc3545;
+            background: #dc3545;
+            color: white;
         }
+
         .status-badge.cancelled {
-            background-color: #e3342f;
+            background: #e3342f;
+            color: white;
         }
+
         .status-badge.pending {
-            background-color: #ffc107;
-            color: black;
+            background: #ffc107;
+            color: var(--primary-color);
         }
+
         .status-badge.in-progress {
-            background-color: #007bff;
+            background: #007bff;
+            color: white;
         }
+
         .no-data {
-            background-color: #fffbe6;
-            padding: 15px;
-            border-left: 5px solid #ffcd39;
-            margin-top: 20px;
-            border-radius: 10px;
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            color: var(--text-color);
+            font-size: 1.1rem;
+            box-shadow: 0 10px 20px var(--card-shadow);
         }
-        @media (max-width: 768px) {
+
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 240px;
+            }
             .main {
-                margin-left: 0;
-                padding: 20px;
-                width: 100%;
+                margin-left: 240px;
+                width: calc(100% - 240px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
             }
             .sidebar {
-                display: none;
+                width: 100%;
+                height: auto;
+                position: relative;
+                padding: 1rem;
             }
-            th, td {
-                font-size: 14px;
-                padding: 10px;
+            .main {
+                margin-left: 0;
+                width: 100%;
+                padding: 1.5rem;
             }
             .search-form {
-                justify-content: center;
+                flex-direction: column;
+            }
+            th, td {
+                padding: 0.8rem;
+                font-size: 0.85rem;
             }
         }
     </style>
 </head>
 <body>
-<div class="sidebar">
-    <h2>AirGo Admin</h2>
-    <a href="dashboard.php">Dashboard</a>
-    <a href="admin_bookings.php">Bookings</a>
-    <a href="admin_employees.php">Employees</a>
-    <a href="booking_history.php">Booking History</a>
-    <a href="login.php">Logout</a>
-</div>
+    <div class="sidebar">
+        <h2>Air<span>go</span></h2>
+        <a href="dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a>
+        <a href="admin_bookings.php"><i class="fas fa-calendar-alt"></i> Bookings</a>
+        <a href="admin_employees.php"><i class="fas fa-users"></i> Employees</a>
+        <a href="booking_history.php"><i class="fas fa-history"></i> Booking History</a>
+        <a href="admin_register.php"><i class="fas fa-user-shield"></i> Administrator</a>
+        <a href="login.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
 
-<div class="main">
-    <div class="header">📖 Booking History</div>
+    <div class="main">
+        <h1><i class="fas fa-history"></i> Booking History</h1>
 
-    <form class="search-form" method="get">
-        <input type="text" full_name="search" placeholder="Search..." value="<?= htmlspecialchars($search) ?>">
-        <button type="submit">Search</button>
-        <?php if ($search): ?>
-            <a href="booking_history.php"><button type="button">Clear</button></a>
+        <form class="search-form" method="get">
+            <input type="text" name="search" placeholder="Search bookings..." value="<?= htmlspecialchars($search ?? '') ?>">
+            <button type="submit" class="button">
+                <i class="fas fa-search"></i> Search
+            </button>
+            <?php if ($search): ?>
+                <a href="booking_history.php" class="button">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            <?php endif; ?>
+            <a href="booking_history.php?export=csv" class="button">
+                <i class="fas fa-download"></i> Export CSV
+            </a>
+        </form>
+
+        <?php if (empty($history)): ?>
+            <div class="no-data">
+                <i class="fas fa-info-circle"></i> No booking history available.
+            </div>
+        <?php else: ?>
+            <?php
+            $lastDate = '';
+            foreach ($history as $row):
+                $date = $row['appointment_date'];
+                if ($date !== $lastDate):
+                    if ($lastDate !== '') echo "</table></div>";
+                    echo "<div class='history-card'>";
+                    echo "<div class='date-header'><i class='fas fa-calendar-day'></i> " . date('F j, Y', strtotime($date)) . "</div>";
+                    echo "<table><tr><th>Name</th><th>Email</th><th>Service</th><th>Location</th><th>Time</th><th>Phone</th><th>Status</th></tr>";
+                    $lastDate = $date;
+                endif;
+                $status = strtolower($row['status']);
+                $normalTime = date("g:i A", strtotime($row['appointment_time']));
+                echo "<tr>
+                        <td>" . htmlspecialchars($row['name'] ?? '') . "</td>
+                        <td>" . htmlspecialchars($row['email'] ?? '') . "</td>
+                        <td>" . htmlspecialchars($row['service'] ?? '') . "</td>
+                        <td>" . htmlspecialchars($row['location'] ?? '') . "</td>
+                        <td>" . htmlspecialchars($normalTime) . "</td>
+                        <td>" . htmlspecialchars($row['phone_number'] ?? '') . "</td>
+                        <td><span class='status-badge $status'>" . htmlspecialchars($row['status'] ?? '') . "</span></td>
+                      </tr>";
+            endforeach;
+            echo "</table></div>";
+            ?>
         <?php endif; ?>
-        <a href="booking_history.php?export=csv"><button type="button">Export CSV</button></a>
-    </form>
-
-    <?php if (empty($history)): ?>
-        <div class="no-data">No booking history available.</div>
-    <?php else: ?>
-        <?php
-        $lastDate = '';
-        foreach ($history as $row):
-            $date = $row['appointment_date'];
-            if ($date !== $lastDate):
-                if ($lastDate !== '') echo "</table></div>";
-                echo "<div class='history-card'>";
-                echo "<div class='date-header'>📅 " . date('F j, Y', strtotime($date)) . "</div>";
-                echo "<table><tr><th>full_name</th><th>Email</th><th>Service</th><th>Location</th><th>Date & Time</th><th>Phone</th><th>Status</th></tr>";
-                $lastDate = $date;
-            endif;
-            $status = strtolower($row['status']);
-            $normalTime = date("g:i A", strtotime($row['appointment_time']));
-            $dateTime = date('F j, Y', strtotime($row['appointment_date'])) . ' - ' . $normalTime;
-            echo "<tr>
-                    <td>{$row['full_name']}</td>
-                    <td>{$row['email']}</td>
-                    <td>{$row['service']}</td>
-                    <td>{$row['location']}</td>
-                    <td>{$dateTime}</td>
-                    <td>{$row['phone_number']}</td>
-                    <td><span class='status-badge $status'>{$row['status']}</span></td>
-                  </tr>";
-        endforeach;
-        echo "</table></div>";
-        ?>
-    <?php endif; ?>
-</div>
+    </div>
 </body>
 </html>
-
-<?php $conn->close(); ?>

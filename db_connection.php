@@ -1,7 +1,7 @@
 <?php
-$servername = "localhost";
+$servername = "db";
 $username = "root";
-$password = "";
+$password = "root_password";
 $database = "airgo"; // Replace with your actual database name
 
 $conn = new mysqli($servername, $username, $password, $database);

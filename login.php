@@ -62,258 +62,279 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Login - Airgo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- Header styles -->
+    <link rel="stylesheet" href="styles/header.css">
     <style>
+        /* Root variables are now in header.css */
+            --primary-color: #07353f;
+            --secondary-color: #3cd5ed;
+            --background-color: #d0f0ff;
+            --text-color: #344047;
+            --card-bg: #e9f0f1;
+            --card-shadow: rgba(7, 53, 63, 0.1);
+            --spacing-unit: clamp(0.5rem, 2vw, 1rem);
+        }
+
         /* Reset */
         * {
             margin: 0; 
             padding: 0; 
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color:  #d0f0ff;
-            color: #07353f;
-            height: 100vh;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--background-color), #fff);
+            color: var(--text-color);
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-        }
-
-        /* Header */
-        header {
-            background-color: #07353f;
-            padding: 8px 20px;
-            box-shadow: 0 2px 8px rgba(7, 53, 63, 0.8);
-        }
-
-        header nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo h1 {
-            font-weight: 100;
-            font-size: 1.5rem;
-            color:  #d0f0ff;
-            letter-spacing: 1px;
-        }
-
-        .nav-link a {
-            background-color:  #d0f0ff;
-            padding: 12px 65px;
-            border-radius: 25px;
-            font-weight: 300;
-            color: #07353f;
-            box-shadow: 0 4px 6px rgba(202, 203, 187, 0.6);
-            transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
-            display: inline-block;
-        }
-
-        .nav-link a:hover {
-            background-color: #07353f;
-            color:  #d0f0ff;
-            box-shadow: 0 6px 12px rgba(7, 53, 63, 0.8);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
         }
 
         /* Main Section */
         #login {
-            flex-grow: 1;
+            flex: 1;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 40px 0;
+            padding: 0;
+            min-height: calc(100vh - 80px);
+            width: 100%;
+            margin: 0 auto;
         }
 
         .login-wrapper {
-            background:  #d0f0ff;
-            padding: 10px 60px;
-            border-radius: 18px;
-            box-shadow: 0 12px 35px rgba(7, 53, 63, 0.2);
-            width: 330px;
-            text-align: center;
-            border: 2.5px solid #07353f;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px var(--card-shadow);
+            width: min(90%, 400px);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            margin: 0 auto;
+            box-sizing: border-box;
+            position: relative;
+            top: -40px;
         }
 
         .login-wrapper h2 {
-            font-size: 1.2rem;
-            font-weight: 500;
-            color: #07353f;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
+            font-size: clamp(1.5rem, 3vw, 1.8rem);
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            position: relative;
+        }
+
+        .login-wrapper h2::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: var(--secondary-color);
+            border-radius: 2px;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            width: 100%;
         }
 
         label {
-            font-weight: 300;
-            color: #07353f;
+            font-weight: 500;
+            color: var(--text-color);
             display: block;
-            margin-bottom: 8px;
-            text-align: left;
-            font-size: 0.95rem;
-        }
-
-        input[type="text"], input[type="password"] {
-            width: 100%;
-            padding: 10px 15px;
-            margin-bottom: 20px;
-            border-radius: 12px;
-            border: 2px solid #07353f;
+            margin-bottom: 0.75rem;
             font-size: 1rem;
-            transition: border-color 0.3s ease;
-            background:  #d0f0ff;
-            color: #07353f;
         }
 
-        input[type="text"]:focus, input[type="password"]:focus {
+        input[type="text"], 
+        input[type="password"],
+        input[type="email"] {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border-radius: 12px;
+            border: 2px solid var(--card-bg);
+            font-size: 16px; /* Prevents iOS zoom */
+            transition: all 0.3s ease;
+            background: white;
+            color: var(--text-color);
+            font-family: 'Poppins', sans-serif;
+            -webkit-appearance: none; /* Removes iOS default styling */
+            appearance: none;
+            box-sizing: border-box;
+            max-width: 100%;
+        }
+
+        input[type="text"]:focus, 
+        input[type="password"]:focus,
+        input[type="email"]:focus {
             outline: none;
-            border-color:  #d0f0ff;
-            box-shadow: 0 0 8px  #d0f0ff;
-            background: #fff;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 4px rgba(60, 213, 237, 0.1);
+        }
+
+        input::placeholder {
+            color: #a0aec0;
+            opacity: 1;
         }
 
         button {
             width: 100%;
-            background-color: #07353f;
-            color:  #d0f0ff;
+            background: var(--primary-color);
+            color: white;
             border: none;
-            padding: 14px 0;
-            border-radius: 25px;
-            font-size: 1.15rem;
-            font-weight: 700;
+            padding: 1rem;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.3s ease, color 0.3s ease;
-            box-shadow: 0 6px 12px rgba(7, 53, 63, 0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-family: 'Poppins', sans-serif;
+            -webkit-appearance: none; /* Removes iOS default styling */
+            appearance: none;
+            margin-top: 1rem;
         }
 
         button:hover {
-            background-color: #d0f0ff;
-            color: #07353f;
-            box-shadow: 0 8px 18px rgba(202, 203, 187, 0.7);
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px var(--card-shadow);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 5px 10px var(--card-shadow);
         }
 
         .register-area {
-            margin-top: 24px;
+            margin-top: 2rem;
+            text-align: center;
             font-weight: 500;
             font-size: 0.95rem;
-            color: #07353f;
+            color: var(--text-color);
         }
 
         .register-area a {
-            color: #07353f;
-            font-weight: 500;
-            text-decoration: underline;
-            transition: color 0.2s ease;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 2px;
         }
 
         .register-area a:hover {
-            color: #CACBBB;
-            background-color: #07353f;
-            padding: 2px 6px;
-            border-radius: 4px;
-            text-decoration: none;
+            color: var(--secondary-color);
+            border-bottom-color: var(--secondary-color);
         }
 
         .error {
-            margin-bottom: 15px;
-            color: #cc0000;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
+            background: #fee;
+            color: #e44;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
             font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        /* Footer */
-        footer {
-            background-color: #07353f;
-            text-align: center;
-            padding: 18px 10px;
-            color: #CACBBB;
-            font-weight: 600;
-            font-size: 0.9rem;
-            box-shadow: inset 0 2px 6px rgba(255, 255, 255, 0.1);
+        .error::before {
+            content: '⚠️';
+        }
+
+        @media (max-width: 480px) {
+            #login {
+                padding: 0;
+                align-items: center;
+            }
+
+            .login-wrapper {
+                width: 90%;
+                padding: 1.5rem;
+                border-radius: 16px;
+                margin: 0 auto;
+                top: -20px;
+            }
+
+            input[type="text"], 
+            input[type="password"],
+            input[type="email"] {
+                padding: 0.875rem;
+                font-size: 16px;
+                width: 100%;
+            }
+
+            .form-group {
+                margin-bottom: 1.25rem;
+                width: 100%;
+            }
+
+            button {
+                padding: 0.875rem;
+            }
         }
     </style>
 </head>
 <body>
 
-  <!-- Header -->
-<header style="background: #07353f; padding: 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
-  <nav class="container" style="display: flex; justify-content: space-between; align-items: center; max-width: 1100px; margin: 0 auto; padding: 0 24px;">
-    <div class="logo">
-      <h1 style="
-        color: #d0f0ff; 
-        font-family: 'Playfair Display', Georgia, serif; 
-        font-weight: 100; 
-        font-style: normal; 
-        letter-spacing: 3px; 
-        font-size: 1.9rem; 
-        margin: 0; 
-        cursor: default;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-        text-transform: uppercase;
-        ">
-        Airgo
-      </h1>
-    </div>
-    <div class="Home-button">
-      <a href="index.php" class="btn-Home" style="position: relative; color: #07353f; background-color:  #d0f0ff; padding: 10px 26px; border-radius: 25px; font-weight: 600; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 1.2px; text-decoration: none; overflow: hidden; display: inline-block; transition: background-color 0.3s ease;">
-        Home
-        <span class="underline"></span>
-      </a>
-    </div>
-  </nav>
-</header>
-
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600&family=Playfair+Display:wght@900&display=swap');
-
-  .btn-Home {
-    cursor: pointer;
-  }
-
-  .btn-Home .underline {
-    position: absolute;
-    bottom: 8px;
-    left: 20%;
-    width: 60%;
-    height: 3px;
-    background-color: #07353f;
-    border-radius: 2px;
-    transform: scaleX(0);
-    transform-origin: center;
-    transition: transform 0.35s ease;
-  }
-
-  .btn-Home:hover {
-    background-color: #d6cec6;
-    color: #07353f;
-  }
-
-  .btn-Home:hover .underline {
-    transform: scaleX(1);
-  }
-</style>
-
+    <!-- Header -->
+    <header class="header">
+        <nav class="container flex flex-center">
+            <div class="logo">
+                <h1>Air<span>go</span></h1>
+            </div>
+            <div class="header-button">
+                <a href="index.php">
+                    Home
+                    <span class="btn-icon">→</span>
+                </a>
+            </div>
+        </nav>
+    </header>
 
     <!-- Login Form Section -->
     <section id="login">
         <div class="login-wrapper">
-            <h2>Login to Your Account</h2>
+            <h2>Welcome Back</h2>
 
             <?php if (isset($error)): ?>
-                <p class="error"><?= htmlspecialchars($error) ?></p>
+                <div class="error"><?= htmlspecialchars($error) ?></div>
             <?php endif; ?>
 
             <form action="login.php" method="POST" autocomplete="off">
-                <label for="email">Email</label>
-                <input type="text" id="email" name="email" required />
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="text" id="email" name="email" required placeholder="Enter your email" />
+                </div>
 
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required />
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required placeholder="Enter your password" />
+                </div>
 
-                <button type="submit">Login</button>
+                <button type="submit">
+                    Login
+                    <span class="btn-icon">→</span>
+                </button>
             </form>
 
             <div class="register-area">
