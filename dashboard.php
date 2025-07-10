@@ -178,52 +178,19 @@ $conn->close();
         .main-container {
             margin-left: 250px;
             padding: clamp(1.5rem, 4vw, 3rem);
-            display: flex;
-            flex-direction: row;
-            gap: clamp(1.5rem, 4vw, 3rem);
             min-height: 100vh;
         }
 
         .calendar-container {
-            flex: 1.5;
-            min-width: 320px;
-        }
-
-        #calendar {
             background: var(--card-bg);
-            padding: 1.5rem;
+            padding: 2rem;
             border-radius: 20px;
             box-shadow: 0 20px 40px var(--card-shadow);
             transition: transform 0.3s ease;
         }
 
-        #calendar:hover {
+        .calendar-container:hover {
             transform: translateY(-5px);
-        }
-
-        .content-container {
-            flex: 1;
-            min-width: 320px;
-        }
-
-        .slot-popup {
-            animation: fadeInUp 0.3s ease-out;
-            background: var(--card-bg);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px var(--card-shadow);
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        @keyframes fadeInUp {
-            from { 
-                opacity: 0; 
-                transform: translateY(20px); 
-            }
-            to { 
-                opacity: 1; 
-                transform: translateY(0); 
-            }
         }
 
         .label-title {
@@ -240,105 +207,53 @@ $conn->close();
             color: var(--secondary-color);
         }
 
-        /* Facebook Section Styles */
-        #facebook-page {
-            background: var(--card-bg);
+        /* Modal Styles */
+        .modal-content {
             border-radius: 20px;
+            border: none;
             box-shadow: 0 20px 40px var(--card-shadow);
-            padding: 1.5rem;
-            transition: transform 0.3s ease;
         }
 
-        #facebook-page:hover {
-            transform: translateY(-5px);
-        }
-
-        .fb-header {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            padding: 1rem;
-            border-radius: 12px;
-            text-align: center;
-            margin-bottom: 1.5rem;
-            font-weight: 600;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            font-size: 0.9rem;
-        }
-
-        .fb-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        .fb-image {
-            width: 280px;
-            height: 280px;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px var(--card-shadow);
-        }
-
-        .fb-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.5s ease;
-        }
-
-        .fb-image:hover img {
-            transform: scale(1.05);
-        }
-
-        .fb-button {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+        .modal-header {
             background: var(--primary-color);
             color: white;
-            padding: 12px 24px;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            border: 2px solid var(--primary-color);
+            border-radius: 20px 20px 0 0;
+            padding: 1.5rem;
         }
 
-        .fb-button:hover {
-            background: transparent;
-            color: var(--primary-color);
+        .modal-title {
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .time-slot-btn {
+            width: 100%;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .time-slot-btn:hover {
             transform: translateY(-2px);
         }
 
-        .fb-info {
-            text-align: center;
-            color: var(--text-color);
+        .time-slot-btn.available {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
         }
 
-        .fb-info h3 {
-            color: var(--primary-color);
-            font-size: 1.2rem;
-            margin-bottom: 1rem;
-        }
-
-        .fb-info ul {
-            list-style: none;
-            padding: 0;
-            margin: 0 0 1rem;
-        }
-
-        .fb-info li {
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .fb-info i {
-            color: var(--secondary-color);
+        .time-slot-btn.unavailable {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            border: 1px solid #dee2e6;
+            cursor: not-allowed;
         }
 
         @media (max-width: 991px) {
@@ -367,12 +282,7 @@ $conn->close();
 
             .main-container {
                 margin-left: 0;
-                flex-direction: column;
                 padding: 1.5rem;
-            }
-
-            #calendar {
-                margin-bottom: 1.5rem;
             }
         }
 
@@ -393,27 +303,9 @@ $conn->close();
                 padding: 1rem;
             }
 
-            #calendar {
+            .calendar-container {
                 padding: 1rem;
             }
-        }
-
-        /* Simple loading indicator */
-        .loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: var(--secondary-color);
-            z-index: 9999;
-            transform: scaleX(0);
-            transform-origin: left;
-            transition: transform 0.3s ease;
-        }
-
-        .loading.active {
-            transform: scaleX(1);
         }
     </style>
 </head>
@@ -438,75 +330,296 @@ $conn->close();
         </div>
         <div id="calendar"></div>
     </div>
+</div>
 
-    <div class="content-container">
-        <!-- Facebook Page Section -->
-        <section id="facebook-page">
-            <div class="fb-header">
-                <i class="fab fa-facebook"></i> Connect With Us
+<!-- Time Slots Modal -->
+<div class="modal fade" id="timeSlotsModal" tabindex="-1" aria-labelledby="timeSlotsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="timeSlotsModalLabel">Available Time Slots</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-
-            <div class="fb-content">
-                <div class="fb-image">
-                    <img src="page.png" alt="AirGo Facebook Page" />
+            <div class="modal-body">
+                <div id="timeSlotsList">
+                    <!-- Time slots will be dynamically inserted here -->
                 </div>
-
-                <a href="https://web.facebook.com/messages/t/111830037044299" target="_blank" class="fb-button">
-                    <i class="fab fa-facebook-messenger"></i> Message Us
-                </a>
-
-                <div class="fb-info">
-                    <h3>Contact Information</h3>
-                    <ul>
-                        <li><i class="far fa-clock"></i> Open 24/7</li>
-                        <li><i class="fas fa-phone"></i> Sun# 09430510783</li>
-                        <li><i class="fas fa-phone"></i> 09976189915</li>
-                    </ul>
+                <div id="bookingForm" style="display: none;">
+                    <!-- Booking form will be dynamically inserted here -->
                 </div>
             </div>
-        </section>
+        </div>
     </div>
 </div>
 
+<!-- Booking Confirmation Modal -->
+<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="confirmationModalLabel">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Booking Confirmed!
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="mb-4">
+                    <i class="fas fa-calendar-check text-success" style="font-size: 4rem;"></i>
+                </div>
+                <h4 class="mb-3">Your appointment has been scheduled!</h4>
+                <p class="mb-4">Thank you for choosing our service. We will send you a confirmation email with the details.</p>
+                <div class="booking-details mb-4">
+                    <!-- Booking details will be inserted here -->
+                </div>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                    <i class="fas fa-home me-2"></i>
+                    Back to Dashboard
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+// Function to show time slots
+window.showTimeSlots = function(date) {
+    // Update modal title
+    document.getElementById('timeSlotsModalLabel').textContent = 
+        `Available Time Slots for ${new Date(date).toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        })}`;
+
+    // Show loading state
+    const timeSlotsList = document.getElementById('timeSlotsList');
+    const bookingForm = document.getElementById('bookingForm');
+    timeSlotsList.style.display = 'block';
+    bookingForm.style.display = 'none';
+    timeSlotsList.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading available time slots...</p>
+        </div>`;
+
+    fetch('get_slots.php?date=' + date)
+        .then(res => {
+            if (!res.ok) throw new Error('Network response was not ok');
+            return res.json();
+        })
+        .then(data => {
+            if (data.error) throw new Error(data.error);
+            
+            const slots = data.slots || [];
+            if (slots.length === 0) {
+                timeSlotsList.innerHTML = `
+                    <div class="alert alert-info" role="alert">
+                        No time slots available for this date.
+                    </div>`;
+                return;
+            }
+
+            let html = '<div class="row g-3">';
+            slots.forEach(slot => {
+                const btnClass = slot.available ? 'available' : 'unavailable';
+                const disabled = !slot.available;
+                const remainingText = slot.available ? 
+                    `${slot.remaining} slots remaining` : 
+                    'Fully booked';
+                
+                html += `
+                    <div class="col-md-4">
+                        <button class="time-slot-btn ${btnClass}" 
+                                onclick="showBookingForm('${date}', '${slot.time}')"
+                                ${disabled ? 'disabled' : ''}>
+                            <div class="fw-bold">${slot.time}</div>
+                            <small>${remainingText}</small>
+                        </button>
+                    </div>`;
+            });
+            html += '</div>';
+            timeSlotsList.innerHTML = html;
+        })
+        .catch(error => {
+            timeSlotsList.innerHTML = `
+                <div class="alert alert-danger" role="alert">
+                    Error: ${error.message}
+                </div>`;
+        });
+}
+
+// Function to handle form submission
+window.handleBookingSubmit = function(form, event) {
+    event.preventDefault();
+    
+    // Show loading state
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalButtonText = submitButton.innerHTML;
+    submitButton.disabled = true;
+    submitButton.innerHTML = `
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        Submitting...
+    `;
+
+    // Get form data
+    const formData = new FormData(form);
+    
+    // Add +639 prefix to contact number
+    let contact = formData.get('contact');
+    if (contact && !contact.startsWith('+639')) {
+        formData.set('contact', '+639' + contact);
+    }
+
+    // Make AJAX request to save booking
+    fetch('save_booking.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show confirmation modal
+            showBookingConfirmation({
+                service: formData.get('service'),
+                date: formData.get('appointment_date'),
+                time: formData.get('appointment_time'),
+                price: formData.get('service_price'),
+                name: formData.get('name'),
+                email: formData.get('email'),
+                contact: formData.get('contact'),
+                location: formData.get('location'),
+                note: formData.get('note')
+            });
+            
+            // Refresh calendar events
+            calendar.refetchEvents();
+        } else {
+            throw new Error(data.message || 'Failed to submit booking');
+        }
+    })
+    .catch(error => {
+        // Show error message
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'alert alert-danger mt-3';
+        errorDiv.textContent = error.message;
+        form.insertBefore(errorDiv, form.firstChild);
+        
+        // Reset button
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalButtonText;
+    });
+}
+
+// Function to show booking confirmation
+window.showBookingConfirmation = function(bookingDetails) {
+    // Hide the time slots modal
+    const timeSlotsModal = bootstrap.Modal.getInstance(document.getElementById('timeSlotsModal'));
+    timeSlotsModal.hide();
+
+    // Format the date and time
+    const formattedDate = new Date(bookingDetails.date).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    const formattedTime = new Date(`2000-01-01T${bookingDetails.time}`).toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true
+    });
+
+    // Update confirmation details
+    const detailsHtml = `
+        <div class="text-start">
+            <p><strong>Name:</strong> ${bookingDetails.name}</p>
+            <p><strong>Email:</strong> ${bookingDetails.email}</p>
+            <p><strong>Contact:</strong> ${bookingDetails.contact}</p>
+            <p><strong>Location:</strong> ${bookingDetails.location}</p>
+            <p><strong>Service:</strong> ${bookingDetails.service}</p>
+            <p><strong>Price:</strong> PHP ${bookingDetails.price}</p>
+            <p><strong>Date:</strong> ${formattedDate}</p>
+            <p><strong>Time:</strong> ${formattedTime}</p>
+            ${bookingDetails.note ? `<p><strong>Note:</strong> ${bookingDetails.note}</p>` : ''}
+        </div>
+    `;
+    document.querySelector('.booking-details').innerHTML = detailsHtml;
+
+    // Show the confirmation modal
+    const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+    confirmationModal.show();
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     const calendarEl = document.getElementById('calendar');
-    const slotsDiv = document.getElementById('available-slots');
+    const timeSlotsList = document.getElementById('timeSlotsList');
+    const bookingForm = document.getElementById('bookingForm');
+    let selectedDate = '';
+
+    // Initialize the modal once
+    const timeSlotsModal = new bootstrap.Modal(document.getElementById('timeSlotsModal'), {
+        backdrop: 'static',
+        keyboard: false
+    });
+
+    // Clean up modal backdrop on hide
+    document.getElementById('timeSlotsModal').addEventListener('hidden.bs.modal', function () {
+        const backdrops = document.getElementsByClassName('modal-backdrop');
+        while (backdrops.length > 0) {
+            backdrops[0].parentNode.removeChild(backdrops[0]);
+        }
+        document.body.classList.remove('modal-open');
+    });
+
+    // Service prices for the booking form
+    const servicePrices = {
+        'Aircon Check-up': 500,
+        'Aircon Relocation': 3500,
+        'Aircon Repair': 1500,
+        'Aircon cleaning (window type)': 800,
+        'Window type (inverter)': 2500,
+        'Window type (U shape)': 2300,
+        'Split type': 2800,
+        'Floormounted': 3000,
+        'Cassette': 3200,
+        'Capacitor Thermostat': 1200
+    };
+
+    // Function to update service price
+    window.updatePrice = function() {
+        const serviceSelect = document.getElementById('service');
+        const priceInput = document.getElementById('service_price');
+        if (serviceSelect && priceInput) {
+            const selectedService = serviceSelect.value;
+            
+            if (selectedService && servicePrices[selectedService]) {
+                priceInput.value = servicePrices[selectedService];
+            } else {
+                priceInput.value = '';
+            }
+        }
+    }
 
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
-        height: 550,
+        height: 650,
         selectable: true,
         events: <?= json_encode($calendar_events) ?>,
         dateClick: function (info) {
-            const selected = info.dateStr;
+            selectedDate = info.dateStr;
             const today = new Date().toISOString().split('T')[0];
-            if (selected < today) {
+            if (selectedDate < today) {
                 alert("You cannot select a past date.");
                 return;
             }
 
-            fetch('get_slots.php?date=' + selected)
-                .then(res => res.json())
-                .then(data => {
-                    let html = `
-                        <div class="p-3 bg-white rounded shadow-sm slot-popup">
-                            <h5 class="text-center mb-3">Available Slots on <strong>${selected}</strong></h5>
-                            <div class="row">`;
-                    data.forEach(slot => {
-                        const btnClass = slot.available ? 'btn-success' : 'btn-secondary';
-                        const disabled = slot.available ? '' : 'disabled';
-                        html += `
-                            <div class="col-md-4 col-sm-6 col-12 mb-3">
-<button class="btn ${btnClass} w-100 fw-semibold text-uppercase fs-6 py-2" ${disabled}
-                                    onclick="window.location.href='booking.php?date=${selected}&time=${slot.time}'">
-                                    ${slot.time}
-                                </button>
-                            </div>`;
-                    });
-                    html += "</div></div>";
-                    slotsDiv.innerHTML = html;
-                });
+            showTimeSlots(selectedDate);
+            timeSlotsModal.show();
         }
     });
 
@@ -530,6 +643,54 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
+
+// Function to show booking form
+window.showBookingForm = function(date, time) {
+    const timeSlotsList = document.getElementById('timeSlotsList');
+    const bookingForm = document.getElementById('bookingForm');
+    const modalTitle = document.getElementById('timeSlotsModalLabel');
+
+    // Update modal title
+    modalTitle.textContent = 'Book Appointment';
+
+    // Show loading state
+    bookingForm.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading booking form...</p>
+        </div>`;
+
+    // Hide time slots and show booking form
+    timeSlotsList.style.display = 'none';
+    bookingForm.style.display = 'block';
+
+    // Fetch the booking form
+    fetch('get_booking_form.php?date=' + date + '&time=' + time)
+        .then(response => response.text())
+        .then(html => {
+            bookingForm.innerHTML = html;
+            // Initialize any form scripts
+            if (typeof updatePrice === 'function') {
+                updatePrice();
+            }
+            if (typeof enableAppointmentTime === 'function') {
+                enableAppointmentTime();
+            }
+        })
+        .catch(error => {
+            bookingForm.innerHTML = `
+                <div class="alert alert-danger" role="alert">
+                    Error loading booking form: ${error.message}
+                </div>
+                <div class="text-center mt-3">
+                    <button type="button" class="btn btn-primary" onclick="showTimeSlots('${date}')">
+                        Back to Time Slots
+                    </button>
+                </div>`;
+        });
+}
 </script>
 
 </body>

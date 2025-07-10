@@ -47,8 +47,32 @@ if (isset($_GET['delete_id'])) {
     }
 }
 
-// FETCH EMPLOYEES
-$sql_employees = "SELECT * FROM employees ORDER BY id DESC";
+// Initialize filter variables
+$filter_name = isset($_GET['filter_name']) ? mysqli_real_escape_string($conn, $_GET['filter_name']) : '';
+$filter_position = isset($_GET['filter_position']) ? mysqli_real_escape_string($conn, $_GET['filter_position']) : '';
+$filter_status = isset($_GET['filter_status']) ? mysqli_real_escape_string($conn, $_GET['filter_status']) : '';
+
+// Get unique positions for dropdown
+$sql_positions = "SELECT DISTINCT position FROM employees ORDER BY position";
+$result_positions = $conn->query($sql_positions);
+$positions = [];
+while ($row = $result_positions->fetch_assoc()) {
+    $positions[] = $row['position'];
+}
+
+// FETCH EMPLOYEES with filters
+$sql_employees = "SELECT * FROM employees WHERE 1=1";
+if (!empty($filter_name)) {
+    $sql_employees .= " AND name LIKE '%$filter_name%'";
+}
+if (!empty($filter_position)) {
+    $sql_employees .= " AND position = '$filter_position'";
+}
+if (!empty($filter_status)) {
+    $sql_employees .= " AND status = '$filter_status'";
+}
+$sql_employees .= " ORDER BY id DESC";
+
 $result_employees = $conn->query($sql_employees);
 $employees = [];
 while ($row = $result_employees->fetch_assoc()) {
@@ -479,6 +503,43 @@ while ($row = $result_employees->fetch_assoc()) {
             </form>
         </div>
 
+        <div class="form-container filter-container">
+            <h2>Filter Employees</h2>
+            <form method="GET" class="filter-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="filter_name">Name</label>
+                        <input type="text" id="filter_name" name="filter_name" value="<?= htmlspecialchars($filter_name) ?>" placeholder="Search by name..."/>
+                    </div>
+                    <div class="form-group">
+                        <label for="filter_position">Position</label>
+                        <select id="filter_position" name="filter_position">
+                            <option value="">All Positions</option>
+                            <?php foreach ($positions as $position): ?>
+                                <option value="<?= htmlspecialchars($position) ?>" <?= $filter_position === $position ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($position) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filter_status">Status</label>
+                        <select id="filter_status" name="filter_status">
+                            <option value="">All Status</option>
+                            <option value="Active" <?= $filter_status === 'Active' ? 'selected' : '' ?>>Active</option>
+                            <option value="Inactive" <?= $filter_status === 'Inactive' ? 'selected' : '' ?>>Inactive</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="filter-btn">
+                    <i class="fas fa-filter"></i> Apply Filters
+                </button>
+                <a href="admin_employees.php" class="reset-btn">
+                    <i class="fas fa-undo"></i> Reset Filters
+                </a>
+            </form>
+        </div>
+
         <table>
             <thead>
                 <tr>
@@ -502,6 +563,9 @@ while ($row = $result_employees->fetch_assoc()) {
                             <td><?= htmlspecialchars($employee['hire_date'] ?? '') ?></td>
                             <td><?= htmlspecialchars($employee['status'] ?? '') ?></td>
                             <td class="action-buttons">
+                                <a href="employee_bookings.php?employee_id=<?= $employee['id'] ?? '' ?>" class="action-button view-btn">
+                                    <i class="fas fa-calendar-check"></i> Bookings
+                                </a>
                                 <a href="edit_employee.php?id=<?= $employee['id'] ?? '' ?>" class="action-button edit-btn">
                                     <i class="fas fa-edit"></i> Edit
                                 </a>

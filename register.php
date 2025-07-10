@@ -2,8 +2,19 @@
 // Include the database connection
 include('db_connection.php');
 
-// Variable to store error messages
+// Start the session at the beginning of the file
+session_start();
+
+// Check for messages in session
 $error_message = "";
+if (isset($_SESSION['error_message'])) {
+    $error_message = $_SESSION['error_message'];
+    unset($_SESSION['error_message']);
+}
+if (isset($_SESSION['success_message'])) {
+    $error_message = $_SESSION['success_message'];
+    unset($_SESSION['success_message']);
+}
 
 // Function to validate username/full name (only letters and spaces, min 3 chars)
 function isValidUsername($username) {
@@ -87,15 +98,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Validate username as full name
     if (!isValidUsername($username)) {
-        $error_message = "Error: Username must contain only letters and spaces.";
+        $_SESSION['error_message'] = "Error: Username must contain only letters and spaces.";
+        header("Location: register.php");
+        exit();
     } 
     // Validate password strength
     elseif (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{12,}$/', $password)) {
-        $error_message = "Error: Password must be minimum 12 characters and include uppercase letters, lowercase letters, numbers, and special characters.";
+        $_SESSION['error_message'] = "Error: Password must be minimum 12 characters and include uppercase letters, lowercase letters, numbers, and special characters.";
+        header("Location: register.php");
+        exit();
     }
     // Check if passwords match
     elseif ($password !== $confirm_password) {
-        $error_message = "Error: Passwords do not match.";
+        $_SESSION['error_message'] = "Error: Passwords do not match.";
+        header("Location: register.php");
+        exit();
     }
     else {
         if ($conn && $conn instanceof mysqli) {
@@ -107,12 +124,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $stmt->store_result();
 
                 if ($stmt->num_rows > 0) {
-                    $error_message = "Error: Username or email already exists.";
+                    $_SESSION['error_message'] = "Error: Username or email already exists.";
+                    header("Location: register.php");
+                    exit();
                 } else {
                     // Hash the password
                     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
-                    echo 'hashed_password: ' . $hashed_password;
 
                     // Insert into user table
                     $sql = "INSERT INTO user (fname, lname, username, password, email, contact, city, district, barangay, zipcode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -120,21 +137,44 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         $insert_stmt->bind_param("ssssssssss", $fname, $lname, $username, $hashed_password, $email, $contact, $city, $district, $barangay, $zipcode);
 
                         if ($insert_stmt->execute()) {
-                            $error_message = "Registration successful!";
+                            // Get the newly inserted user's ID
+                            $user_id = $conn->insert_id;
+                            
+                            // Set session variables for automatic login
+                            $_SESSION['user_id'] = $user_id;
+                            $_SESSION['username'] = $username;
+                            $_SESSION['fname'] = $fname;
+                            $_SESSION['lname'] = $lname;
+                            $_SESSION['email'] = $email;
+                            
+                            // Store success message in session
+                            $_SESSION['success_message'] = "Registration successful! Redirecting to dashboard...";
+                            
+                            // Redirect to dashboard
+                            header("Location: dashboard.php");
+                            exit();
                         } else {
-                            $error_message = "Error: " . $insert_stmt->error;
+                            $_SESSION['error_message'] = "Error: " . $insert_stmt->error;
+                            header("Location: register.php");
+                            exit();
                         }
                         $insert_stmt->close();
                     } else {
-                        $error_message = "Error preparing insert statement: " . $conn->error;
+                        $_SESSION['error_message'] = "Error preparing insert statement: " . $conn->error;
+                        header("Location: register.php");
+                        exit();
                     }
                 }
                 $stmt->close();
             } else {
-                $error_message = "Error preparing select statement: " . $conn->error;
+                $_SESSION['error_message'] = "Error preparing select statement: " . $conn->error;
+                header("Location: register.php");
+                exit();
             }
         } else {
-            $error_message = "Database connection failed.";
+            $_SESSION['error_message'] = "Database connection failed.";
+            header("Location: register.php");
+            exit();
         }
     }
 }
@@ -1014,7 +1054,12 @@ if ($conn && $conn instanceof mysqli) {
 
     function submitForm() {
         // Submit the form
-        document.querySelector('form').submit();
+        const form = document.querySelector('form');
+        form.submit();
+        
+        // Disable the submit button to prevent double submission
+        document.querySelector('.btn-primary').disabled = true;
+        document.querySelector('.btn-secondary').disabled = true;
     }
 
     // Close modal when clicking outside
