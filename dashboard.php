@@ -5,6 +5,9 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+// Get current page for active sidebar highlighting
+$current_page = basename($_SERVER['PHP_SELF']);
+
 $host = getenv('DB_HOST') ?: 'localhost';
 $db = getenv('DB_NAME') ?: 'airgo';
 $user = getenv('DB_USER') ?: 'root';
@@ -175,6 +178,19 @@ $conn->close();
             transform: scale(1.1);
         }
 
+        .sidebar a.active {
+            background: var(--secondary-color);
+            color: var(--primary-color);
+        }
+
+        .sidebar a.active i {
+            color: var(--primary-color);
+        }
+
+        .sidebar a.active:hover::before {
+            transform: scaleX(0);
+        }
+
         .main-container {
             margin-left: 250px;
             padding: clamp(1.5rem, 4vw, 3rem);
@@ -315,9 +331,9 @@ $conn->close();
 <div class="sidebar">
     <h2>Air<span>go</span></h2>
     <div class="nav-links">
-        <a href="dashboard.php"><i class="fas fa-home"></i> Dashboard</a>
-        <a href="book-now.php"><i class="fas fa-calendar-alt"></i> Booking</a>
-        <a href="cancel_booking.php"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+        <a href="dashboard.php" class="<?= $current_page === 'dashboard.php' ? 'active' : '' ?>"><i class="fas fa-home"></i> Dashboard</a>
+        <a href="book-now.php" class="<?= $current_page === 'book-now.php' ? 'active' : '' ?>"><i class="fas fa-calendar-alt"></i> Booking</a>
+        <a href="cancel_booking.php" class="<?= $current_page === 'cancel_booking.php' ? 'active' : '' ?>"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
         <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 </div>
@@ -330,7 +346,7 @@ $conn->close();
         </div>
         <div id="calendar"></div>
     </div>
-</div>
+    </div>
 
 <!-- Time Slots Modal -->
 <div class="modal fade" id="timeSlotsModal" tabindex="-1" aria-labelledby="timeSlotsModalLabel" aria-hidden="true">

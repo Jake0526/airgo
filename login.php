@@ -296,20 +296,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 <body>
 
-    <!-- Header -->
+  <!-- Header -->
     <header class="header">
         <nav class="container flex flex-center">
-            <div class="logo">
+    <div class="logo">
                 <h1>Air<span>go</span></h1>
-            </div>
+    </div>
             <div class="header-button">
                 <a href="index.php">
-                    Home
+        Home
                     <span class="btn-icon">→</span>
-                </a>
-            </div>
-        </nav>
-    </header>
+      </a>
+    </div>
+  </nav>
+</header>
 
     <!-- Login Form Section -->
     <section id="login">
@@ -322,12 +322,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             <form action="login.php" method="POST" autocomplete="off">
                 <div class="form-group">
-                    <label for="email">Email</label>
+                <label for="email">Email</label>
                     <input type="text" id="email" name="email" required placeholder="Enter your email" />
                 </div>
 
                 <div class="form-group">
-                    <label for="password">Password</label>
+                <label for="password">Password</label>
                     <input type="password" id="password" name="password" required placeholder="Enter your password" />
                 </div>
 

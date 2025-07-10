@@ -160,11 +160,16 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
             font-style: italic;
         }
 
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
         .sidebar a {
             display: flex;
             align-items: center;
             gap: 12px;
-            margin: 1rem 0;
             color: rgba(255, 255, 255, 0.9);
             text-decoration: none;
             padding: 12px 16px;
@@ -207,6 +212,19 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
 
         .sidebar a:hover i {
             transform: scale(1.1);
+        }
+
+        .sidebar a.active {
+            background: var(--secondary-color);
+            color: var(--primary-color);
+        }
+
+        .sidebar a.active i {
+            color: var(--primary-color);
+        }
+
+        .sidebar a.active:hover::before {
+            transform: scaleX(0);
         }
 
         .main {
@@ -413,12 +431,14 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
 <body>
     <div class="sidebar">
         <h2>Air<span>go</span></h2>
-        <a href="dashboard.php"><i class="fas fa-chart-line"></i> Dashboard</a>
-        <a href="admin_bookings.php"><i class="fas fa-calendar-alt"></i> Bookings</a>
-        <a href="admin_employees.php"><i class="fas fa-users"></i> Employees</a>
-        <a href="booking_history.php"><i class="fas fa-history"></i> Booking History</a>
-        <a href="admin_register.php"><i class="fas fa-user-shield"></i> Administrator</a>
-        <a href="login.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <div class="nav-links">
+            <a href="dashboard.php" class="<?= basename($_SERVER['PHP_SELF']) === 'dashboard.php' ? 'active' : '' ?>"><i class="fas fa-chart-line"></i> Dashboard</a>
+            <a href="admin_bookings.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_bookings.php' ? 'active' : '' ?>"><i class="fas fa-calendar-alt"></i> Bookings</a>
+            <a href="admin_employees.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_employees.php' ? 'active' : '' ?>"><i class="fas fa-users"></i> Employees</a>
+            <a href="booking_history.php" class="<?= basename($_SERVER['PHP_SELF']) === 'booking_history.php' ? 'active' : '' ?>"><i class="fas fa-history"></i> Booking History</a>
+            <a href="admin_register.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_register.php' ? 'active' : '' ?>"><i class="fas fa-user-shield"></i> Administrator</a>
+            <a href="login.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
     </div>
 
     <div class="main">

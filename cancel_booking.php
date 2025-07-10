@@ -5,6 +5,9 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+// Get current page for active sidebar highlighting
+$current_page = basename($_SERVER['PHP_SELF']);
+
 // Include the database connection
 include('db_connection.php');
 
@@ -154,6 +157,19 @@ usort($combined, function($a, $b) {
             transform: scale(1.1);
         }
 
+        .sidebar a.active {
+            background: var(--secondary-color);
+            color: var(--primary-color);
+        }
+
+        .sidebar a.active i {
+            color: var(--primary-color);
+        }
+
+        .sidebar a.active:hover::before {
+            transform: scaleX(0);
+        }
+
         .main {
             margin-left: 250px;
             padding: clamp(1.5rem, 4vw, 3rem);
@@ -297,9 +313,9 @@ usort($combined, function($a, $b) {
 <div class="sidebar">
     <h2>Air<span>go</span></h2>
     <div class="nav-links">
-        <a href="dashboard.php"><i class="fa-solid fa-house"></i> Dashboard</a>
-        <a href="book-now.php"><i class="fa-solid fa-calendar-plus"></i> Booking</a>
-        <a href="cancel_booking.php"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+        <a href="dashboard.php" class="<?= $current_page === 'dashboard.php' ? 'active' : '' ?>"><i class="fa-solid fa-house"></i> Dashboard</a>
+        <a href="book-now.php" class="<?= $current_page === 'book-now.php' ? 'active' : '' ?>"><i class="fa-solid fa-calendar-plus"></i> Booking</a>
+        <a href="cancel_booking.php" class="<?= $current_page === 'cancel_booking.php' ? 'active' : '' ?>"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
         <a href="logout.php"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
     </div>
 </div>

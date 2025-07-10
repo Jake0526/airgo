@@ -6,10 +6,17 @@ if (!isset($_SESSION['employee_logged_in']) || !isset($_SESSION['employee_id']))
     exit();
 }
 
+// Get current page for active sidebar highlighting
+$current_page = basename($_SERVER['PHP_SELF']);
+
 $employee_id = $_SESSION['employee_id'];
 
-// DB connection
-$conn = new mysqli("localhost", "root", "", "airgo");
+// DB connection using environment variables
+$host = getenv('DB_HOST') ?: 'localhost';
+$db = getenv('DB_NAME') ?: 'airgo';
+$user = getenv('DB_USER') ?: 'root';
+$pass = getenv('DB_PASSWORD') ?: '';
+$conn = new mysqli($host, $user, $pass, $db);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
@@ -85,54 +92,321 @@ $result = $stmt->get_result();
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AirGo Employee Dashboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 <style>
-:root { --bg: #4c7273; --main: #07353f; --accent: #CACBBB; --light: #ffffff; --shadow: rgba(0, 0, 0, 0.1); }
-* {margin:0;padding:0;box-sizing:border-box;}
-body {font-family:'Segoe UI',sans-serif;background:var(--bg);display:flex;}
-.sidebar {width:250px;height:100vh;background:var(--main);color:var(--light);padding:30px 20px;position:fixed;display:flex;flex-direction:column;}
-.sidebar h2 {font-size:24px;margin-bottom:30px;text-align:center;}
-.sidebar a {color:var(--light);text-decoration:none;margin:12px 0;padding:10px 15px;border-radius:10px;transition:background 0.3s ease;}
-.sidebar a:hover {background:var(--accent);color:#000;}
-.main-content {margin-left:250px;padding:20px;width:calc(100% - 250px);position:relative;}
-.main-content h1 {margin-bottom:20px;color:white;font-size:20px;margin-top:10px;}
-.employee-name {position:absolute;top:20px;right:30px;color:white;font-size:14px;background:rgba(0,0,0,0.2);padding:6px 12px;border-radius:8px;}
-table {width:90%;background:var(--light);border-collapse:collapse;border-radius:15px;box-shadow:6px 6px 12px var(--shadow), -6px -6px 12px #ffffff;overflow:hidden;margin:30px auto;}
-th,td {padding:12px 25px;text-align:left;font-size:12px;}
-th {background:var(--main);color:var(--light);}
-td {background-color:#fff;color:#333;border-bottom:1px solid #eee;}
-tr:hover td {background:#e6f7ff;transition:0.3s ease;}
-.done-button,.note-button {display:inline-block;padding:6px 10px;background-color:#07353f;color:white;border:none;border-radius:8px;text-decoration:none;font-weight:bold;font-size:10px;cursor:pointer;transition:background-color 0.3s ease;}
-.done-button:hover,.note-button:hover {background-color:#CACBBB;}
-.note-form {margin-top:10px;}
-.note-form textarea {width:100%;height:60px;padding:5px;font-size:12px;margin-top:5px;}
-.note-form button {margin-top:5px;}
-.note-list {margin-top:5px;padding:5px;background:#f4f4f4;border-radius:5px;font-size:11px;}
-.edit-icon {cursor:pointer;color:#07353f;margin-left:8px;font-size:12px;}
-.edit-form {margin-top:5px;}
-.edit-form textarea {width:100%;height:50px;padding:5px;font-size:12px;}
-.edit-form button {margin-top:5px;}
-@media(max-width:768px){.main-content{margin-left:0;width:100%;}.sidebar{display:none;}}
+        :root {
+            --primary-color: #07353f;
+            --secondary-color: #3cd5ed;
+            --background-color: #d0f0ff;
+            --text-color: #344047;
+            --card-bg: #ffffff;
+            --card-shadow: rgba(7, 53, 63, 0.1);
+            --spacing-unit: clamp(0.5rem, 2vw, 1rem);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--background-color), #ffffff);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            line-height: 1.6;
+        }
+
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background: linear-gradient(180deg, var(--primary-color), #052830);
+            padding: 2rem 1.5rem;
+            color: white;
+            position: fixed;
+            box-shadow: 4px 0 20px var(--card-shadow);
+        }
+
+        .sidebar h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            letter-spacing: 1px;
+        }
+
+        .sidebar h2 span {
+            color: var(--secondary-color);
+            font-style: italic;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            padding: 12px 16px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+            margin: 0;
+        }
+
+        .sidebar a i {
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--secondary-color);
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.3s ease;
+            z-index: -1;
+            border-radius: 12px;
+        }
+
+        .sidebar a:hover {
+            color: var(--primary-color);
+            transform: translateX(5px);
+        }
+
+        .sidebar a:hover::before {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+
+        .sidebar a.active {
+            background: var(--secondary-color);
+            color: var(--primary-color);
+        }
+
+        .sidebar a.active i {
+            color: var(--primary-color);
+        }
+
+        .sidebar a.active:hover::before {
+            transform: scaleX(0);
+        }
+
+        /* Simple loading indicator */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--secondary-color);
+            z-index: 9999;
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+
+        .loading.active {
+            transform: scaleX(1);
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 2rem;
+            width: calc(100% - 250px);
+        }
+
+        .main-content h1 {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        .employee-name {
+            background: var(--card-bg);
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px var(--card-shadow);
+            margin-bottom: 2rem;
+            display: inline-block;
+            font-weight: 500;
+        }
+
+        table {
+            width: 100%;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px var(--card-shadow);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        th {
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 500;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        tr:hover td {
+            background: rgba(60, 213, 237, 0.05);
+        }
+
+        .done-button, .note-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            text-decoration: none;
+        }
+
+        .done-button {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .note-button {
+            background: var(--secondary-color);
+            color: var(--primary-color);
+            margin-left: 0.5rem;
+        }
+
+        .done-button:hover, .note-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--card-shadow);
+        }
+
+        .note-form {
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+            box-shadow: 0 4px 12px var(--card-shadow);
+        }
+
+        .note-form textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-family: 'Poppins', sans-serif;
+            resize: vertical;
+        }
+
+        .note-list {
+            background: rgba(60, 213, 237, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .note-list strong {
+            color: var(--primary-color);
+        }
+
+        .edit-icon {
+            color: var(--primary-color);
+            cursor: pointer;
+            margin-left: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                padding: 1rem;
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 1rem;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            .employee-name {
+                width: 100%;
+                text-align: center;
+            }
+        }
 </style>
 </head>
 <body>
+    <div class="loading"></div>
+
 <div class="sidebar">
-    <h2>AirGo Employee</h2>
-    <a href="employee_dashboard.php">Dashboard</a>
-    <a href="booking_history_employees.php">History</a>
-    <a href="employees_login.php">Logout</a>
+        <h2>Air<span>go</span></h2>
+        <div class="nav-links">
+            <a href="employee_dashboard.php" class="<?= $current_page === 'employee_dashboard.php' ? 'active' : '' ?>"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="booking_history_employees.php" class="<?= $current_page === 'booking_history_employees.php' ? 'active' : '' ?>"><i class="fas fa-history"></i> History</a>
+            <a href="employees_login.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
 </div>
 
 <div class="main-content">
 <?php if (!empty($employee_name)): ?>
-<div class="employee-name">Logged in as: <strong><?= htmlspecialchars($employee_name) ?></strong></div>
+            <div class="employee-name">
+                <i class="fas fa-user"></i> Logged in as: <strong><?= htmlspecialchars($employee_name) ?></strong>
+            </div>
 <?php endif; ?>
-<h1>Assigned Bookings</h1>
+
+        <h1><i class="fas fa-clipboard-list"></i> Assigned Bookings</h1>
+
 <table>
 <thead>
 <tr>
-<th>Name</th><th>Service</th><th>Location</th><th>Phone</th><th>Appointment Date</th><th>Time</th><th>Status</th><th>Action</th><th>Price</th>
+                    <th>Customer</th>
+                    <th>Service</th>
+                    <th>Location</th>
+                    <th>Phone</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                    <th>Price</th>
+                    <th>Actions</th>
 </tr>
 </thead>
 <tbody>
@@ -146,25 +420,32 @@ tr:hover td {background:#e6f7ff;transition:0.3s ease;}
 <td><?= htmlspecialchars($row['appointment_date']) ?></td>
 <td><?= date("g:i A", strtotime($row['appointment_time'])) ?></td>
 <td><?= htmlspecialchars($row['status'] ? ucfirst($row['status']) : 'Pending') ?></td>
+                            <td>₱<?= number_format($row['price'], 2) ?></td>
 <td>
 <?php if (strtolower($row['status']) === 'approved'): ?>
-<a href="?done_id=<?= $row['id'] ?>" class="done-button" onclick="return confirm('Mark this booking as done?');">Done</a>
-<button class="note-button" onclick="document.getElementById('note-form-<?= $row['id'] ?>').style.display='block';">Add Note</button>
+                                    <a href="?done_id=<?= $row['id'] ?>" class="done-button" onclick="return confirm('Mark this booking as done?');">
+                                        <i class="fas fa-check"></i> Done
+                                    </a>
+                                    <button class="note-button" onclick="document.getElementById('note-form-<?= $row['id'] ?>').style.display='block';">
+                                        <i class="fas fa-note-sticky"></i> Add Note
+                                    </button>
 <?php else: ?>
-<span style="color:#999;font-size:10px;">No action</span>
+                                    <span style="color: #999;">No action needed</span>
 <?php endif; ?>
 </td>
-<td>₱<?= number_format($row['price'], 2) ?></td>
 </tr>
 <tr>
 <td colspan="9">
 <div id="note-form-<?= $row['id'] ?>" class="note-form" style="display:none;">
 <form method="post">
 <input type="hidden" name="note_booking_id" value="<?= $row['id'] ?>">
-<textarea name="note_text" placeholder="Enter additional services or notes..."></textarea>
-<button type="submit" name="add_note" class="note-button">Save Note</button>
+                                        <textarea name="note_text" placeholder="Enter additional services or notes..." rows="3"></textarea>
+                                        <button type="submit" name="add_note" class="note-button">
+                                            <i class="fas fa-save"></i> Save Note
+                                        </button>
 </form>
 </div>
+
 <?php
 $stmt_notes = $conn->prepare("SELECT id, note, created_at FROM booking_notes WHERE booking_id = ? ORDER BY created_at DESC");
 $stmt_notes->bind_param("i", $row['id']);
@@ -173,17 +454,21 @@ $notes_result = $stmt_notes->get_result();
 if ($notes_result->num_rows > 0):
 ?>
 <div class="note-list">
-<strong>Notes:</strong><br>
+                                        <strong><i class="fas fa-notes-medical"></i> Notes:</strong><br>
 <?php while ($note = $notes_result->fetch_assoc()): ?>
 <div>
 • <?= htmlspecialchars($note['note']) ?>
 <em>(<?= date("F j, Y g:i A", strtotime($note['created_at'])) ?>)</em>
-<span class="edit-icon" onclick="document.getElementById('edit-form-<?= $note['id'] ?>').style.display='block';">✏️ Edit</span>
-<div id="edit-form-<?= $note['id'] ?>" class="edit-form" style="display:none;">
+                                                <span class="edit-icon" onclick="document.getElementById('edit-form-<?= $note['id'] ?>').style.display='block';">
+                                                    <i class="fas fa-edit"></i>
+                                                </span>
+                                                <div id="edit-form-<?= $note['id'] ?>" class="note-form" style="display:none;">
 <form method="post">
 <input type="hidden" name="edit_note_id" value="<?= $note['id'] ?>">
-<textarea name="edit_note_text"><?= htmlspecialchars($note['note']) ?></textarea>
-<button type="submit" name="edit_note" class="note-button">Update</button>
+                                                        <textarea name="edit_note_text" rows="3"><?= htmlspecialchars($note['note']) ?></textarea>
+                                                        <button type="submit" name="edit_note" class="note-button">
+                                                            <i class="fas fa-save"></i> Update Note
+                                                        </button>
 </form>
 </div>
 </div>
@@ -194,11 +479,37 @@ if ($notes_result->num_rows > 0):
 </tr>
 <?php endwhile; ?>
 <?php else: ?>
-<tr><td colspan="9" style="text-align:center;color:#555;">No assigned bookings.</td></tr>
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 2rem;">
+                            <i class="fas fa-inbox" style="font-size: 2rem; color: #999; margin-bottom: 1rem; display: block;"></i>
+                            No assigned bookings at the moment.
+                        </td>
+                    </tr>
 <?php endif; ?>
 </tbody>
 </table>
 </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Simple page transition
+        document.querySelectorAll('.sidebar a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (!this.href.includes('logout.php')) {
+                    e.preventDefault();
+                    const href = this.href;
+                    
+                    // Show loading indicator
+                    document.querySelector('.loading').classList.add('active');
+                    
+                    // Navigate after delay
+                    setTimeout(() => {
+                        window.location.href = href;
+                    }, 300);
+                }
+            });
+        });
+    });
+    </script>
 </body>
 </html>
 <?php $conn->close(); ?>

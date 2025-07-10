@@ -37,7 +37,7 @@ $districts = [
         "Agdao Proper", "Centro (San Juan)", "Gov. Paciano Bangoy", "Gov. Vicente Duterte", "Kap. Tomas Monteverde, Sr.",
         "Lapu-Lapu", "Leon Garcia", "Rafael Castillo", "San Antonio", "Ubalde", "Wilfredo Aquino"
     ],
-    "Buhangin" => [
+	"Buhangin" => [
         "Acacia", "Alfonso Angliongto Sr.", "Buhangin Proper", "Cabantian", "Callawa",
         "Communal", "Indangan", "Mandug", "Pampanga", "Sasa", "Tigatto", "Vicente Hizon Sr.", "Waan"
     ],
@@ -793,18 +793,18 @@ if ($conn && $conn instanceof mysqli) {
                         <div class="form-group">
                             <label for="district">District</label>
                             <select name="district" id="district" required>
-                                <option value="">-- Select District --</option>
-                                <?php foreach ($districts as $district => $barangays): ?>
-                                    <option value="<?php echo $district; ?>"><?php echo $district; ?></option>
-                                <?php endforeach; ?>
-                            </select>
+        <option value="">-- Select District --</option>
+        <?php foreach ($districts as $district => $barangays): ?>
+            <option value="<?php echo $district; ?>"><?php echo $district; ?></option>
+        <?php endforeach; ?>
+    </select>
                         </div>
 
                         <div class="form-group">
                             <label for="barangay">Barangay</label>
                             <select name="barangay" id="barangay" required>
-                                <option value="">-- Select Barangay --</option>
-                            </select>
+        <option value="">-- Select Barangay --</option>
+    </select>
                         </div>
 
                         <div class="form-group">
