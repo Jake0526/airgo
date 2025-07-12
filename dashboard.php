@@ -43,10 +43,10 @@ for ($i = $range_start; $i <= $range_end; $i += 86400) {
         $title = "";
     } elseif ($remaining <= 0) {
         $color = "#ff6b6b";
-        $title = "Fully Booked";
+        $title = "";
     } else {
         $color = "#48c78e";
-        $title = "$remaining Slots Left";
+        $title = "";
     }
 
     $calendar_events[] = [
@@ -334,7 +334,7 @@ $conn->close();
         <a href="dashboard.php" class="<?= $current_page === 'dashboard.php' ? 'active' : '' ?>"><i class="fas fa-home"></i> Dashboard</a>
         <a href="book-now.php" class="<?= $current_page === 'book-now.php' ? 'active' : '' ?>"><i class="fas fa-calendar-alt"></i> Booking</a>
         <a href="cancel_booking.php" class="<?= $current_page === 'cancel_booking.php' ? 'active' : '' ?>"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
-        <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 </div>
 
@@ -366,31 +366,29 @@ $conn->close();
             </div>
         </div>
     </div>
-</div>
+                    </div>
 
-<!-- Booking Confirmation Modal -->
+<!-- Confirmation Modal -->
 <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-success text-white">
+            <div class="modal-header">
                 <h5 class="modal-title" id="confirmationModalLabel">
-                    <i class="fas fa-check-circle me-2"></i>
-                    Booking Confirmed!
+                    <i class="fas fa-question-circle me-2"></i>
+                    Confirm Booking
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body text-center py-4">
-                <div class="mb-4">
-                    <i class="fas fa-calendar-check text-success" style="font-size: 4rem;"></i>
-                </div>
-                <h4 class="mb-3">Your appointment has been scheduled!</h4>
-                <p class="mb-4">Thank you for choosing our service. We will send you a confirmation email with the details.</p>
-                <div class="booking-details mb-4">
-                    <!-- Booking details will be inserted here -->
-                </div>
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
-                    <i class="fas fa-home me-2"></i>
-                    Back to Dashboard
+            <div class="modal-body">
+                <p id="confirmationMessage"></p>
+                <div id="bookingDetails" class="mt-3"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="confirmActionBtn">
+                    <i class="fas fa-check me-2"></i>Confirm Booking
                 </button>
             </div>
         </div>
@@ -469,19 +467,37 @@ window.showTimeSlots = function(date) {
         });
 }
 
-// Function to handle form submission
+// Function to show confirmation modal
+function showConfirmation(message, details, callback) {
+    const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+    document.getElementById('confirmationMessage').textContent = message;
+    document.getElementById('bookingDetails').innerHTML = details;
+    
+    const confirmBtn = document.getElementById('confirmActionBtn');
+    const originalBtnHtml = confirmBtn.innerHTML;
+    
+    // Remove any existing click handlers
+    confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+    
+    // Add new click handler
+    document.getElementById('confirmActionBtn').addEventListener('click', function() {
+        // Show loading state
+        this.disabled = true;
+        this.innerHTML = `
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            Processing...
+        `;
+        
+        callback(calendar);  // Pass calendar instance to callback
+    });
+    
+    modal.show();
+}
+
+// Update handleBookingSubmit function
 window.handleBookingSubmit = function(form, event) {
     event.preventDefault();
     
-    // Show loading state
-    const submitButton = form.querySelector('button[type="submit"]');
-    const originalButtonText = submitButton.innerHTML;
-    submitButton.disabled = true;
-    submitButton.innerHTML = `
-        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-        Submitting...
-    `;
-
     // Get form data
     const formData = new FormData(form);
     
@@ -491,43 +507,67 @@ window.handleBookingSubmit = function(form, event) {
         formData.set('contact', '+639' + contact);
     }
 
-    // Make AJAX request to save booking
-    fetch('save_booking.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Show confirmation modal
-            showBookingConfirmation({
-                service: formData.get('service'),
-                date: formData.get('appointment_date'),
-                time: formData.get('appointment_time'),
-                price: formData.get('service_price'),
-                name: formData.get('name'),
-                email: formData.get('email'),
-                contact: formData.get('contact'),
-                location: formData.get('location'),
-                note: formData.get('note')
-            });
+    // Format booking details for confirmation
+    const details = `
+        <div class="booking-details">
+            <p><strong>Service:</strong> ${formData.get('service')}</p>
+            <p><strong>Date:</strong> ${new Date(formData.get('appointment_date')).toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            })}</p>
+            <p><strong>Time:</strong> ${formData.get('appointment_time')}</p>
+            <p><strong>Name:</strong> ${formData.get('name')}</p>
+            <p><strong>Contact:</strong> ${formData.get('contact')}</p>
+            <p><strong>Location:</strong> ${formData.get('location')}</p>
+            <p><strong>Price:</strong> PHP ${parseFloat(formData.get('service_price')).toLocaleString()}</p>
+            ${formData.get('note') ? `<p><strong>Note:</strong> ${formData.get('note')}</p>` : ''}
+        </div>
+    `;
+
+    showConfirmation('Please confirm your booking details:', details, (calendarInstance) => {
+        // Make AJAX request to save booking
+        fetch('save_booking.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Hide confirmation modal
+                const confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'));
+                confirmModal.hide();
+
+                // Show success confirmation
+                showBookingConfirmation({
+                    service: formData.get('service'),
+                    date: formData.get('appointment_date'),
+                    time: formData.get('appointment_time'),
+                    price: formData.get('service_price'),
+                    name: formData.get('name'),
+                    email: formData.get('email'),
+                    contact: formData.get('contact'),
+                    location: formData.get('location'),
+                    note: formData.get('note')
+                });
+                
+                // Refresh calendar events using the passed calendar instance
+                if (calendarInstance && typeof calendarInstance.refetchEvents === 'function') {
+                    calendarInstance.refetchEvents();
+                }
+            } else {
+                throw new Error(data.message || 'Failed to submit booking');
+            }
+        })
+        .catch(error => {
+            // Show error message
+            alert('An error occurred while submitting the booking: ' + error.message);
             
-            // Refresh calendar events
-            calendar.refetchEvents();
-        } else {
-            throw new Error(data.message || 'Failed to submit booking');
-        }
-    })
-    .catch(error => {
-        // Show error message
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'alert alert-danger mt-3';
-        errorDiv.textContent = error.message;
-        form.insertBefore(errorDiv, form.firstChild);
-        
-        // Reset button
-        submitButton.disabled = false;
-        submitButton.innerHTML = originalButtonText;
+            // Hide confirmation modal
+            const confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'));
+            confirmModal.hide();
+        });
     });
 }
 
@@ -544,11 +584,9 @@ window.showBookingConfirmation = function(bookingDetails) {
         month: 'long',
         day: 'numeric'
     });
-    const formattedTime = new Date(`2000-01-01T${bookingDetails.time}`).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: true
-    });
+
+    // Format time without trying to create a Date object
+    const formattedTime = bookingDetails.time;
 
     // Update confirmation details
     const detailsHtml = `
@@ -558,7 +596,7 @@ window.showBookingConfirmation = function(bookingDetails) {
             <p><strong>Contact:</strong> ${bookingDetails.contact}</p>
             <p><strong>Location:</strong> ${bookingDetails.location}</p>
             <p><strong>Service:</strong> ${bookingDetails.service}</p>
-            <p><strong>Price:</strong> PHP ${bookingDetails.price}</p>
+            <p><strong>Price:</strong> PHP ${parseFloat(bookingDetails.price).toLocaleString()}</p>
             <p><strong>Date:</strong> ${formattedDate}</p>
             <p><strong>Time:</strong> ${formattedTime}</p>
             ${bookingDetails.note ? `<p><strong>Note:</strong> ${bookingDetails.note}</p>` : ''}
@@ -641,6 +679,142 @@ document.addEventListener('DOMContentLoaded', function () {
 
     calendar.render();
 
+    // Function to show confirmation modal
+    function showConfirmation(message, details, callback) {
+        const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+        document.getElementById('confirmationMessage').textContent = message;
+        document.getElementById('bookingDetails').innerHTML = details;
+        
+        const confirmBtn = document.getElementById('confirmActionBtn');
+        const originalBtnHtml = confirmBtn.innerHTML;
+        
+        // Remove any existing click handlers
+        confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+        
+        // Add new click handler
+        document.getElementById('confirmActionBtn').addEventListener('click', function() {
+            // Show loading state
+            this.disabled = true;
+            this.innerHTML = `
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                Processing...
+            `;
+            
+            callback(calendar);  // Pass calendar instance to callback
+        });
+        
+        modal.show();
+    }
+
+    // Update handleBookingSubmit function
+    window.handleBookingSubmit = function(form, event) {
+        event.preventDefault();
+        
+        // Get form data
+        const formData = new FormData(form);
+        
+        // Add +639 prefix to contact number
+        let contact = formData.get('contact');
+        if (contact && !contact.startsWith('+639')) {
+            formData.set('contact', '+639' + contact);
+        }
+
+        // Get the correct price from the service prices object
+        const selectedService = formData.get('service');
+        const servicePrice = servicePrices[selectedService] || 0;
+        formData.set('service_price', servicePrice);
+
+        // Format booking details for confirmation
+        const details = `
+            <div class="booking-details">
+                <p><strong>Service:</strong> ${selectedService}</p>
+                <p><strong>Date:</strong> ${new Date(formData.get('appointment_date')).toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                })}</p>
+                <p><strong>Time:</strong> ${formData.get('appointment_time')}</p>
+                <p><strong>Name:</strong> ${formData.get('name')}</p>
+                <p><strong>Contact:</strong> ${formData.get('contact')}</p>
+                <p><strong>Location:</strong> ${formData.get('location')}</p>
+                <p><strong>Price:</strong> PHP ${servicePrice.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                })}</p>
+                ${formData.get('note') ? `<p><strong>Note:</strong> ${formData.get('note')}</p>` : ''}
+            </div>
+        `;
+
+        // Validate price before showing confirmation
+        if (servicePrice === 0) {
+            alert('Please select a valid service');
+            return;
+        }
+
+        showConfirmation('Please confirm your booking details:', details, (calendarInstance) => {
+            // Make AJAX request to save booking
+            fetch('save_booking.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close all modals and clean up
+                    const modals = document.querySelectorAll('.modal');
+                    modals.forEach(modalEl => {
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        if (modal) {
+                            modal.hide();
+                        }
+                    });
+
+                    // Remove any remaining backdrops and modal-open class
+                    document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+                    document.body.classList.remove('modal-open');
+
+                    // Show success confirmation
+                    showBookingConfirmation({
+                        service: formData.get('service'),
+                        date: formData.get('appointment_date'),
+                        time: formData.get('appointment_time'),
+                        price: servicePrice,
+                        name: formData.get('name'),
+                        email: formData.get('email'),
+                        contact: formData.get('contact'),
+                        location: formData.get('location'),
+                        note: formData.get('note')
+                    });
+                    
+                    // Refresh calendar events
+                    if (calendarInstance && typeof calendarInstance.refetchEvents === 'function') {
+                        calendarInstance.refetchEvents();
+                    }
+                } else {
+                    throw new Error(data.message || 'Failed to submit booking');
+                }
+            })
+            .catch(error => {
+                // Show error message
+                alert('An error occurred while submitting the booking: ' + error.message);
+                
+                // Close all modals and clean up
+                const modals = document.querySelectorAll('.modal');
+                modals.forEach(modalEl => {
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) {
+                        modal.hide();
+                    }
+                });
+
+                // Remove any remaining backdrops and modal-open class
+                document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+                document.body.classList.remove('modal-open');
+            });
+        });
+    }
+
     // Simple page transition
     document.querySelectorAll('.nav-links a').forEach(link => {
         link.addEventListener('click', function(e) {
@@ -684,13 +858,36 @@ window.showBookingForm = function(date, time) {
 
     // Fetch the booking form
     fetch('get_booking_form.php?date=' + date + '&time=' + time)
-        .then(response => response.text())
-        .then(html => {
-            bookingForm.innerHTML = html;
+        .then(async response => {
+            const text = await response.text();
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                throw new Error('Invalid response format from server');
+            }
+        })
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.message || 'Server error occurred');
+            }
+            
+            if (!data.html || !data.script) {
+                throw new Error('Invalid response format: missing html or script');
+            }
+            
+            // Insert HTML
+            bookingForm.innerHTML = data.html;
+            
+            // Execute script
+            const scriptElement = document.createElement('script');
+            scriptElement.textContent = data.script;
+            document.body.appendChild(scriptElement);
+            
             // Initialize any form scripts
             if (typeof updatePrice === 'function') {
                 updatePrice();
             }
+            
             if (typeof enableAppointmentTime === 'function') {
                 enableAppointmentTime();
             }
@@ -698,16 +895,85 @@ window.showBookingForm = function(date, time) {
         .catch(error => {
             bookingForm.innerHTML = `
                 <div class="alert alert-danger" role="alert">
-                    Error loading booking form: ${error.message}
+                    <h5 class="alert-heading">Error Loading Form</h5>
+                    <p>${error.message}</p>
+                    <hr>
+                    <p class="mb-0">Please try again or contact support if the problem persists.</p>
                 </div>
                 <div class="text-center mt-3">
                     <button type="button" class="btn btn-primary" onclick="showTimeSlots('${date}')">
-                        Back to Time Slots
+                        <i class="fas fa-arrow-left me-2"></i>Back to Time Slots
                     </button>
                 </div>`;
         });
 }
 </script>
 
+<style>
+/* Confirmation Modal Styles */
+#confirmationModal .modal-header {
+    background: var(--primary-color);
+    color: white;
+}
+
+#confirmationModal .modal-content {
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 20px 40px var(--card-shadow);
+}
+
+#confirmationModal .modal-body {
+    padding: 2rem;
+}
+
+#confirmationModal .booking-details {
+    background: rgba(7, 53, 63, 0.05);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-top: 1rem;
+}
+
+#confirmationModal .booking-details p {
+    margin-bottom: 0.5rem;
+}
+
+#confirmationModal .booking-details strong {
+    color: var(--primary-color);
+}
+
+#confirmationModal .modal-footer {
+    justify-content: center;
+    padding: 1.5rem;
+    border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+#confirmationModal .btn {
+    padding: 0.8rem 1.5rem;
+    border-radius: 50px;
+    font-weight: 500;
+    min-width: 120px;
+    transition: all 0.3s ease;
+}
+
+#confirmationModal .btn-primary {
+    background-color: var(--primary-color);
+    border: none;
+}
+
+#confirmationModal .btn-primary:hover {
+    background-color: var(--secondary-color);
+    transform: translateY(-2px);
+}
+
+#confirmationModal .btn-secondary {
+    background-color: #6c757d;
+    border: none;
+}
+
+#confirmationModal .btn-secondary:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+}
+</style>
 </body>
 </html>

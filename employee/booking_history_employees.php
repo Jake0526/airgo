@@ -186,22 +186,9 @@ while ($row = $result->fetch_assoc()) {
             transform: scaleX(0);
         }
 
-        /* Simple loading indicator */
+        /* Remove loading indicator styles */
         .loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: var(--secondary-color);
-            z-index: 9999;
-            transform: scaleX(0);
-            transform-origin: left;
-            transition: transform 0.3s ease;
-        }
-
-        .loading.active {
-            transform: scaleX(1);
+            display: none;
         }
 
         .main-content {
@@ -346,18 +333,74 @@ while ($row = $result->fetch_assoc()) {
             font-size: 1.1rem;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 991px) {
+            body {
+                background: #f5f9fc;
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+            }
+
             .sidebar {
                 width: 100%;
                 height: auto;
                 position: relative;
                 padding: 1rem;
+                background: var(--primary-color);
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            }
+
+            .sidebar h2 {
+                display: none;
+            }
+
+            .nav-links {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+                padding: 0;
+            }
+
+            .nav-links a {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+                color: rgba(255, 255, 255, 0.9);
+                text-decoration: none;
+                padding: 0.75rem;
+                border-radius: 12px;
+                font-size: 0.9rem;
+                transition: all 0.3s ease;
+                text-align: center;
+                background: rgba(255, 255, 255, 0.1);
+            }
+
+            .nav-links a i {
+                font-size: 1.1rem;
+            }
+
+            .nav-links a.active {
+                background: var(--secondary-color);
+                color: var(--primary-color);
+                font-weight: 500;
             }
 
             .main-content {
                 margin-left: 0;
                 width: 100%;
                 padding: 1rem;
+                background: #f5f9fc;
+                min-height: calc(100vh - 80px);
+                flex: 1;
+            }
+
+            .main-content h1 {
+                font-size: 1.5rem;
+                margin-bottom: 1.25rem;
+                color: var(--primary-color);
+                font-weight: 600;
+                padding: 0;
             }
 
             table {
@@ -370,17 +413,45 @@ while ($row = $result->fetch_assoc()) {
                 justify-content: center;
             }
         }
+
+        @media (max-width: 575px) {
+            .nav-links {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .nav-links a {
+                padding: 0.6rem;
+                font-size: 0.85rem;
+            }
+
+            .nav-links a i {
+                font-size: 1rem;
+            }
+
+            .main-content {
+                padding: 0.75rem;
+            }
+
+            .main-content h1 {
+                font-size: 1.25rem;
+                margin-bottom: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="loading"></div>
-
     <div class="sidebar">
         <h2>Air<span>go</span></h2>
         <div class="nav-links">
-            <a href="employee_dashboard.php" class="<?= $current_page === 'employee_dashboard.php' ? 'active' : '' ?>"><i class="fas fa-home"></i> Dashboard</a>
-            <a href="booking_history_employees.php" class="<?= $current_page === 'booking_history_employees.php' ? 'active' : '' ?>"><i class="fas fa-history"></i> History</a>
-            <a href="employees_login.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <a href="employee_dashboard.php" class="<?= $current_page === 'employee_dashboard.php' ? 'active' : '' ?>">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="booking_history_employees.php" class="<?= $current_page === 'booking_history_employees.php' ? 'active' : '' ?>">
+                <i class="fas fa-history"></i> History
+            </a>
+            <a href="employees_login.php">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
         </div>
     </div>
 
@@ -457,27 +528,6 @@ while ($row = $result->fetch_assoc()) {
         }
         ?>
     </div>
-    <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Simple page transition
-        document.querySelectorAll('.sidebar a').forEach(link => {
-            link.addEventListener('click', function(e) {
-                if (!this.href.includes('logout.php')) {
-                    e.preventDefault();
-                    const href = this.href;
-                    
-                    // Show loading indicator
-                    document.querySelector('.loading').classList.add('active');
-                    
-                    // Navigate after delay
-                    setTimeout(() => {
-                        window.location.href = href;
-                    }, 300);
-                }
-            });
-        });
-    });
-    </script>
 </body>
 </html>
 <?php $conn->close(); ?>

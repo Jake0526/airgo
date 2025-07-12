@@ -52,6 +52,12 @@ $filter_name = isset($_GET['filter_name']) ? mysqli_real_escape_string($conn, $_
 $filter_position = isset($_GET['filter_position']) ? mysqli_real_escape_string($conn, $_GET['filter_position']) : '';
 $filter_status = isset($_GET['filter_status']) ? mysqli_real_escape_string($conn, $_GET['filter_status']) : '';
 
+// Pagination setup
+$records_per_page = 10;
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$page = max(1, $page); // Ensure page is at least 1
+$offset = ($page - 1) * $records_per_page;
+
 // Get unique positions for dropdown
 $sql_positions = "SELECT DISTINCT position FROM employees ORDER BY position";
 $result_positions = $conn->query($sql_positions);
@@ -60,7 +66,22 @@ while ($row = $result_positions->fetch_assoc()) {
     $positions[] = $row['position'];
 }
 
-// FETCH EMPLOYEES with filters
+// Get total count for pagination
+$count_sql = "SELECT COUNT(*) as total FROM employees WHERE 1=1";
+if (!empty($filter_name)) {
+    $count_sql .= " AND name LIKE '%$filter_name%'";
+}
+if (!empty($filter_position)) {
+    $count_sql .= " AND position = '$filter_position'";
+}
+if (!empty($filter_status)) {
+    $count_sql .= " AND status = '$filter_status'";
+}
+$count_result = $conn->query($count_sql);
+$total_records = $count_result->fetch_assoc()['total'];
+$total_pages = ceil($total_records / $records_per_page);
+
+// FETCH EMPLOYEES with filters and pagination
 $sql_employees = "SELECT * FROM employees WHERE 1=1";
 if (!empty($filter_name)) {
     $sql_employees .= " AND name LIKE '%$filter_name%'";
@@ -71,7 +92,7 @@ if (!empty($filter_position)) {
 if (!empty($filter_status)) {
     $sql_employees .= " AND status = '$filter_status'";
 }
-$sql_employees .= " ORDER BY id DESC";
+$sql_employees .= " ORDER BY id DESC LIMIT $records_per_page OFFSET $offset";
 
 $result_employees = $conn->query($sql_employees);
 $employees = [];
@@ -405,6 +426,266 @@ while ($row = $result_employees->fetch_assoc()) {
             color: #842029;
         }
 
+        /* Pagination Styles */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 2rem;
+            padding: 1rem;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px var(--card-shadow);
+        }
+
+        .pagination-info {
+            font-size: 0.9rem;
+            color: var(--text-color);
+        }
+
+        .pagination-links {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .pagination-link {
+            padding: 0.5rem 0.75rem;
+            min-width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+        }
+
+        .pagination-link:hover,
+        .pagination-link.active {
+            background: var(--secondary-color);
+            color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        /* Confirmation Modal Styles */
+        .confirmation-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .confirmation-modal.active {
+            opacity: 1;
+        }
+
+        .confirmation-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -60%);
+            background: white;
+            padding: 0;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transform: translate(-50%, -60%) scale(0.95);
+            transition: all 0.3s ease;
+        }
+
+        .confirmation-modal.active .confirmation-content {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+
+        .confirmation-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .confirmation-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .confirmation-body {
+            padding: 1.5rem;
+            text-align: center;
+            color: var(--text-color);
+        }
+
+        .confirmation-actions {
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            background: #f8f9fa;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .confirm-btn,
+        .confirmation-actions .cancel-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .confirm-btn {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .confirm-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .confirmation-actions .cancel-btn {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .confirmation-actions .cancel-btn:hover {
+            background: #dee2e6;
+            transform: translateY(-2px);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 600px;
+            margin: 20px auto;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            transform: translateY(-20px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .modal-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: white;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: var(--secondary-color);
+            transform: scale(1.1);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+
+        .save-btn,
+        .cancel-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .save-btn {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .save-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .cancel-btn {
+            background: #f8f9fa;
+            color: #495057;
+        }
+
+        .cancel-btn:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+
         @media (max-width: 1024px) {
             .sidebar {
                 width: 240px;
@@ -428,6 +709,43 @@ while ($row = $result_employees->fetch_assoc()) {
                 position: relative;
                 padding: 1rem;
             }
+
+            .sidebar h2 {
+                display: none;
+            }
+
+            .nav-links {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.75rem;
+                padding: 0;
+            }
+
+            .nav-links a {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+                color: rgba(255, 255, 255, 0.9);
+                text-decoration: none;
+                padding: 0.75rem;
+                border-radius: 12px;
+                font-size: 0.9rem;
+                transition: all 0.3s ease;
+                text-align: center;
+                background: rgba(255, 255, 255, 0.1);
+            }
+
+            .nav-links a i {
+                font-size: 1.1rem;
+            }
+
+            .nav-links a.active {
+                background: var(--secondary-color);
+                color: var(--primary-color);
+                font-weight: 500;
+            }
+
             .main {
                 margin-left: 0;
                 width: 100%;
@@ -436,9 +754,158 @@ while ($row = $result_employees->fetch_assoc()) {
             .form-row {
                 flex-direction: column;
             }
-            th, td {
-                padding: 0.8rem;
+
+            /* Card style for table rows */
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tr {
+                margin-bottom: 1rem;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+                overflow: hidden;
+                position: relative;
+            }
+
+            /* Name header */
+            td:first-child {
+                background: var(--primary-color);
+                color: white;
+                font-size: 1rem;
+                font-weight: 500;
+                padding: 1rem;
+                margin: -1px;
+                border-radius: 12px 12px 0 0;
+                border-bottom: none;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                position: relative;
+                width: calc(100% + 2px);
+            }
+
+            /* Left border accent */
+            tr::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 4px;
+                background: var(--secondary-color);
+                border-radius: 12px 0 0 12px;
+            }
+
+            /* Actions buttons */
+            td:last-child {
+                padding: 0.75rem 1rem;
+                display: flex;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+                justify-content: flex-start;
+                background: #f8f9fa;
+                border-radius: 0 0 12px 12px;
+            }
+
+            td:last-child .action-button {
+                flex: 1;
+                min-width: 120px;
+                justify-content: center;
                 font-size: 0.85rem;
+            }
+
+            /* Content rows */
+            td:not(:first-child):not(:last-child) {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            }
+
+            td:not(:first-child):not(:last-child):before {
+                content: attr(data-label);
+                font-weight: 500;
+                color: var(--primary-color);
+                min-width: 100px;
+            }
+
+            /* Status styling */
+            td[data-label="Status"] {
+                padding: 0.75rem 1rem;
+            }
+
+            td[data-label="Status"]:before {
+                content: attr(data-label);
+                font-weight: 500;
+                color: var(--primary-color);
+                min-width: 100px;
+            }
+
+            td[data-label="Status"] {
+                font-weight: 500;
+            }
+
+            td[data-status="Active"] {
+                color: #198754;
+            }
+
+            td[data-status="Inactive"] {
+                color: #dc3545;
+            }
+
+            .pagination-container {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 0.75rem;
+                margin-top: 1rem;
+            }
+
+            .pagination-info {
+                text-align: center;
+                font-size: 0.85rem;
+            }
+
+            .pagination-links {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .pagination-link {
+                padding: 0.4rem 0.6rem;
+                min-width: 32px;
+                height: 32px;
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 575px) {
+            .sidebar {
+                padding: 0.5rem;
+            }
+
+            .nav-links {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .nav-links a {
+                padding: 0.6rem;
+                font-size: 0.85rem;
+            }
+
+            .nav-links a i {
+                font-size: 1rem;
+            }
+
+            .main {
+                padding: 1rem;
             }
         }
     </style>
@@ -451,7 +918,7 @@ while ($row = $result_employees->fetch_assoc()) {
             <a href="admin_bookings.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_bookings.php' ? 'active' : '' ?>"><i class="fas fa-calendar-alt"></i> Bookings</a>
             <a href="admin_employees.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_employees.php' ? 'active' : '' ?>"><i class="fas fa-users"></i> Employees</a>
             <a href="booking_history.php" class="<?= basename($_SERVER['PHP_SELF']) === 'booking_history.php' ? 'active' : '' ?>"><i class="fas fa-history"></i> Booking History</a>
-            <a href="admin_register.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_register.php' ? 'active' : '' ?>"><i class="fas fa-user-shield"></i> Administrator</a>
+            <!-- <a href="admin_register.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_register.php' ? 'active' : '' ?>"><i class="fas fa-user-shield"></i> Administrator</a> -->
             <a href="login.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
     </div>
@@ -467,7 +934,7 @@ while ($row = $result_employees->fetch_assoc()) {
 
         <div class="form-container">
             <h2>Add New Employee</h2>
-            <form method="POST">
+            <form method="POST" onsubmit="return confirmAddEmployee(this);">
                 <div class="form-row">
                     <div class="form-group">
                         <label for="name">Employee Name</label>
@@ -576,22 +1043,22 @@ while ($row = $result_employees->fetch_assoc()) {
                 <?php if (count($employees) > 0): ?>
                     <?php foreach ($employees as $employee): ?>
                         <tr>
-                            <td><?= htmlspecialchars($employee['id'] ?? '') ?></td>
-                            <td><?= htmlspecialchars($employee['name'] ?? '') ?></td>
-                            <td><?= htmlspecialchars($employee['email'] ?? '') ?></td>
-                            <td><?= htmlspecialchars($employee['position'] ?? '') ?></td>
-                            <td><?= htmlspecialchars($employee['hire_date'] ?? '') ?></td>
-                            <td><?= htmlspecialchars($employee['status'] ?? '') ?></td>
-                            <td class="action-buttons">
+                            <td data-label="ID"><?= htmlspecialchars($employee['id'] ?? '') ?></td>
+                            <td data-label="Name"><?= htmlspecialchars($employee['name'] ?? '') ?></td>
+                            <td data-label="Email"><?= htmlspecialchars($employee['email'] ?? '') ?></td>
+                            <td data-label="Position"><?= htmlspecialchars($employee['position'] ?? '') ?></td>
+                            <td data-label="Hire Date"><?= htmlspecialchars($employee['hire_date'] ?? '') ?></td>
+                            <td data-label="Status" data-status="<?= htmlspecialchars($employee['status'] ?? '') ?>"><?= htmlspecialchars($employee['status'] ?? '') ?></td>
+                            <td data-label="Actions" class="action-buttons">
                                 <a href="employee_bookings.php?employee_id=<?= $employee['id'] ?? '' ?>" class="action-button view-btn">
                                     <i class="fas fa-calendar-check"></i> Bookings
                                 </a>
-                                <a href="edit_employee.php?id=<?= $employee['id'] ?? '' ?>" class="action-button edit-btn">
+                                <button class="action-button edit-btn" onclick='openEditModal(<?= json_encode($employee) ?>)'>
                                     <i class="fas fa-edit"></i> Edit
-                                </a>
+                                </button>
                                 <a href="admin_employees.php?delete_id=<?= $employee['id'] ?? '' ?>" 
                                    class="action-button delete-btn" 
-                                   onclick="return confirm('Are you sure you want to delete this employee?');">
+                                   onclick="return confirmDelete('admin_employees.php?delete_id=<?= $employee['id'] ?? '' ?>');">
                                     <i class="fas fa-trash"></i> Delete
                                 </a>
                             </td>
@@ -604,9 +1071,210 @@ while ($row = $result_employees->fetch_assoc()) {
                 <?php endif; ?>
             </tbody>
         </table>
+
+        <?php if ($total_pages > 1): ?>
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    Showing <?= min($offset + 1, $total_records) ?> to <?= min($offset + $records_per_page, $total_records) ?> of <?= $total_records ?> employees
+                </div>
+                <div class="pagination-links">
+                    <?php if ($page > 1): ?>
+                        <a href="?page=<?= $page - 1 ?>&filter_name=<?= urlencode($filter_name) ?>&filter_position=<?= urlencode($filter_position) ?>&filter_status=<?= urlencode($filter_status) ?>" class="pagination-link">Previous</a>
+                    <?php endif; ?>
+                    <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                        <a href="?page=<?= $i ?>&filter_name=<?= urlencode($filter_name) ?>&filter_position=<?= urlencode($filter_position) ?>&filter_status=<?= urlencode($filter_status) ?>" class="pagination-link <?= $i == $page ? 'active' : '' ?>">
+                            <?= $i ?>
+                        </a>
+                    <?php endfor; ?>
+                    <?php if ($page < $total_pages): ?>
+                        <a href="?page=<?= $page + 1 ?>&filter_name=<?= urlencode($filter_name) ?>&filter_position=<?= urlencode($filter_position) ?>&filter_status=<?= urlencode($filter_status) ?>" class="pagination-link">Next</a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <!-- Edit Employee Modal -->
+    <div class="modal" id="editEmployeeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Edit Employee</h2>
+                <button class="close-btn" onclick="closeEditModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editEmployeeForm" onsubmit="updateEmployee(event)">
+                    <input type="hidden" id="employee_id" name="employee_id">
+                    <div class="form-group">
+                        <label for="edit_name">Employee Name</label>
+                        <input type="text" id="edit_name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_email">Email Address</label>
+                        <input type="email" id="edit_email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_position">Position</label>
+                        <input type="text" id="edit_position" name="position" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_hire_date">Hire Date</label>
+                        <input type="date" id="edit_hire_date" name="hire_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_status">Status</label>
+                        <select id="edit_status" name="status" required>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="save-btn">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                        <button type="button" class="cancel-btn" onclick="closeEditModal()">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="confirmation-modal" id="confirmationModal">
+        <div class="confirmation-content">
+            <div class="confirmation-header">
+                <h3><i class="fas fa-question-circle"></i> Confirm Action</h3>
+                <button class="close-btn" onclick="closeConfirmationModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="confirmation-body">
+                <p id="confirmationMessage"></p>
+            </div>
+            <div class="confirmation-actions">
+                <button class="confirm-btn" id="confirmActionBtn">
+                    <i class="fas fa-check"></i> Confirm
+                </button>
+                <button class="cancel-btn" onclick="closeConfirmationModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
+        function openEditModal(employee) {
+            document.getElementById('employee_id').value = employee.id;
+            document.getElementById('edit_name').value = employee.name;
+            document.getElementById('edit_email').value = employee.email;
+            document.getElementById('edit_position').value = employee.position;
+            document.getElementById('edit_hire_date').value = employee.hire_date;
+            document.getElementById('edit_status').value = employee.status;
+
+            const modal = document.getElementById('editEmployeeModal');
+            modal.style.display = 'block';
+            setTimeout(() => modal.classList.add('active'), 10);
+        }
+
+        function closeEditModal() {
+            const modal = document.getElementById('editEmployeeModal');
+            modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+
+        async function updateEmployee(event) {
+            event.preventDefault();
+            
+            showConfirmationModal('Are you sure you want to update this employee?', async () => {
+                const form = event.target;
+                const formData = new FormData(form);
+
+                try {
+                    const response = await fetch('update_employee.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        closeEditModal();
+                        showSuccessMessage('Employee updated successfully!');
+                    } else {
+                        showErrorMessage(result.message || 'Error updating employee');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showErrorMessage('An error occurred while updating the employee');
+                }
+            });
+        }
+
+        function showConfirmationModal(message, onConfirm) {
+            const modal = document.getElementById('confirmationModal');
+            const messageEl = document.getElementById('confirmationMessage');
+            const confirmBtn = document.getElementById('confirmActionBtn');
+            
+            messageEl.textContent = message;
+            modal.style.display = 'block';
+            setTimeout(() => modal.classList.add('active'), 10);
+
+            // Remove any existing click handler
+            confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+            
+            // Add new click handler
+            document.getElementById('confirmActionBtn').addEventListener('click', () => {
+                closeConfirmationModal();
+                onConfirm();
+            });
+        }
+
+        function closeConfirmationModal() {
+            const modal = document.getElementById('confirmationModal');
+            modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+
+        function showSuccessMessage(message) {
+            showConfirmationModal(message);
+            setTimeout(() => {
+                closeConfirmationModal();
+                window.location.reload();
+            }, 1500);
+        }
+
+        function showErrorMessage(message) {
+            showConfirmationModal('Error: ' + message);
+        }
+
+        function confirmDelete(deleteUrl) {
+            showConfirmationModal('Are you sure you want to delete this employee?', () => {
+                window.location.href = deleteUrl;
+            });
+            return false;
+        }
+
+        function confirmAddEmployee(form) {
+            showConfirmationModal('Are you sure you want to add this employee?', () => {
+                form.submit();
+            });
+            return false;
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const editModal = document.getElementById('editEmployeeModal');
+            const confirmationModal = document.getElementById('confirmationModal');
+            if (event.target === editModal) {
+                closeEditModal();
+            }
+            if (event.target === confirmationModal) {
+                closeConfirmationModal();
+            }
+        }
+
         function togglePassword(fieldId, icon) {
             const input = document.getElementById(fieldId);
             const i = icon.querySelector('i');

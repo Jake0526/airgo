@@ -18,6 +18,168 @@
     <!-- Header styles -->
     <link rel="stylesheet" href="styles/header.css">
 
+    <!-- Scroll Animation Styles -->
+    <style>
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: opacity, transform;
+        }
+
+        .fade-up.visible {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+        }
+
+        .fade-in {
+            opacity: 0;
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: opacity;
+        }
+
+        .fade-in.visible {
+            opacity: 1 !important;
+        }
+
+        .slide-in-left {
+            opacity: 0;
+            transform: translateX(-30px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: opacity, transform;
+        }
+
+        .slide-in-left.visible {
+            opacity: 1 !important;
+            transform: translateX(0) !important;
+        }
+
+        .slide-in-right {
+            opacity: 0;
+            transform: translateX(30px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: opacity, transform;
+        }
+
+        .slide-in-right.visible {
+            opacity: 1 !important;
+            transform: translateX(0) !important;
+        }
+
+        .scale-up {
+            opacity: 0;
+            transform: scale(0.95);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: opacity, transform;
+        }
+
+        .scale-up.visible {
+            opacity: 1 !important;
+            transform: scale(1) !important;
+        }
+
+        .stagger-animation > * {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: opacity, transform;
+        }
+
+        .stagger-animation > *.visible {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+        }
+
+        .stagger-animation > *:nth-child(1) { transition-delay: 0.1s; }
+        .stagger-animation > *:nth-child(2) { transition-delay: 0.2s; }
+        .stagger-animation > *:nth-child(3) { transition-delay: 0.3s; }
+        .stagger-animation > *:nth-child(4) { transition-delay: 0.4s; }
+        .stagger-animation > *:nth-child(5) { transition-delay: 0.5s; }
+
+        .video-section, .services-grid, .how-it-works, .social-media, .testimonials {
+            overflow: hidden;
+        }
+    </style>
+
+    <!-- Scroll Animation Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.2
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        // Don't unobserve - keep watching for visibility changes
+                        entry.target.classList.add('keep-observing');
+                    }
+                });
+            }, observerOptions);
+
+            function setupAnimation(elements, animationClass) {
+                elements.forEach(el => {
+                    if (el) {
+                        el.classList.add(animationClass);
+                        el.classList.add('keep-observing');
+                        observer.observe(el);
+                    }
+                });
+            }
+
+            // Initialize animations after page load
+            window.addEventListener('load', () => {
+                // Video Section
+                setupAnimation([document.querySelector('.video-content')], 'fade-up');
+                setupAnimation([document.querySelector('.video-wrapper')], 'scale-up');
+
+                // Services Section
+                setupAnimation([document.querySelector('#services .section-title')], 'fade-up');
+                document.querySelectorAll('.service-card').forEach((card, index) => {
+                    card.style.transitionDelay = `${index * 0.1}s`;
+                    setupAnimation([card], 'fade-up');
+                });
+
+                // How It Works Section
+                setupAnimation([document.querySelector('#how-it-works .section-title')], 'fade-up');
+                document.querySelectorAll('.step-card').forEach((card, index) => {
+                    card.style.transitionDelay = `${index * 0.2}s`;
+                    setupAnimation([card], 'fade-up');
+                });
+
+                // Social Media Section
+                setupAnimation([document.querySelector('.social-card')], 'scale-up');
+
+                // Testimonials Section
+                setupAnimation([document.querySelector('#testimonials .section-title')], 'fade-up');
+                document.querySelectorAll('.testimonial-card').forEach((card, index) => {
+                    card.style.transitionDelay = `${index * 0.2}s`;
+                    setupAnimation([card], 'fade-up');
+                });
+            });
+
+            // Reset animations on scroll to top
+            let lastScrollTop = 0;
+            window.addEventListener('scroll', () => {
+                const st = window.pageYOffset || document.documentElement.scrollTop;
+                if (st < lastScrollTop && st < 100) {
+                    document.querySelectorAll('.fade-up, .fade-in, .slide-in-left, .slide-in-right, .scale-up')
+                        .forEach(el => {
+                            el.style.transition = 'none';
+                            el.classList.remove('visible');
+                            setTimeout(() => {
+                                el.style.transition = '';
+                            }, 100);
+                        });
+                }
+                lastScrollTop = st <= 0 ? 0 : st;
+            }, false);
+        });
+    </script>
+
     <!-- Base styles -->
     <style>
         :root {
@@ -659,34 +821,303 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
   <!-- Business Section -->
-<section id="business" style="padding: 20px 5px; background:  #d0f0ff; text-align: center; font-family: 'Poppins', Arial, sans-serif;">
-  <div class="container" style="max-width: 500px; margin: 0 auto;">
-    <h2 style="
-      font-family: 'Playfair Display', serif; 
-      font-size: 1.5rem; 
-      color: #07353f; 
-      margin-bottom: 5px; 
-      border-bottom: 1px solid #c9d6d8; 
-      display: inline-block; 
-      padding-bottom: 5px; 
-      letter-spacing: 1.2px;
-      font-weight: 500;
-      ">
-      Welcome to Airgo
-    </h2>
-    <p style="
-      font-family: 'Poppins', sans-serif; 
-      font-size: 1.15rem; 
-      color: #444444; 
-      line-height: 1.6; 
-      max-width: 500px; 
-      margin: 0 auto;
-      font-weight: 500;
-      ">
-      Your reliable booking platform for all your services needs.
-    </p>
-  </div>
+<section id="welcome" class="welcome-section">
+    <div class="container">
+        <div class="welcome-content">
+            <div class="welcome-text">
+                <h1 class="welcome-title">
+                    Welcome to <span class="highlight">Air<span>go</span></span>
+                </h1>
+                <p class="welcome-description">
+                    Your reliable booking platform for all your aircon services needs
+                </p>
+                <div class="welcome-features">
+                    <div class="feature">
+                        <div class="feature-icon">⚡</div>
+                        <span>Fast Service</span>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">👨‍🔧</div>
+                        <span>Expert Technicians</span>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">💯</div>
+                        <span>Quality Guaranteed</span>
+                    </div>
+                </div>
+                <a href="#services" class="cta-button">
+                    Explore Our Services
+                    <svg viewBox="0 0 24 24" width="24" height="24">
+                        <path fill="currentColor" d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/>
+                    </svg>
+                </a>
+            </div>
+            <div class="welcome-decoration">
+                <div class="decoration-circle"></div>
+                <div class="decoration-line"></div>
+            </div>
+        </div>
+    </div>
 </section>
+
+<style>
+.welcome-section {
+    min-height: 100vh;
+    padding: 0;
+    background: linear-gradient(135deg, var(--background-color) 0%, #ffffff 100%);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    margin-top: -76px; /* Adjust this value based on your header height */
+    padding-top: 76px; /* Same as margin-top to offset the header */
+}
+
+.welcome-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding: clamp(2rem, 5vw, 4rem) 0;
+}
+
+.welcome-text {
+    max-width: 900px;
+    text-align: center;
+    animation: fadeInUp 0.8s ease-out;
+    padding: 0 1rem;
+}
+
+.welcome-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    color: var(--primary-color);
+    margin-bottom: clamp(1.5rem, 3vw, 2rem);
+    line-height: 1.2;
+    font-weight: 900;
+}
+
+.welcome-title .highlight {
+    position: relative;
+    display: inline-block;
+}
+
+.welcome-title .highlight span {
+    color: var(--secondary-color);
+    font-style: italic;
+}
+
+.welcome-title .highlight::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--secondary-color);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.5s ease;
+}
+
+.welcome-title .highlight:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+}
+
+.welcome-description {
+    font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+    margin-bottom: clamp(2rem, 4vw, 3rem);
+}
+
+.welcome-features {
+    display: flex;
+    justify-content: center;
+    gap: clamp(1.5rem, 3vw, 2.5rem);
+    margin-bottom: clamp(2rem, 4vw, 3rem);
+    opacity: 1;
+    animation: fadeInUp 0.8s ease-out 0.4s forwards;
+}
+
+.feature {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.8rem 1.5rem;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(7, 53, 63, 0.1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.feature:nth-child(1) { animation-delay: 0.6s; }
+.feature:nth-child(2) { animation-delay: 0.8s; }
+.feature:nth-child(3) { animation-delay: 1s; }
+
+.feature:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(7, 53, 63, 0.12);
+    background: rgba(255, 255, 255, 1);
+}
+
+.feature-icon {
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
+.feature span {
+    font-size: clamp(1rem, 1.5vw, 1.2rem);
+    font-weight: 500;
+    color: var(--primary-color);
+}
+
+.cta-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: clamp(1rem, 2vw, 1.5rem) clamp(2rem, 4vw, 3rem);
+    font-size: clamp(1rem, 1.5vw, 1.2rem);
+    color: white;
+    background: var(--primary-color);
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid var(--primary-color);
+}
+
+.cta-button:hover {
+    background: transparent;
+    color: var(--primary-color);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(7, 53, 63, 0.15);
+}
+
+.cta-button svg {
+    width: 24px;
+    height: 24px;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cta-button:hover svg {
+    transform: translateX(5px);
+}
+
+.welcome-decoration {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.decoration-circle {
+    position: absolute;
+    width: clamp(300px, 40vw, 500px);
+    height: clamp(300px, 40vw, 500px);
+    border-radius: 50%;
+    background: linear-gradient(45deg, var(--secondary-color) 0%, transparent 60%);
+    opacity: 0.1;
+    top: -20%;
+    right: -10%;
+    animation: rotate 20s linear infinite;
+}
+
+.decoration-line {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, transparent 45%, var(--secondary-color) 49%, var(--secondary-color) 51%, transparent 55%);
+    opacity: 0.05;
+    transform: skewY(-6deg);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 768px) {
+    .welcome-features {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        padding: 0 1rem;
+        opacity: 1;
+    }
+
+    .feature {
+        width: 100%;
+        max-width: 300px;
+        justify-content: center;
+        padding: 0.6rem 1.2rem;
+    }
+
+    .welcome-title {
+        padding: 0;
+    }
+
+    .welcome-description {
+        padding: 0;
+    }
+
+    .cta-button {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+    }
+}
+
+@media (max-height: 700px) {
+    .welcome-section {
+        min-height: 100vh;
+    }
+
+    .welcome-title {
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        margin-bottom: 1rem;
+    }
+
+    .welcome-description {
+        font-size: clamp(1rem, 2vw, 1.4rem);
+        margin-bottom: 1.5rem;
+    }
+
+    .welcome-features {
+        margin-bottom: 1.5rem;
+    }
+
+    .feature {
+        padding: 0.5rem 1rem;
+    }
+
+    .feature-icon {
+        font-size: 1.4rem;
+    }
+}
+</style>
 
 <!-- Include Google Fonts -->
 <style>
@@ -696,233 +1127,589 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     <!-- Slideshow -->
-    <section id="slideshow" class="container">
-        <div class="slides">
-            <?php for ($i = 1; $i <= 25; $i += 3): ?>
-                <?php if ($i >= 21 && $i <= 25) continue; ?>
-                <div class="slide">
-                    <img src="images/<?php echo $i; ?>.jpg" alt="Slide <?php echo $i; ?>" />
-                    <img src="images/<?php echo $i + 1; ?>.jpg" alt="Slide <?php echo $i + 1; ?>" />
-                    <img src="images/<?php echo $i + 2; ?>.jpg" alt="Slide <?php echo $i + 2; ?>" />
+    <section id="slideshow" class="slideshow-section">
+        <div class="container">
+            <div class="slideshow-container">
+                <div class="slides">
+                    <?php for ($i = 1; $i <= 25; $i += 3): ?>
+                        <?php if ($i >= 21 && $i <= 25) continue; ?>
+                        <div class="slide">
+                            <div class="slide-image">
+                                <img src="images/<?php echo $i; ?>.jpg" alt="Service Image <?php echo $i; ?>" loading="lazy" />
+                            </div>
+                            <div class="slide-image">
+                                <img src="images/<?php echo $i + 1; ?>.jpg" alt="Service Image <?php echo $i + 1; ?>" loading="lazy" />
+                            </div>
+                            <div class="slide-image">
+                                <img src="images/<?php echo $i + 2; ?>.jpg" alt="Service Image <?php echo $i + 2; ?>" loading="lazy" />
+                            </div>
+                        </div>
+                    <?php endfor; ?>
                 </div>
-            <?php endfor; ?>
+                <button class="slide-nav prev" aria-label="Previous slide">❮</button>
+                <button class="slide-nav next" aria-label="Next slide">❯</button>
+                <div class="slide-dots"></div>
+            </div>
         </div>
     </section>
+
+<style>
+.slideshow-section {
+    padding: clamp(3rem, 8vw, 6rem) 0;
+    background: linear-gradient(to bottom, var(--background-color), white);
+    overflow: hidden;
+}
+
+.slideshow-container {
+    position: relative;
+    max-width: 1200px;
+    margin: 0 auto;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(7, 53, 63, 0.15);
+}
+
+.slides {
+    display: flex;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide {
+    display: flex;
+    justify-content: center;
+    gap: clamp(0.5rem, 2vw, 1rem);
+    min-width: 100%;
+    padding: clamp(1rem, 3vw, 2rem);
+}
+
+.slide-image {
+    flex: 1;
+    border-radius: 15px;
+    overflow: hidden;
+    aspect-ratio: 1;
+    position: relative;
+}
+
+.slide-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.slide-image:hover img {
+    transform: scale(1.05);
+}
+
+.slide-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    background: rgba(7, 53, 63, 0.8);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    z-index: 2;
+}
+
+.slide-nav:hover {
+    background: var(--secondary-color);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.prev {
+    left: 20px;
+}
+
+.next {
+    right: 20px;
+}
+
+.slide-dots {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 2;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.dot.active {
+    background: var(--secondary-color);
+    transform: scale(1.2);
+}
+
+@media (max-width: 768px) {
+    .slide {
+        flex-direction: column;
+    }
+
+    .slide-image {
+        aspect-ratio: 16/9;
+    }
+
+    .slide-nav {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+
+    .prev {
+        left: 10px;
+    }
+
+    .next {
+        right: 10px;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const slidesContainer = document.querySelector('.slides');
+    const slides = document.querySelectorAll('.slide');
+    const prevButton = document.querySelector('.prev');
+    const nextButton = document.querySelector('.next');
+    const dotsContainer = document.querySelector('.slide-dots');
+    
+    let currentSlide = 0;
+    let isTransitioning = false;
+    const totalSlides = slides.length;
+
+    // Create dots
+    slides.forEach((_, index) => {
+        const dot = document.createElement('div');
+        dot.classList.add('dot');
+        if (index === 0) dot.classList.add('active');
+        dot.addEventListener('click', () => goToSlide(index));
+        dotsContainer.appendChild(dot);
+    });
+
+    const dots = document.querySelectorAll('.dot');
+
+    function updateDots() {
+        dots.forEach((dot, index) => {
+            dot.classList.toggle('active', index === currentSlide);
+        });
+    }
+
+    function goToSlide(index) {
+        if (isTransitioning) return;
+        isTransitioning = true;
+        currentSlide = index;
+        slidesContainer.style.transform = `translateX(-${currentSlide * 100}%)`;
+        updateDots();
+        setTimeout(() => {
+            isTransitioning = false;
+        }, 500);
+    }
+
+    function nextSlide() {
+        goToSlide((currentSlide + 1) % totalSlides);
+    }
+
+    function prevSlide() {
+        goToSlide((currentSlide - 1 + totalSlides) % totalSlides);
+    }
+
+    prevButton.addEventListener('click', prevSlide);
+    nextButton.addEventListener('click', nextSlide);
+
+    // Auto advance slides
+    let slideInterval = setInterval(nextSlide, 5000);
+
+    // Pause on hover
+    slidesContainer.addEventListener('mouseenter', () => {
+        clearInterval(slideInterval);
+    });
+
+    slidesContainer.addEventListener('mouseleave', () => {
+        slideInterval = setInterval(nextSlide, 5000);
+    });
+
+    // Touch support
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    slidesContainer.addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+    });
+
+    slidesContainer.addEventListener('touchend', e => {
+        touchEndX = e.changedTouches[0].screenX;
+        if (touchStartX - touchEndX > 50) {
+            nextSlide();
+        } else if (touchEndX - touchStartX > 50) {
+            prevSlide();
+        }
+    });
+});
+</script>
 
 
 
 <!-- Video Section -->
 <section id="service-video" class="video-section">
-  <div class="container">
-    <div class="video-wrapper">
-    <video
-      id="serviceVideo"
-      muted
-      playsinline
-      autoplay
-      controls
-      preload="auto"
-      poster="video-thumbnail.jpg"
-    >
-      <source src="video.mp4" type="video/mp4" />
-      Your browser does not support the video tag.
-    </video>
-      <div class="play-overlay">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="#fff">
-          <path d="M8 5v14l11-7z"/>
-        </svg>
-      </div>
+    <div class="container">
+        <div class="video-content">
+            <h2 class="section-title">Watch Our Services in Action</h2>
+            <div class="video-wrapper">
+                <video
+                    id="serviceVideo"
+                    muted
+                    playsinline
+                    poster="video-thumbnail.jpg"
+                    preload="metadata"
+                >
+                    <source src="video.mp4" type="video/mp4" />
+                    Your browser does not support the video tag.
+                </video>
+                <div class="video-controls">
+                    <button class="play-pause" aria-label="Play video">
+                        <svg class="play-icon" viewBox="0 0 24 24" width="24" height="24">
+                            <path fill="currentColor" d="M8 5v14l11-7z"/>
+                        </svg>
+                        <svg class="pause-icon" viewBox="0 0 24 24" width="24" height="24">
+                            <path fill="currentColor" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                        </svg>
+                    </button>
+                    <div class="progress-bar">
+                        <div class="progress-filled"></div>
+                    </div>
+                    <button class="mute" aria-label="Mute video">
+                        <svg class="volume-icon" viewBox="0 0 24 24" width="24" height="24">
+                            <path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                        </svg>
+                        <svg class="mute-icon" viewBox="0 0 24 24" width="24" height="24">
+                            <path fill="currentColor" d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="video-overlay">
+                    <div class="overlay-content">
+                        <h3>Experience Our Professional Service</h3>
+                        <p>Click to watch our expert technicians in action</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 </section>
 
 <style>
-  .video-section {
-    padding: clamp(3rem, 8vw, 6rem) 0;
-    background: linear-gradient(to bottom, var(--background-color), white);
-  }
+.video-section {
+    padding: clamp(4rem, 10vw, 8rem) 0;
+    background: linear-gradient(to bottom, white, var(--background-color));
+}
 
-  .video-wrapper {
-    position: relative;
-    width: 100%;
-    max-width: 900px;
+.video-content {
+    max-width: 1000px;
     margin: 0 auto;
+}
+
+.video-wrapper {
+    position: relative;
     border-radius: 20px;
     overflow: hidden;
+    background: var(--primary-color);
     box-shadow: 0 20px 40px rgba(7, 53, 63, 0.15);
     aspect-ratio: 16 / 9;
-    background: var(--primary-color);
-  }
+    margin-top: clamp(2rem, 5vw, 3rem);
+}
 
-  .video-wrapper video {
+.video-wrapper video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.video-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.video-wrapper:hover .video-controls {
+    opacity: 1;
+}
+
+.play-pause, .mute {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.play-pause:hover, .mute:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.pause-icon, .mute-icon {
+    display: none;
+}
+
+.video-wrapper.playing .play-icon {
+    display: none;
+}
+
+.video-wrapper.playing .pause-icon {
+    display: block;
+}
+
+.video-wrapper.muted .volume-icon {
+    display: none;
+}
+
+.video-wrapper.muted .mute-icon {
+    display: block;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 5px;
+    cursor: pointer;
+    position: relative;
+}
+
+.progress-filled {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: var(--secondary-color);
+    border-radius: 5px;
+    width: 0%;
+    transition: width 0.1s linear;
+}
+
+.video-overlay {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    background: rgba(7, 53, 63, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
     transition: opacity 0.3s ease;
-  }
-
-  .play-overlay {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 80px;
-        height: 80px;
-    background: rgba(7, 53, 63, 0.8);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
     cursor: pointer;
-    transition: all 0.3s ease;
+}
+
+.video-wrapper.playing .video-overlay {
     opacity: 0;
-  }
+    pointer-events: none;
+}
 
-  .play-overlay:hover {
-    transform: translate(-50%, -50%) scale(1.1);
-    background: var(--secondary-color);
-  }
+.overlay-content {
+    text-align: center;
+    color: white;
+    padding: 20px;
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+}
 
-  .video-wrapper.playing .play-overlay {
-    opacity: 0;
-        pointer-events: none;
-  }
+.video-overlay:hover .overlay-content {
+    transform: translateY(0);
+}
 
-  @media (max-width: 768px) {
+.overlay-content h3 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.overlay-content p {
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    opacity: 0.9;
+}
+
+@media (max-width: 768px) {
     .video-wrapper {
-      border-radius: 10px;
-      margin: 0 1rem;
+        border-radius: 10px;
+        margin: 0 1rem;
     }
 
-    .play-overlay {
-      width: 60px;
-      height: 60px;
+    .video-controls {
+        padding: 15px;
     }
 
-    .play-overlay svg {
-      width: 24px;
-      height: 24px;
+    .play-pause, .mute {
+        padding: 6px;
     }
-  }
+
+    .overlay-content {
+        padding: 15px;
+    }
+
+    .overlay-content h3 {
+        font-size: 1.2rem;
+    }
+
+    .overlay-content p {
+        font-size: 0.9rem;
+    }
+}
 </style>
 
 <script>
-  const video = document.getElementById('serviceVideo');
-  const wrapper = video.closest('.video-wrapper');
-  const playOverlay = wrapper.querySelector('.play-overlay');
+document.addEventListener('DOMContentLoaded', function() {
+    const wrapper = document.querySelector('.video-wrapper');
+    const video = document.getElementById('serviceVideo');
+    const playPauseBtn = wrapper.querySelector('.play-pause');
+    const muteBtn = wrapper.querySelector('.mute');
+    const progress = wrapper.querySelector('.progress-filled');
+    const progressBar = wrapper.querySelector('.progress-bar');
+    const overlay = wrapper.querySelector('.video-overlay');
 
-  // Auto-play when the page loads
-  document.addEventListener('DOMContentLoaded', () => {
-    video.play().catch(error => {
-      console.log("Auto-play failed:", error);
-    });
-    wrapper.classList.add('playing');
-  });
-
-  // Play/pause on overlay click
-  playOverlay.addEventListener('click', () => {
-    if (video.paused) {
-      video.play();
-      wrapper.classList.add('playing');
-    } else {
-      video.pause();
-      wrapper.classList.remove('playing');
-    }
-  });
-
-  // Show/hide overlay based on video state
-  video.addEventListener('play', () => wrapper.classList.add('playing'));
-  video.addEventListener('pause', () => wrapper.classList.remove('playing'));
-  video.addEventListener('ended', () => {
-    wrapper.classList.remove('playing');
-    video.play(); // Auto-replay when ended
-  });
-
-  // Intersection Observer for autoplay
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach(entry => {
-        if (!entry.isIntersecting && !video.paused) {
-          video.pause();
-        } else if (entry.isIntersecting && video.paused) {
-          video.play().catch(error => {
-            console.log("Auto-play failed:", error);
-          });
+    // Play/Pause
+    function togglePlay() {
+        if (video.paused) {
+            video.play();
+            wrapper.classList.add('playing');
+        } else {
+            video.pause();
+            wrapper.classList.remove('playing');
         }
-      });
-    },
-    { threshold: 0.5 }
-  );
+    }
 
-  observer.observe(video);
+    // Mute
+    function toggleMute() {
+        video.muted = !video.muted;
+        wrapper.classList.toggle('muted', video.muted);
+    }
+
+    // Update Progress
+    function handleProgress() {
+        const percent = (video.currentTime / video.duration) * 100;
+        progress.style.width = `${percent}%`;
+    }
+
+    // Scrub
+    function scrub(e) {
+        const scrubTime = (e.offsetX / progressBar.offsetWidth) * video.duration;
+        video.currentTime = scrubTime;
+    }
+
+    // Event Listeners
+    playPauseBtn.addEventListener('click', togglePlay);
+    overlay.addEventListener('click', togglePlay);
+    muteBtn.addEventListener('click', toggleMute);
+    video.addEventListener('timeupdate', handleProgress);
+    video.addEventListener('ended', () => {
+        wrapper.classList.remove('playing');
+        progress.style.width = '0%';
+    });
+
+    let mousedown = false;
+    progressBar.addEventListener('click', scrub);
+    progressBar.addEventListener('mousemove', (e) => mousedown && scrub(e));
+    progressBar.addEventListener('mousedown', () => mousedown = true);
+    progressBar.addEventListener('mouseup', () => mousedown = false);
+
+    // Initialize muted state
+    wrapper.classList.toggle('muted', video.muted);
+});
 </script>
 
 
 
     <!-- Available Services -->
 <section id="services" class="services">
-  <div class="container">
-    <h2 class="section-title">Available Services</h2>
-    <div class="services-grid">
-      <!-- Service Card 1 -->
-      <div class="service-card">
-        <div class="service-icon">🧹</div>
-        <h3>Cleaning</h3>
-        <ul class="service-list">
-        <li>Aircon filter cleaning</li>
-        <li>Coil cleaning</li>
-        <li>Vent cleaning</li>
-      </ul>
-    </div>
+    <div class="container">
+        <h2 class="section-title fade-up">Available Services</h2>
+        <div class="services-grid">
+            <div class="service-row first-row">
+                <div class="service-card">
+                    <div class="service-icon">🧹</div>
+                    <h3>Cleaning</h3>
+                    <ul class="service-list">
+                        <li>Aircon filter cleaning</li>
+                        <li>Coil cleaning</li>
+                        <li>Vent cleaning</li>
+                    </ul>
+                </div>
 
-      <!-- Service Card 2 -->
-      <div class="service-card">
-        <div class="service-icon">🔍</div>
-        <h3>Check-up</h3>
-        <ul class="service-list">
-        <li>Performance diagnostics</li>
-        <li>Leak inspection</li>
-        <li>Energy efficiency check</li>
-      </ul>
-    </div>
+                <div class="service-card">
+                    <div class="service-icon">🔍</div>
+                    <h3>Check-up</h3>
+                    <ul class="service-list">
+                        <li>Performance diagnostics</li>
+                        <li>Leak inspection</li>
+                        <li>Energy efficiency check</li>
+                    </ul>
+                </div>
 
-      <!-- Service Card 3 -->
-      <div class="service-card">
-        <div class="service-icon">⚙️</div>
-        <h3>Installation</h3>
-        <ul class="service-list">
-        <li>New unit installation</li>
-        <li>System setup</li>
-        <li>Calibration</li>
-      </ul>
-    </div>
+                <div class="service-card">
+                    <div class="service-icon">⚙️</div>
+                    <h3>Installation</h3>
+                    <ul class="service-list">
+                        <li>New unit installation</li>
+                        <li>System setup</li>
+                        <li>Calibration</li>
+                    </ul>
+                </div>
+            </div>
 
-      <!-- Service Card 4 -->
-      <div class="service-card">
-        <div class="service-icon">🚚</div>
-        <h3>Relocations</h3>
-        <ul class="service-list">
-        <li>Unit moving</li>
-        <li>Re-installation</li>
-        <li>Safety check</li>
-      </ul>
-    </div>
+            <div class="service-row second-row">
+                <div class="service-card">
+                    <div class="service-icon">🚚</div>
+                    <h3>Relocations</h3>
+                    <ul class="service-list">
+                        <li>Unit moving</li>
+                        <li>Re-installation</li>
+                        <li>Safety check</li>
+                    </ul>
+                </div>
 
-      <!-- Service Card 5 -->
-      <div class="service-card">
-        <div class="service-icon">🔧</div>
-        <h3>Repair</h3>
-        <ul class="service-list">
-        <li>Leak repairs</li>
-        <li>Component replacement</li>
-        <li>Emergency service</li>
-      </ul>
+                <div class="service-card">
+                    <div class="service-icon">🔧</div>
+                    <h3>Repair</h3>
+                    <ul class="service-list">
+                        <li>Leak repairs</li>
+                        <li>Component replacement</li>
+                        <li>Emergency service</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
-    </div>
-  </div>
 </section>
 
 <style>
@@ -953,10 +1740,24 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   .services-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-    gap: clamp(1.5rem, 4vw, 2.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(2rem, 4vw, 3rem);
     padding: 1rem;
+  }
+
+  .service-row {
+    display: flex;
+    justify-content: center;
+    gap: clamp(1.5rem, 4vw, 2.5rem);
+  }
+
+  .first-row {
+    flex-wrap: wrap;
+  }
+
+  .second-row {
+    flex-wrap: wrap;
   }
 
   .service-card {
@@ -967,6 +1768,9 @@ document.addEventListener('DOMContentLoaded', function() {
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
+    flex: 1;
+    min-width: 280px;
+    max-width: 350px;
   }
 
   .service-card::before {
@@ -1026,14 +1830,25 @@ document.addEventListener('DOMContentLoaded', function() {
     color: var(--secondary-color);
   }
 
-  @media (max-width: 768px) {
-    .services-grid {
-      grid-template-columns: 1fr;
-      padding: 0.5rem;
+  @media (max-width: 992px) {
+    .service-row {
+      justify-content: center;
     }
-
+    
     .service-card {
-      padding: 1.5rem;
+      flex: 0 1 calc(50% - 1.25rem);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .service-row {
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .service-card {
+      flex: 0 1 100%;
+      max-width: 100%;
     }
   }
 </style>
@@ -1066,34 +1881,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
   <section id="how-it-works" class="how-it-works">
-  <div class="container">
-    <h2 class="section-title">How It Works</h2>
-    <div class="steps-grid">
-      <!-- Step 1 -->
-      <div class="step-card">
-        <div class="step-number">1</div>
-        <div class="step-icon">👤</div>
-        <h3>Create Account</h3>
-        <p>Sign up for an account and log in securely to access our services.</p>
-      </div>
+    <div class="container">
+        <h2 class="section-title fade-up">How It Works</h2>
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <div class="step-icon">👤</div>
+                <h3>Create Account</h3>
+                <p>Sign up for an account and log in securely to access our services.</p>
+            </div>
 
-      <!-- Step 2 -->
-      <div class="step-card">
-        <div class="step-number">2</div>
-        <div class="step-icon">🔍</div>
-        <h3>Browse Services</h3>
-        <p>Search and explore our wide range of aircon services easily.</p>
-      </div>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <div class="step-icon">🔍</div>
+                <h3>Browse Services</h3>
+                <p>Search and explore our wide range of aircon services easily.</p>
+            </div>
 
-      <!-- Step 3 -->
-      <div class="step-card">
-        <div class="step-number">3</div>
-        <div class="step-icon">📅</div>
-        <h3>Book & Confirm</h3>
-        <p>Schedule your service and get instant confirmation.</p>
-      </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <div class="step-icon">📅</div>
+                <h3>Book & Confirm</h3>
+                <p>Schedule your service and get instant confirmation.</p>
+            </div>
+        </div>
     </div>
-  </div>
 </section>
 
 <style>
@@ -1223,69 +2035,90 @@ document.addEventListener('DOMContentLoaded', function() {
 
    <!-- Social Media Section -->
 <section id="social-media" class="social-media">
-  <div class="container">
-    <div class="social-card">
-      <div class="social-header">
-        <div class="social-icon">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-          </svg>
+    <div class="container">
+        <div class="social-card">
+            <div class="social-header">
+                <div class="social-icon">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
+                </div>
+                <h2>Connect With Us</h2>
+            </div>
+            <div class="social-content">
+                <div class="social-info">
+                    <h3>Follow Us on Facebook</h3>
+                    <p>Stay updated with our latest services, promotions, and aircon maintenance tips!</p>
+                    <ul class="contact-info">
+                        <li>
+                            <span class="icon">📱</span>
+                            <span>Sun# 09430510783 / 09976189915</span>
+                        </li>
+                        <li>
+                            <span class="icon">🕒</span>
+                            <span>Available 24/7</span>
+                        </li>
+                        <li>
+                            <span class="icon">💬</span>
+                            <span>Quick Response Time</span>
+                        </li>
+                        <li>
+                            <span class="icon">📍</span>
+                            <span>Serving Metro Manila and nearby areas</span>
+                        </li>
+                    </ul>
+                    <div class="social-buttons">
+                        <a href="https://web.facebook.com/messages/t/111830037044299" target="_blank" class="btn-facebook">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="messenger-icon">
+                                <path d="M12 2C6.477 2 2 6.145 2 11.243c0 2.908 1.438 5.504 3.686 7.205V22l3.39-1.869c.924.258 1.902.398 2.924.398 5.523 0 10-4.145 10-9.243C22 6.145 17.523 2 12 2zm1.05 12.443l-2.375-2.375L6.03 14.12l4.82-4.82 2.375 2.375L17.97 9.62l-4.82 4.82z"/>
+                            </svg>
+                            Message Us
+                        </a>
+                        <a href="https://www.facebook.com/airgo.ac" target="_blank" class="btn-facebook btn-follow">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="facebook-icon">
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                            </svg>
+                            Follow Us
+                        </a>
+                    </div>
+                </div>
+                <div class="social-image">
+                    <img src="page.png" alt="Airgo Facebook Page" loading="lazy">
+                    <div class="image-overlay">
+                        <div class="overlay-text">Visit our Facebook Page</div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <h2>Connect With Us</h2>
-      </div>
-      <div class="social-content">
-        <div class="social-info">
-          <h3>Visit Our Facebook Page</h3>
-          <p>Follow us for updates, tips, and special offers!</p>
-          <ul class="contact-info">
-            <li>
-              <span class="icon">📱</span>
-              <span>Sun# 09430510783 / 09976189915</span>
-            </li>
-            <li>
-              <span class="icon">🕒</span>
-              <span>Open 24/7</span>
-            </li>
-            <li>
-              <span class="icon">💬</span>
-              <span>Fast Response Time</span>
-            </li>
-      </ul>
-          <a href="https://web.facebook.com/messages/t/111830037044299" target="_blank" class="btn btn-facebook">
-            Message Us on Facebook
-          </a>
-        </div>
-        <div class="social-image">
-          <img src="page.png" alt="Airgo Facebook Page" loading="lazy">
-        </div>
-      </div>
     </div>
-  </div>
 </section>
 
 <style>
-  .social-media {
+.social-media {
     padding: clamp(3rem, 8vw, 6rem) 0;
     background: linear-gradient(to bottom, white, var(--background-color));
-  }
+    opacity: 1 !important;
+}
 
-  .social-card {
+.social-card {
     background: white;
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 20px 40px rgba(7, 53, 63, 0.1);
-  }
+    opacity: 1 !important;
+    animation: fadeIn 0.8s ease-out forwards;
+}
 
-  .social-header {
+.social-header {
     background: var(--primary-color);
     padding: clamp(1.5rem, 4vw, 2.5rem);
     display: flex;
     align-items: center;
     gap: 1rem;
     color: white;
-  }
+}
 
-  .social-icon {
+.social-icon {
     width: 48px;
     height: 48px;
     background: var(--secondary-color);
@@ -1294,167 +2127,270 @@ document.addEventListener('DOMContentLoaded', function() {
     align-items: center;
     justify-content: center;
     color: var(--primary-color);
-  }
+}
 
-  .social-header h2 {
+.social-header h2 {
     margin: 0;
     font-size: clamp(1.5rem, 4vw, 2rem);
-  }
+}
 
-  .social-content {
+.social-content {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: clamp(2rem, 5vw, 4rem);
     padding: clamp(2rem, 5vw, 4rem);
-  }
+    opacity: 1 !important;
+}
 
-  .social-info {
+.social-info {
     display: flex;
     flex-direction: column;
     justify-content: center;
-  }
+    animation: slideInLeft 0.8s ease-out forwards;
+}
 
-  .social-info h3 {
+.social-info h3 {
     color: var(--primary-color);
     font-size: clamp(1.2rem, 3vw, 1.8rem);
     margin-bottom: 1rem;
-  }
+}
 
-  .social-info p {
+.social-info p {
     color: var(--text-color);
     margin-bottom: 2rem;
-  }
+    line-height: 1.6;
+}
 
-  .contact-info {
+.contact-info {
     list-style: none;
     padding: 0;
     margin-bottom: 2rem;
-  }
+}
 
-  .contact-info li {
+.contact-info li {
     display: flex;
     align-items: center;
     gap: 1rem;
     margin-bottom: 1rem;
     color: var(--text-color);
-  }
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
 
-  .contact-info .icon {
+.contact-info li:hover {
+    background: rgba(60, 213, 237, 0.1);
+    transform: translateX(5px);
+}
+
+.contact-info .icon {
     font-size: 1.5rem;
     color: var(--secondary-color);
-  }
+    min-width: 24px;
+    text-align: center;
+}
 
-  .btn-facebook {
+.social-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: auto;
+}
+
+.btn-facebook {
+    flex: 1;
     background: #1877f2;
     color: white;
     border-radius: 30px;
-    padding: 1rem 2rem;
+    padding: 1rem 1.5rem;
     font-weight: 600;
     text-align: center;
     transition: all 0.3s ease;
-    display: inline-block;
-    margin-top: auto;
-  }
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 2px solid #1877f2;
+}
 
-  .btn-facebook:hover {
-    background: #0d6efd;
+.btn-facebook.btn-follow {
+    background: white;
+    color: #1877f2;
+}
+
+.btn-facebook:hover {
     transform: translateY(-3px);
     box-shadow: 0 10px 20px rgba(13, 110, 253, 0.2);
-  }
+}
 
-  .social-image {
+.btn-facebook.btn-follow:hover {
+    background: #1877f2;
+    color: white;
+}
+
+.social-image {
     position: relative;
     border-radius: 15px;
     overflow: hidden;
-    aspect-ratio: 4/3;
-  }
+    aspect-ratio: 16/9;
+    animation: slideInRight 0.8s ease-out forwards;
+}
 
-  .social-image img {
+.social-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     transition: transform 0.3s ease;
-  }
+}
 
-  .social-image:hover img {
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(7, 53, 63, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.overlay-text {
+    color: white;
+    font-weight: 600;
+    font-size: 1.2rem;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+}
+
+.social-image:hover img {
     transform: scale(1.05);
-  }
+}
 
-  @media (max-width: 768px) {
+.social-image:hover .image-overlay {
+    opacity: 1;
+}
+
+.social-image:hover .overlay-text {
+    transform: translateY(0);
+}
+
+.messenger-icon, .facebook-icon {
+    transition: transform 0.3s ease;
+}
+
+.btn-facebook:hover .messenger-icon,
+.btn-facebook:hover .facebook-icon {
+    transform: scale(1.1);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@media (max-width: 768px) {
     .social-content {
-      grid-template-columns: 1fr;
-      padding: 1.5rem;
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
     }
 
     .social-image {
-      order: -1;
-      aspect-ratio: 16/9;
+        order: -1;
     }
 
-    .social-header {
-      padding: 1.5rem;
-      flex-direction: column;
-      text-align: center;
+    .social-buttons {
+        flex-direction: column;
+    }
+
+    .contact-info li {
+        font-size: 0.9rem;
     }
 
     .btn-facebook {
-      width: 100%;
+        width: 100%;
     }
-  }
+}
 </style>
 
 
    <!-- Testimonials -->
 <section id="testimonials" class="testimonials">
-  <div class="container">
-    <h2 class="section-title">What Our Customers Say</h2>
-    <div class="testimonials-grid">
-      <!-- Testimonial 1 -->
-      <div class="testimonial-card">
-        <div class="testimonial-content">
-          <div class="quote-icon">❝</div>
-          <p>"Airgo made booking so easy! The service was professional and efficient. I will definitely use it again."</p>
-          <div class="testimonial-author">
-            <div class="author-avatar">JD</div>
-            <div class="author-info">
-              <h4>John Doe</h4>
-              <span>Satisfied Customer</span>
+    <div class="container">
+        <h2 class="section-title fade-up">What Our Customers Say</h2>
+        <div class="testimonials-grid">
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    <div class="quote-icon">❝</div>
+                    <p>"Airgo made booking so easy! The service was professional and efficient. I will definitely use it again."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">JD</div>
+                        <div class="author-info">
+                            <h4>John Doe</h4>
+                            <span>Satisfied Customer</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Testimonial 2 -->
-      <div class="testimonial-card">
-        <div class="testimonial-content">
-          <div class="quote-icon">❝</div>
-          <p>"Great platform with amazing service! The technicians were knowledgeable and professional. Highly recommend."</p>
-          <div class="testimonial-author">
-            <div class="author-avatar">JS</div>
-            <div class="author-info">
-              <h4>Jane Smith</h4>
-              <span>Happy Client</span>
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    <div class="quote-icon">❝</div>
+                    <p>"Great platform with amazing service! The technicians were knowledgeable and professional. Highly recommend."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">JS</div>
+                        <div class="author-info">
+                            <h4>Jane Smith</h4>
+                            <span>Happy Client</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Testimonial 3 -->
-      <div class="testimonial-card">
-        <div class="testimonial-content">
-          <div class="quote-icon">❝</div>
-          <p>"The best aircon service I've ever used. Quick response time and excellent customer service!"</p>
-          <div class="testimonial-author">
-            <div class="author-avatar">MJ</div>
-            <div class="author-info">
-              <h4>Mike Johnson</h4>
-              <span>Regular Customer</span>
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    <div class="quote-icon">❝</div>
+                    <p>"The best aircon service I've ever used. Quick response time and excellent customer service!"</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">MJ</div>
+                        <div class="author-info">
+                            <h4>Mike Johnson</h4>
+                            <span>Regular Customer</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
     </div>
-  </div>
 </section>
 
 <style>

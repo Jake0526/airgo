@@ -272,6 +272,43 @@ if (!$recent) {
                 position: relative;
                 padding: 1rem;
             }
+
+            .sidebar h2 {
+                display: none;
+            }
+
+            .nav-links {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.75rem;
+                padding: 0;
+            }
+
+            .nav-links a {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+                color: rgba(255, 255, 255, 0.9);
+                text-decoration: none;
+                padding: 0.75rem;
+                border-radius: 12px;
+                font-size: 0.9rem;
+                transition: all 0.3s ease;
+                text-align: center;
+                background: rgba(255, 255, 255, 0.1);
+            }
+
+            .nav-links a i {
+                font-size: 1.1rem;
+            }
+
+            .nav-links a.active {
+                background: var(--secondary-color);
+                color: var(--primary-color);
+                font-weight: 500;
+            }
+
             .main {
                 margin-left: 0;
                 width: 100%;
@@ -279,6 +316,125 @@ if (!$recent) {
             }
             .grid {
                 grid-template-columns: 1fr;
+            }
+
+            /* Card style for table rows */
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tr {
+                margin-bottom: 1rem;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+                overflow: hidden;
+                position: relative;
+            }
+
+            /* Customer name header */
+            td:first-child {
+                background: var(--primary-color);
+                color: white;
+                font-size: 1rem;
+                font-weight: 500;
+                padding: 1rem;
+                margin: -1px;
+                border-radius: 12px 12px 0 0;
+                border-bottom: none;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                position: relative;
+                width: calc(100% + 2px);
+            }
+
+            /* Left border accent */
+            tr::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 4px;
+                background: var(--secondary-color);
+                border-radius: 12px 0 0 12px;
+            }
+
+            /* Content rows */
+            td:not(:first-child) {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            }
+
+            td:not(:first-child):before {
+                content: attr(data-label);
+                font-weight: 500;
+                color: var(--primary-color);
+                min-width: 100px;
+            }
+
+            td:last-child {
+                border-bottom: none;
+            }
+
+            /* Status styling */
+            td[data-label="Status"] {
+                padding: 0.75rem 1rem;
+            }
+
+            td[data-label="Status"]:before {
+                content: attr(data-label);
+                font-weight: 500;
+                color: var(--primary-color);
+                min-width: 100px;
+            }
+
+            td[data-status="Pending"] {
+                color: #856404;
+            }
+
+            td[data-status="Approved"] {
+                color: #155724;
+            }
+
+            td[data-status="Completed"] {
+                color: #28a745;
+            }
+
+            td[data-status="Cancelled"] {
+                color: #dc3545;
+            }
+        }
+
+        @media (max-width: 575px) {
+            .sidebar {
+                padding: 0.5rem;
+            }
+
+            .nav-links {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .nav-links a {
+                padding: 0.6rem;
+                font-size: 0.85rem;
+            }
+
+            .nav-links a i {
+                font-size: 1rem;
+            }
+
+            .main {
+                padding: 1rem;
             }
         }
     </style>
@@ -292,7 +448,7 @@ if (!$recent) {
         <a href="admin_bookings.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_bookings.php' ? 'active' : '' ?>"><i class="fas fa-calendar-alt"></i> Bookings</a>
         <a href="admin_employees.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_employees.php' ? 'active' : '' ?>"><i class="fas fa-users"></i> Employees</a>
         <a href="booking_history.php" class="<?= basename($_SERVER['PHP_SELF']) === 'booking_history.php' ? 'active' : '' ?>"><i class="fas fa-history"></i> Booking History</a>
-        <a href="admin_register.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_register.php' ? 'active' : '' ?>"><i class="fas fa-user-shield"></i> Administrator</a>
+        <!-- <a href="admin_register.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_register.php' ? 'active' : '' ?>"><i class="fas fa-user-shield"></i> Administrator</a> -->
         <a href="login.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 </div>
@@ -335,10 +491,10 @@ if (!$recent) {
             <tbody>
                 <?php while ($row = $recent->fetch_assoc()): ?>
                     <tr>
-                        <td><?php echo htmlspecialchars($row['user_name'] ?? 'N/A'); ?></td>
-                        <td><?php echo htmlspecialchars($row['service']); ?></td>
-                        <td><?php echo $row['employee_name'] ?: 'Unassigned'; ?></td>
-                        <td><?php echo htmlspecialchars($row['status']); ?></td>
+                        <td data-label="Customer"><?php echo htmlspecialchars($row['user_name'] ?? 'N/A'); ?></td>
+                        <td data-label="Service"><?php echo htmlspecialchars($row['service']); ?></td>
+                        <td data-label="Assigned Employee"><?php echo $row['employee_name'] ?: 'Unassigned'; ?></td>
+                        <td data-label="Status" data-status="<?php echo htmlspecialchars($row['status']); ?>"><?php echo htmlspecialchars($row['status']); ?></td>
                     </tr>
                 <?php endwhile; ?>
             </tbody>

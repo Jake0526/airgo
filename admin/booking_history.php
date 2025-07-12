@@ -250,14 +250,12 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
             box-shadow: 0 10px 20px var(--card-shadow);
             margin-bottom: 2rem;
             display: flex;
+            flex-direction: column;
             gap: 1rem;
-            align-items: center;
-            flex-wrap: wrap;
         }
 
         .search-form input {
-            flex: 1;
-            min-width: 200px;
+            width: 100%;
             padding: 0.8rem 1rem;
             border: 2px solid var(--background-color);
             border-radius: 12px;
@@ -271,13 +269,19 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
             box-shadow: 0 0 0 4px rgba(60, 213, 237, 0.1);
         }
 
+        .button-row {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
         .button {
             background: var(--primary-color);
             color: white;
             border: none;
             padding: 0.8rem 1.5rem;
-            border-radius: 50px;
-            font-weight: 600;
+            border-radius: 12px;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.3s ease;
             font-family: 'Poppins', sans-serif;
@@ -285,12 +289,14 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
             align-items: center;
             gap: 0.5rem;
             text-decoration: none;
+            min-width: 120px;
+            justify-content: center;
         }
 
         .button:hover {
             background: var(--secondary-color);
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px var(--card-shadow);
+            box-shadow: 0 4px 8px var(--card-shadow);
         }
 
         .history-card {
@@ -413,6 +419,43 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
                 position: relative;
                 padding: 1rem;
             }
+
+            .sidebar h2 {
+                display: none;
+            }
+
+            .nav-links {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.75rem;
+                padding: 0;
+            }
+
+            .nav-links a {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+                color: rgba(255, 255, 255, 0.9);
+                text-decoration: none;
+                padding: 0.75rem;
+                border-radius: 12px;
+                font-size: 0.9rem;
+                transition: all 0.3s ease;
+                text-align: center;
+                background: rgba(255, 255, 255, 0.1);
+            }
+
+            .nav-links a i {
+                font-size: 1.1rem;
+            }
+
+            .nav-links a.active {
+                background: var(--secondary-color);
+                color: var(--primary-color);
+                font-weight: 500;
+            }
+
             .main {
                 margin-left: 0;
                 width: 100%;
@@ -426,6 +469,135 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
                 font-size: 0.85rem;
             }
         }
+
+        @media (max-width: 575px) {
+            .sidebar {
+                padding: 0.5rem;
+            }
+
+            .nav-links {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .nav-links a {
+                padding: 0.6rem;
+                font-size: 0.85rem;
+            }
+
+            .nav-links a i {
+                font-size: 1rem;
+            }
+
+            .main {
+                padding: 1rem;
+            }
+
+            /* Adjust table for mobile */
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+
+            thead {
+                display: none;
+            }
+
+            tr {
+                margin-bottom: 1rem;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+                overflow: hidden;
+                position: relative;
+                padding: 0.5rem 0;
+            }
+
+            /* Name header */
+            td:first-child {
+                display: none; /* Hide the name as a header since we'll show it in the content */
+            }
+
+            /* Left border accent */
+            tr::before {
+                display: none; /* Remove the left border accent */
+            }
+
+            /* Content rows */
+            td:not(:first-child) {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            }
+
+            td:not(:first-child):before {
+                content: attr(data-label) ": ";
+                font-weight: 500;
+                color: var(--primary-color);
+            }
+
+            td:last-child {
+                border-bottom: none;
+            }
+
+            /* Name header */
+            td:first-child {
+                display: none; /* Hide the name as a header since we'll show it in the content */
+            }
+
+            /* Left border accent */
+            tr::before {
+                display: none; /* Remove the left border accent */
+            }
+
+            /* Status styling */
+            td[data-label="Status"] {
+                margin-top: 0.5rem;
+            }
+
+            .status-badge {
+                margin-left: auto;
+            }
+
+            .history-card {
+                margin-bottom: 1rem;
+            }
+
+            .date-header {
+                font-size: 1rem;
+                padding: 0.75rem 1rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .search-form {
+                padding: 0.75rem;
+                gap: 0.5rem;
+            }
+
+            .search-form input {
+                padding: 0.6rem 0.75rem;
+                font-size: 0.9rem;
+            }
+
+            .button {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 575px) {
+            .search-form {
+                padding: 1rem;
+            }
+
+            .button {
+                padding: 0.7rem 1rem;
+                font-size: 0.9rem;
+                min-width: 100px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -436,7 +608,7 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
             <a href="admin_bookings.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_bookings.php' ? 'active' : '' ?>"><i class="fas fa-calendar-alt"></i> Bookings</a>
             <a href="admin_employees.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_employees.php' ? 'active' : '' ?>"><i class="fas fa-users"></i> Employees</a>
             <a href="booking_history.php" class="<?= basename($_SERVER['PHP_SELF']) === 'booking_history.php' ? 'active' : '' ?>"><i class="fas fa-history"></i> Booking History</a>
-            <a href="admin_register.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_register.php' ? 'active' : '' ?>"><i class="fas fa-user-shield"></i> Administrator</a>
+            <!-- <a href="admin_register.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_register.php' ? 'active' : '' ?>"><i class="fas fa-user-shield"></i> Administrator</a> -->
             <a href="login.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
     </div>
@@ -446,17 +618,14 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
 
         <form class="search-form" method="get">
             <input type="text" name="search" placeholder="Search bookings..." value="<?= htmlspecialchars($search ?? '') ?>">
-            <button type="submit" class="button">
-                <i class="fas fa-search"></i> Search
-            </button>
-            <?php if ($search): ?>
-                <a href="booking_history.php" class="button">
-                    <i class="fas fa-times"></i> Clear
+            <div class="button-row">
+                <button type="submit" class="button">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                <a href="booking_history.php?export=csv" class="button">
+                    <i class="fas fa-download"></i> Export CSV
                 </a>
-            <?php endif; ?>
-            <a href="booking_history.php?export=csv" class="button">
-                <i class="fas fa-download"></i> Export CSV
-            </a>
+            </div>
         </form>
 
         <?php if (empty($history)): ?>
@@ -472,19 +641,19 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
                     if ($lastDate !== '') echo "</table></div>";
                     echo "<div class='history-card'>";
                     echo "<div class='date-header'><i class='fas fa-calendar-day'></i> " . date('F j, Y', strtotime($date)) . "</div>";
-                    echo "<table><tr><th>Name</th><th>Email</th><th>Service</th><th>Location</th><th>Time</th><th>Phone</th><th>Status</th></tr>";
+                    echo "<table>";
                     $lastDate = $date;
                 endif;
                 $status = strtolower($row['status']);
                 $normalTime = date("g:i A", strtotime($row['appointment_time']));
                 echo "<tr>
-                        <td>" . htmlspecialchars($row['name'] ?? '') . "</td>
-                        <td>" . htmlspecialchars($row['email'] ?? '') . "</td>
-                        <td>" . htmlspecialchars($row['service'] ?? '') . "</td>
-                        <td>" . htmlspecialchars($row['location'] ?? '') . "</td>
-                        <td>" . htmlspecialchars($normalTime) . "</td>
-                        <td>" . htmlspecialchars($row['phone_number'] ?? '') . "</td>
-                        <td><span class='status-badge $status'>" . htmlspecialchars($row['status'] ?? '') . "</span></td>
+                        <td data-label='Name'>" . htmlspecialchars($row['name'] ?? '') . "</td>
+                        <td data-label='Email'>" . htmlspecialchars($row['email'] ?? '') . "</td>
+                        <td data-label='Service'>" . htmlspecialchars($row['service'] ?? '') . "</td>
+                        <td data-label='Location'>" . htmlspecialchars($row['location'] ?? '') . "</td>
+                        <td data-label='Time'>" . htmlspecialchars($normalTime) . "</td>
+                        <td data-label='Phone'>" . htmlspecialchars($row['phone_number'] ?? '') . "</td>
+                        <td data-label='Status'><span class='status-badge $status'>" . htmlspecialchars($row['status'] ?? '') . "</span></td>
                       </tr>";
             endforeach;
             echo "</table></div>";
