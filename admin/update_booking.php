@@ -6,12 +6,15 @@ if (!isset($_SESSION['admin_logged_in'])) {
     exit();
 }
 
-include('../db_connection.php');
+require_once '../config/database.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $response = ['success' => false, 'message' => ''];
 
     try {
+        // Get database connection
+        $conn = Database::getConnection();
+
         $booking_id = $_POST['booking_id'];
         $service = $_POST['service'];
         $location = $_POST['location'];
@@ -58,8 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (Exception $e) {
         $response['message'] = $e->getMessage();
     }
-
-    $conn->close();
     
     header('Content-Type: application/json');
     echo json_encode($response);

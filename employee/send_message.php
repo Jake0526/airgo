@@ -9,11 +9,8 @@ $sender_id = $_SESSION['employee_id'];
 $sender_name = $_SESSION['employee_name'];
 $message = $_POST['message'];
 
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "airgo";
-$conn = new mysqli($servername, $username, $password, $dbname);
+require_once '../config/database.php';
+$conn = Database::getConnection();
 
 // For now, broadcast to all customers (or choose specific one later)
 $sql = "INSERT INTO messages (sender_id, sender_name, message, receiver_role, timestamp) VALUES (?, ?, ?, 'customer', NOW())";

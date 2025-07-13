@@ -7,7 +7,10 @@ if (!isset($_SESSION['admin_logged_in'])) {
 }
 
 // Include the database connection
-include('../db_connection.php');
+require_once '../config/database.php';
+
+// Get database connection
+$conn = Database::getConnection();
 
 $total_bookings = $conn->query("SELECT COUNT(*) AS count FROM bookings")->fetch_assoc()['count'];
 $pending_approvals = $conn->query("SELECT COUNT(*) AS count FROM bookings WHERE status = 'Pending'")->fetch_assoc()['count'];

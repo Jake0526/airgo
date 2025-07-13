@@ -1,6 +1,6 @@
 <?php    
 // Include the database connection
-include('../db_connection.php');
+require_once '../config/database.php';
 
 // Start the session
 session_start();
@@ -14,6 +14,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($username) || empty($password)) {
         $error_message = "Both fields are required.";
     } else {
+        // Get database connection
+        $conn = Database::getConnection();
+        
         $sql = "SELECT * FROM admin WHERE username = ?";
         $stmt = $conn->prepare($sql);
 

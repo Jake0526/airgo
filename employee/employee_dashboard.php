@@ -11,15 +11,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
 
 $employee_id = $_SESSION['employee_id'];
 
-// DB connection using environment variables
-$host = getenv('DB_HOST') ?: 'localhost';
-$db = getenv('DB_NAME') ?: 'airgo';
-$user = getenv('DB_USER') ?: 'root';
-$pass = getenv('DB_PASSWORD') ?: '';
-$conn = new mysqli($host, $user, $pass, $db);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once '../config/database.php';
+$conn = Database::getConnection();
 
 // Fetch employee name
 $employee_name = "";

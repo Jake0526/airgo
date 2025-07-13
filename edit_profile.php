@@ -9,11 +9,8 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 $username = $_SESSION['username'];
 
-$host = 'localhost';
-$db = 'airgo';
-$user = 'root';
-$pass = '';
-$conn = new mysqli($host, $user, $pass, $db);
+require_once 'config/database.php';
+$conn = Database::getConnection();
 
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);

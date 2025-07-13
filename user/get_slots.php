@@ -1,9 +1,6 @@
 <?php
-$host = 'localhost';
-$db = 'airgo';
-$user = 'root';
-$pass = '';
-$conn = new mysqli($host, $user, $pass, $db);
+require_once '../config/database.php';
+$conn = Database::getConnection();
 
 if ($conn->connect_error) {
     die(json_encode(['error' => 'DB connection failed']));

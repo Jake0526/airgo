@@ -5,6 +5,9 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+require_once '../config/database.php';
+$conn = Database::getConnection();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id']) && isset($_POST['source'])) {
     $id = intval($_POST['id']);
     $source = $_POST['source'];
@@ -15,15 +18,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id']) && isset($_POST
     }
 
     $table = $source === 'History' ? 'booking_history_customer' : 'cancel_booking';
-
-    $host = 'localhost';
-    $db = 'airgo';
-    $user = 'root';
-    $pass = '';
-    $conn = new mysqli($host, $user, $pass, $db);
-    if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
-    }
 
     // Delete record
     $stmt = $conn->prepare("DELETE FROM $table WHERE id = ? AND user_id = ?");

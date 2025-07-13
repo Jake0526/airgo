@@ -10,21 +10,10 @@ error_log("get_slots.php accessed with date: " . ($_GET['date'] ?? 'not set'));
 
 header('Content-Type: application/json');
 
+require_once 'config/database.php';
+$conn = Database::getConnection();
+
 try {
-    $host = getenv('DB_HOST') ?: 'localhost';
-    $db = getenv('DB_NAME') ?: 'airgo';
-    $user = getenv('DB_USER') ?: 'root';
-    $pass = getenv('DB_PASSWORD') ?: '';
-
-    error_log("Attempting database connection to: $host");
-    
-    $conn = new mysqli($host, $user, $pass, $db);
-
-    if ($conn->connect_error) {
-        error_log("Database connection failed: " . $conn->connect_error);
-        throw new Exception("Database connection failed: " . $conn->connect_error);
-    }
-
     if (!isset($_GET['date'])) {
         throw new Exception("No date provided");
     }

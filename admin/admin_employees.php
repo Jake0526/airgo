@@ -6,9 +6,12 @@ if (!isset($_SESSION['admin_logged_in'])) {
 }
 
 // Include the database connection
-include('../db_connection.php');
+require_once '../config/database.php';
 
 $message = "";
+
+// Get database connection
+$conn = Database::getConnection();
 
 // ADD EMPLOYEE
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_employee'])) {

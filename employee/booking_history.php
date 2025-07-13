@@ -1,17 +1,8 @@
 <?php 
 session_start();
 
-
-
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "airgo";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once '../config/database.php';
+$conn = Database::getConnection();
 
 // Fetch all done/cancelled/completed/rejected bookings, no matter how old
 $sql = "SELECT b.id, b.name, b.service, b.created_at, b.location, b.phone_number, 

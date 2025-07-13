@@ -5,12 +5,10 @@ if (!isset($_SESSION['employee_logged_in']) || !isset($_SESSION['employee_id']))
     exit();
 }
 
+require_once '../config/database.php';
+$conn = Database::getConnection();
+
 $employee_id = $_SESSION['employee_id'];
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "airgo";
-$conn = new mysqli($servername, $username, $password, $dbname);
 
 // Get messages for this technician
 $sql = "SELECT * FROM messages WHERE receiver_id = ? OR sender_id = ? ORDER BY timestamp ASC";

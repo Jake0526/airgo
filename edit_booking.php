@@ -7,7 +7,8 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-include('db_connection.php');
+require_once('config/database.php');
+$conn = Database::getConnection();
 
 $booking_id = intval($_POST['booking_id']);
 $user_id = $_SESSION['user_id'];
@@ -48,5 +49,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request method']);
 }
 
-$conn->close();
+// No need to manually close the connection as the Database class handles it
 ?>

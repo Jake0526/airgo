@@ -1,6 +1,7 @@
 <?php
 session_start();
-$conn = new mysqli("localhost", "root", "", "airgo");
+require_once 'config/database.php';
+$conn = Database::getConnection();
 
 // Get booking ID
 $booking_id = intval($_GET['booking_id'] ?? 0);

@@ -7,19 +7,12 @@ if (!isset($_SESSION['admin_logged_in'])) {
     exit();
 }
 
+require_once '../config/database.php';
+$conn = Database::getConnection();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $booking_id = intval($_POST['booking_id'] ?? 0);
     $employee_id = intval($_POST['employee_id'] ?? 0);
-
-    $servername = "localhost";
-    $username = "root";
-    $password = "";
-    $dbname = "airgo";
-
-    $conn = new mysqli($servername, $username, $password, $dbname);
-    if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
-    }
 
     // Update booking with employee_id
     $stmt = $conn->prepare("UPDATE bookings SET employee_id = ? WHERE id = ?");

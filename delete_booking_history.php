@@ -20,10 +20,8 @@ if ($source === 'cancelled') {
     die("Invalid source.");
 }
 
-$conn = new mysqli('localhost', 'root', '', 'airgo');
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once 'config/database.php';
+$conn = Database::getConnection();
 
 $stmt = $conn->prepare("DELETE FROM $table WHERE id = ? AND user_id = ?");
 $stmt->bind_param("ii", $id, $_SESSION['user_id']);

@@ -5,15 +5,8 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// Database connection
-$host = 'localhost';
-$db = 'airgo';
-$user = 'root';
-$pass = '';
-$conn = new mysqli($host, $user, $pass, $db);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once '../config/database.php';
+$conn = Database::getConnection();
 
 $user_id = $_SESSION['user_id'];
 

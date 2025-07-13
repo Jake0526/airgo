@@ -1,79 +1,112 @@
 <?php
-// Start output buffering
+// Prevent any output before our JSON response
 ob_start();
 
 session_start();
-include('db_connection.php');
+require_once 'config/database.php';
 
-// Clear any previous output and set headers
-ob_end_clean();
-header('Content-Type: application/json');
-
+// Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
-    echo json_encode(['success' => false, 'message' => 'User not logged in']);
-    exit();
-}
-
-$user_id = $_SESSION['user_id'];
-$service = $_POST['service'] ?? '';
-$appointment_date = $_POST['appointment_date'] ?? '';
-// Convert 12-hour time format to 24-hour format
-$appointment_time = $_POST['appointment_time'];
-if (preg_match('/(\d{1,2}):(\d{2})\s*(AM|PM)/i', $appointment_time, $matches)) {
-    $hour = intval($matches[1]);
-    $minute = $matches[2];
-    $meridiem = strtoupper($matches[3]);
-    
-    if ($meridiem === 'PM' && $hour < 12) {
-        $hour += 12;
-    } elseif ($meridiem === 'AM' && $hour === 12) {
-        $hour = 0;
-    }
-    
-    $appointment_time = sprintf('%02d:%02d:00', $hour, $minute);
-}
-$contact = $_POST['contact'] ?? '';
-$location = $_POST['location'] ?? '';
-$price = $_POST['price'] ?? '';
-$note = $_POST['note'] ?? '';
-
-// Validate required fields
-if (empty($service) || empty($appointment_date) || empty($appointment_time) || 
-    empty($contact) || empty($location) || empty($price)) {
-    echo json_encode(['success' => false, 'message' => 'All required fields must be filled']);
-    exit();
-}
-
-// Validate location format
-$location_parts = explode(',', $location);
-if (count($location_parts) < 4) {
-    echo json_encode(['success' => false, 'message' => 'Invalid address format. Please provide complete address details.']);
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'message' => 'Not authenticated']);
     exit();
 }
 
 try {
-    // Prepare the SQL statement
-    $sql = "INSERT INTO bookings (user_id, service, price, appointment_date, appointment_time, location, note, status, phone) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?)";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("ssdsssss", $user_id, $service, $price, $appointment_date, $appointment_time, $location, $note, $contact);
-    
-    if ($stmt->execute()) {
-        $stmt->close();
-        $conn->close();
-        echo json_encode([
-            'success' => true,
-            'message' => 'Booking saved successfully'
-        ]);
-        exit();
-    } else {
-        throw new Exception("Failed to save booking");
+    // Get database connection
+    $conn = Database::getConnection();
+
+    // Validate required fields
+    $required_fields = [
+        'service',
+        'appointment_date',
+        'appointment_time',
+        'phone',
+        'location',
+        'price'
+    ];
+
+    $missing_fields = [];
+    foreach ($required_fields as $field) {
+        if (!isset($_POST[$field]) || empty($_POST[$field])) {
+            $missing_fields[] = $field;
+        }
     }
+
+    if (!empty($missing_fields)) {
+        throw new Exception('Missing required fields: ' . implode(', ', $missing_fields));
+    }
+
+    // Get form data
+    $user_id = $_SESSION['user_id'];
+    $service = $_POST['service'];
+    $appointment_date = $_POST['appointment_date'];
+    $appointment_time = $_POST['appointment_time'];
+    
+    // Convert time from "11:20 AM" to "HH:mm:ss" format
+    $time_obj = DateTime::createFromFormat('g:i A', $appointment_time);
+    if (!$time_obj) {
+        throw new Exception('Invalid time format');
+    }
+    $appointment_time = $time_obj->format('H:i:s');
+    
+    $phone = $_POST['phone'];
+    $location = $_POST['location'];
+    $price = $_POST['price'];
+    $note = $_POST['note'] ?? '';
+    $status = 'Pending';
+    $created_at = date('Y-m-d H:i:s');
+
+    // Check if the time slot is still available
+    $check_sql = "SELECT COUNT(*) as count FROM bookings WHERE appointment_date = ? AND appointment_time = ? AND status != 'Cancelled'";
+    $check_stmt = $conn->prepare($check_sql);
+    $check_stmt->bind_param("ss", $appointment_date, $appointment_time);
+    $check_stmt->execute();
+    $result = $check_stmt->get_result();
+    $row = $result->fetch_assoc();
+
+    if ($row['count'] > 0) {
+        throw new Exception('This time slot is no longer available. Please select another time.');
+    }
+
+    // Insert the booking
+    $sql = "INSERT INTO bookings (user_id, service, appointment_date, appointment_time, phone, location, price, note, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("isssssdsss", 
+        $user_id,
+        $service,
+        $appointment_date,
+        $appointment_time,
+        $phone, // This will be stored in the 'phone' column
+        $location,
+        $price,
+        $note,
+        $status,
+        $created_at
+    );
+
+    if ($stmt->execute()) {
+        // Clear any buffered output
+        ob_clean();
+        
+        // Send success response
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'Booking saved successfully']);
+    } else {
+        throw new Exception('Failed to save booking: ' . $stmt->error);
+    }
+
 } catch (Exception $e) {
-    if (isset($stmt)) $stmt->close();
-    if (isset($conn)) $conn->close();
-    echo json_encode([
-        'success' => false, 
-        'message' => 'Error saving booking: ' . $e->getMessage()
-    ]);
-    exit();
+    // Clear any buffered output
+    ob_clean();
+    
+    // Send error response
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+}
+
+// Close the database connection
+if (isset($conn)) {
+    $conn->close();
 }

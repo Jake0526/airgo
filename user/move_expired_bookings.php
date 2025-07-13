@@ -1,11 +1,6 @@
 <?php
-$host = 'localhost';
-$user = 'root';
-$pass = '';
-$dbname = 'airgo_db';
-
-$conn = new mysqli($host, $user, $pass, $dbname);
-if ($conn->connect_error) die("Connection failed: " . $conn->connect_error);
+require_once '../config/database.php';
+$conn = Database::getConnection();
 
 // Get all bookings with past date/time
 $query = "SELECT * FROM bookings WHERE CONCAT(appointment_date, ' ', appointment_time) < NOW()";

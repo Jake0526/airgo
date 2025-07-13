@@ -5,10 +5,8 @@ if (!isset($_SESSION['admin_logged_in'])) {
     exit();
 }
 
-$conn = new mysqli('localhost', 'root', '', 'airgo');
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once '../config/database.php';
+$conn = Database::getConnection();
 
 // Archive past completed, done, rejected, or cancelled bookings
 $conn->query(" 

@@ -5,15 +5,8 @@ if (!isset($_SESSION['admin_logged_in'])) {
     exit();
 }
 
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "airgo";
-
-$conn = new mysqli($servername, $username, $password, $dbname);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once '../config/database.php';
+$conn = Database::getConnection();
 
 if (isset($_GET['booking_id'])) {
     $booking_id = $_GET['booking_id'];

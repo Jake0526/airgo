@@ -8,19 +8,8 @@ if (!isset($_SESSION['admin_logged_in'])) {
     exit();
 }
 
-// Database connection (replace with your actual database credentials)
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "airgo"; // Change this to your actual database name
-
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once '../config/database.php';
+$conn = Database::getConnection();
 
 $message = "";
 

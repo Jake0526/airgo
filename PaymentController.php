@@ -6,17 +6,9 @@ use PHPMailer\PHPMailer\Exception;
 require 'PHPMailer-master/src/Exception.php';
 require 'PHPMailer-master/src/PHPMailer.php';
 require 'PHPMailer-master/src/SMTP.php';
+require_once 'config/database.php';
 
-// Load database connection
-$host = 'localhost';
-$user = 'root';
-$pass = ''; // update if needed
-$dbname = 'airgo_db'; // your actual DB name
-
-$conn = new mysqli($host, $user, $pass, $dbname);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+$conn = Database::getConnection();
 
 // Handle POST request
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

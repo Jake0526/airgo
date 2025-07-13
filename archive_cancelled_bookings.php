@@ -1,5 +1,6 @@
 <?php
-$conn = new mysqli('localhost', 'root', '', 'airgo');
+require_once 'config/database.php';
+$conn = Database::getConnection();
 
 $sql = "SELECT * FROM bookings WHERE booking_date < CURDATE() AND status = 'Cancelled'";
 $result = $conn->query($sql);

@@ -3,15 +3,8 @@
 // $employee_id = $_SESSION['employee_id']; // if logged in
 $employee_id = 1; // for testing
 
-$host = "localhost";
-$user = "root";
-$password = "";
-$database = "airgo";
-
-$conn = new mysqli($host, $user, $password, $database);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+require_once '../config/database.php';
+$conn = Database::getConnection();
 
 // Handle adding a reply
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["reply_note"])) {

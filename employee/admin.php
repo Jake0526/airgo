@@ -1,14 +1,8 @@
 <?php
 session_start();
 
-// Database connection
-$servername = "localhost";
-$db_username = "root"; // replace with your DB username
-$db_password = ""; // replace with your DB password
-$dbname = "airgo"; // name of the database
-
-// Create connection
-$conn = new mysqli($servername, $db_username, $db_password, $dbname);
+require_once '../config/database.php';
+$conn = Database::getConnection();
 
 // Check connection
 if ($conn->connect_error) {

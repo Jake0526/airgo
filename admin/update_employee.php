@@ -9,10 +9,13 @@ if (!isset($_SESSION['admin_logged_in'])) {
 }
 
 // Include the database connection
-include('../db_connection.php');
+require_once '../config/database.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $response = ['success' => false, 'message' => ''];
+
+    // Get database connection
+    $conn = Database::getConnection();
 
     // Get and sanitize input
     $id = intval($_POST['employee_id']);
