@@ -13,23 +13,6 @@ require_once '../config/database.php';
 // Get database connection
 $conn = Database::getConnection();
 
-// Move completed/cancelled/rejected/done bookings to history
-$statusesToMove = ['Completed', 'Cancelled'];
-
-$placeholders = implode(',', array_fill(0, count($statusesToMove), '?'));
-$sql = "DELETE FROM bookings WHERE status IN ($placeholders)";
-$stmt = $conn->prepare($sql);
-if ($stmt === false) {
-    die("Prepare failed: " . $conn->error);
-}
-
-// Bind all strings
-$types = str_repeat('s', count($statusesToMove));
-$stmt->bind_param($types, ...$statusesToMove);
-$stmt->execute();
-
-$stmt->close();
-
 // Determine selected tab
 $tab = isset($_GET['tab']) ? $_GET['tab'] : 'all';
 
@@ -51,10 +34,34 @@ switch ($tab) {
     case 'approved':
         $where = "WHERE LOWER(b.status) = 'approved'";
         break;
+    case 'completed':
+        $where = "WHERE LOWER(b.status) = 'completed'";
+        break;
+    case 'cancelled':
+        $where = "WHERE LOWER(b.status) = 'cancelled'";
+        break;
     case 'all':
     default:
-        $where = "";
+        $where = "WHERE LOWER(b.status) NOT IN ('completed', 'cancelled')";
         break;
+}
+
+// Add filter conditions
+$filter_name = isset($_GET['filter_name']) ? mysqli_real_escape_string($conn, trim($_GET['filter_name'])) : '';
+$filter_service = isset($_GET['filter_service']) ? mysqli_real_escape_string($conn, trim($_GET['filter_service'])) : '';
+$filter_location = isset($_GET['filter_location']) ? mysqli_real_escape_string($conn, trim($_GET['filter_location'])) : '';
+
+if (!empty($filter_name)) {
+    $where .= $where ? " AND" : "WHERE";
+    $where .= " CONCAT(u.fname, ' ', u.lname) LIKE '%$filter_name%'";
+}
+if (!empty($filter_service)) {
+    $where .= $where ? " AND" : "WHERE";
+    $where .= " b.service LIKE '%$filter_service%'";
+}
+if (!empty($filter_location)) {
+    $where .= $where ? " AND" : "WHERE";
+    $where .= " b.location LIKE '%$filter_location%'";
 }
 
 // Get total count for pagination
@@ -67,9 +74,9 @@ $total_records = $count_result->fetch_assoc()['total'];
 $total_pages = ceil($total_records / $records_per_page);
 
 // Fetch bookings with pagination
-$sql = "SELECT b.id, u.username, b.service, b.status, b.created_at, b.location, b.phone, 
-               b.appointment_date, b.appointment_time, b.employee_id, u.username, e.name AS employee_name,
-               b.note
+$sql = "SELECT b.id, CONCAT(u.fname, ' ', u.lname) as customer_name, b.service, b.status, b.created_at, b.location, b.phone, 
+               b.appointment_date, b.appointment_time, b.employee_id, e.name AS employee_name,
+               b.note, b.payment_proof
         FROM bookings b
         LEFT JOIN user u ON b.user_id = u.id
         LEFT JOIN employees e ON b.employee_id = e.id
@@ -272,6 +279,51 @@ if (!$result) {
             color: var(--secondary-color);
         }
 
+        /* Export Button Styles */
+        .export-container {
+            display: flex;
+            justify-content: flex-end;
+            margin: 1rem 0;
+            padding: 0 1rem;
+        }
+
+        .export-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            background-color: #2bc4dc;
+        }
+
+        .export-btn i {
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 768px) {
+            .export-container {
+                padding: 0 0.75rem;
+            }
+
+            .export-btn {
+                width: auto;
+                padding: 0.6rem 1.2rem;
+            }
+        }
+
+        /* Table Styles */
         table {
             width: 100%;
             background: var(--card-bg);
@@ -413,6 +465,112 @@ if (!$result) {
 
         .pagination-btn i {
             font-size: 0.8rem;
+        }
+
+        /* Filter Form Styles */
+        .filter-container {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px var(--card-shadow);
+            margin-bottom: 2rem;
+        }
+
+        .filter-container h2 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .filter-form .form-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-form .form-group {
+            flex: 1;
+        }
+
+        .filter-form label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .filter-form input,
+        .filter-form select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 2px solid var(--background-color);
+            border-radius: 12px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .filter-form input:focus,
+        .filter-form select:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 4px rgba(60, 213, 237, 0.1);
+        }
+
+        .filter-form button,
+        .filter-form .button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .filter-form button:hover,
+        .filter-form .button:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px var(--card-shadow);
+            color: var(--primary-color);
+        }
+
+        .filter-form button + .button {
+            margin-left: 1rem;
+            background: #f8f9fa;
+            color: var(--text-color);
+        }
+
+        .filter-form button + .button:hover {
+            background: #e9ecef;
+            color: var(--primary-color);
+        }
+
+        @media (max-width: 768px) {
+            .filter-form .form-row {
+                flex-direction: column;
+            }
+
+            .filter-form button,
+            .filter-form .button {
+                width: 100%;
+                justify-content: center;
+                margin: 0.5rem 0;
+            }
+
+            .filter-form button + .button {
+                margin-left: 0;
+            }
         }
 
         @media (max-width: 1200px) {
@@ -819,7 +977,6 @@ if (!$result) {
             <a href="dashboard.php" class="<?= basename($_SERVER['PHP_SELF']) === 'dashboard.php' ? 'active' : '' ?>"><i class="fas fa-chart-line"></i> Dashboard</a>
             <a href="admin_bookings.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_bookings.php' ? 'active' : '' ?>"><i class="fas fa-calendar-alt"></i> Bookings</a>
             <a href="admin_employees.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_employees.php' ? 'active' : '' ?>"><i class="fas fa-users"></i> Employees</a>
-            <a href="booking_history.php" class="<?= basename($_SERVER['PHP_SELF']) === 'booking_history.php' ? 'active' : '' ?>"><i class="fas fa-history"></i> Booking History</a>
             <!-- <a href="admin_register.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_register.php' ? 'active' : '' ?>"><i class="fas fa-user-shield"></i> Administrator</a> -->
             <a href="login.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
@@ -830,7 +987,7 @@ if (!$result) {
 
         <div class="tabs">
             <a href="?tab=all" class="tab-link <?= ($tab == 'all') ? 'active' : '' ?>">
-                <i class="fas fa-list"></i> All Bookings
+                <i class="fas fa-list"></i> Active Bookings
             </a>
             <a href="?tab=pending" class="tab-link <?= ($tab == 'pending') ? 'active' : '' ?>">
                 <i class="fas fa-clock"></i> Pending
@@ -841,7 +998,142 @@ if (!$result) {
             <a href="?tab=approved" class="tab-link <?= ($tab == 'approved') ? 'active' : '' ?>">
                 <i class="fas fa-check-circle"></i> Approved
             </a>
+            <a href="?tab=completed" class="tab-link <?= ($tab == 'completed') ? 'active' : '' ?>">
+                <i class="fas fa-check-double"></i> Completed
+            </a>
+            <a href="?tab=cancelled" class="tab-link <?= ($tab == 'cancelled') ? 'active' : '' ?>">
+                <i class="fas fa-ban"></i> Cancelled
+            </a>
         </div>
+
+        <div class="form-container filter-container">
+            <h2>Filter Bookings</h2>
+            <form method="GET" class="filter-form">
+                <input type="hidden" name="tab" value="<?= htmlspecialchars($tab) ?>">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="filter_name">Customer Full Name</label>
+                        <input type="text" id="filter_name" name="filter_name" value="<?= htmlspecialchars($_GET['filter_name'] ?? '') ?>" placeholder="Search by customer's full name..."/>
+                    </div>
+                    <div class="form-group">
+                        <label for="filter_service">Service</label>
+                        <input type="text" id="filter_service" name="filter_service" value="<?= htmlspecialchars($_GET['filter_service'] ?? '') ?>" placeholder="Search by service..."/>
+                    </div>
+                    <div class="form-group">
+                        <label for="filter_location">Location</label>
+                        <input type="text" id="filter_location" name="filter_location" value="<?= htmlspecialchars($_GET['filter_location'] ?? '') ?>" placeholder="Search by location..."/>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="filter-btn">
+                        <i class="fas fa-filter"></i> Apply Filters
+                    </button>
+                    <a href="?tab=<?= htmlspecialchars($tab) ?>" class="reset-btn">
+                        <i class="fas fa-undo"></i> Reset Filters
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <?php if ($tab == 'completed'): ?>
+            <div class="export-container">
+                <a href="export_completed.php" class="export-btn">
+                    <i class="fas fa-file-excel"></i>
+                    Export to Excel
+                </a>
+            </div>
+        <?php endif; ?>
+
+        <style>
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .filter-btn, .reset-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .filter-btn {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .reset-btn {
+            background: #f8f9fa;
+            color: var(--text-color);
+        }
+
+        .filter-btn:hover, .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .reset-btn:hover {
+            background: #e9ecef;
+            color: var(--primary-color);
+        }
+
+        .export-container {
+            display: flex;
+            justify-content: flex-end;
+            margin: 1rem 0;
+            padding: 0 1rem;
+        }
+
+        .export-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .export-btn i {
+            font-size: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .filter-btn, .reset-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .export-container {
+                padding: 0 0.75rem;
+            }
+
+            .export-btn {
+                width: auto;
+            }
+        }
+        </style>
 
         <div class="table-container">
             <table>
@@ -863,7 +1155,7 @@ if (!$result) {
                     <?php if ($result->num_rows > 0): ?>
                         <?php while ($row = $result->fetch_assoc()): ?>
                         <tr>
-                            <td data-label="Name"><?= htmlspecialchars($row['username'] ?? '') ?></td>
+                            <td data-label="Name"><?= htmlspecialchars($row['customer_name'] ?? '') ?></td>
                             <td data-label="Service"><?= htmlspecialchars($row['service'] ?? '') ?></td>
                             <td data-label="Location"><?= htmlspecialchars($row['location'] ?? '') ?></td>
                             <td data-label="Contact"><?= htmlspecialchars($row['phone'] ?? '') ?></td>
@@ -902,10 +1194,10 @@ if (!$result) {
             </div>
             <div class="pagination">
                 <?php if ($page > 1): ?>
-                    <a href="?tab=<?= $tab ?>&page=1" class="pagination-btn">
+                    <a href="?tab=<?= $tab ?>&page=1<?= !empty($filter_name) ? '&filter_name='.urlencode($filter_name) : '' ?><?= !empty($filter_service) ? '&filter_service='.urlencode($filter_service) : '' ?><?= !empty($filter_location) ? '&filter_location='.urlencode($filter_location) : '' ?>" class="pagination-btn">
                         <i class="fas fa-angle-double-left"></i>
                     </a>
-                    <a href="?tab=<?= $tab ?>&page=<?= $page - 1 ?>" class="pagination-btn">
+                    <a href="?tab=<?= $tab ?>&page=<?= $page - 1 ?><?= !empty($filter_name) ? '&filter_name='.urlencode($filter_name) : '' ?><?= !empty($filter_service) ? '&filter_service='.urlencode($filter_service) : '' ?><?= !empty($filter_location) ? '&filter_location='.urlencode($filter_location) : '' ?>" class="pagination-btn">
                         <i class="fas fa-angle-left"></i>
                     </a>
                 <?php endif; ?>
@@ -916,16 +1208,16 @@ if (!$result) {
                 
                 for ($i = $start_page; $i <= $end_page; $i++):
                 ?>
-                    <a href="?tab=<?= $tab ?>&page=<?= $i ?>" class="pagination-btn <?= $i == $page ? 'active' : '' ?>">
+                    <a href="?tab=<?= $tab ?>&page=<?= $i ?><?= !empty($filter_name) ? '&filter_name='.urlencode($filter_name) : '' ?><?= !empty($filter_service) ? '&filter_service='.urlencode($filter_service) : '' ?><?= !empty($filter_location) ? '&filter_location='.urlencode($filter_location) : '' ?>" class="pagination-btn <?= $i == $page ? 'active' : '' ?>">
                         <?= $i ?>
                     </a>
                 <?php endfor; ?>
 
                 <?php if ($page < $total_pages): ?>
-                    <a href="?tab=<?= $tab ?>&page=<?= $page + 1 ?>" class="pagination-btn">
+                    <a href="?tab=<?= $tab ?>&page=<?= $page + 1 ?><?= !empty($filter_name) ? '&filter_name='.urlencode($filter_name) : '' ?><?= !empty($filter_service) ? '&filter_service='.urlencode($filter_service) : '' ?><?= !empty($filter_location) ? '&filter_location='.urlencode($filter_location) : '' ?>" class="pagination-btn">
                         <i class="fas fa-angle-right"></i>
                     </a>
-                    <a href="?tab=<?= $tab ?>&page=<?= $total_pages ?>" class="pagination-btn">
+                    <a href="?tab=<?= $tab ?>&page=<?= $total_pages ?><?= !empty($filter_name) ? '&filter_name='.urlencode($filter_name) : '' ?><?= !empty($filter_service) ? '&filter_service='.urlencode($filter_service) : '' ?><?= !empty($filter_location) ? '&filter_location='.urlencode($filter_location) : '' ?>" class="pagination-btn">
                         <i class="fas fa-angle-double-right"></i>
                     </a>
                 <?php endif; ?>
@@ -951,23 +1243,23 @@ if (!$result) {
                         </div>
                         <div class="form-group">
                             <label for="service">Service</label>
-                            <input type="text" id="service" name="service" required>
+                            <input type="text" id="service" name="service" required readonly>
                         </div>
                         <div class="form-group">
                             <label for="location">Location</label>
-                            <input type="text" id="location" name="location" required>
+                            <input type="text" id="location" name="location" required readonly>
                         </div>
                         <div class="form-group">
                             <label for="phone">Contact</label>
-                            <input type="text" id="phone" name="phone" required>
+                            <input type="text" id="phone" name="phone" required readonly>
                         </div>
                         <div class="form-group">
                             <label for="appointment_date">Appointment Date</label>
-                            <input type="date" id="appointment_date" name="appointment_date" required>
+                            <input type="date" id="appointment_date" name="appointment_date" required readonly>
                         </div>
                         <div class="form-group">
                             <label for="appointment_time">Appointment Time</label>
-                            <input type="time" id="appointment_time" name="appointment_time" required>
+                            <input type="time" id="appointment_time" name="appointment_time" required readonly>
                         </div>
                         <div class="form-group">
                             <label for="status">Status</label>
@@ -991,6 +1283,22 @@ if (!$result) {
                                 <option value="<?= $employee['id'] ?>"><?= htmlspecialchars($employee['name']) ?></option>
                                 <?php endwhile; ?>
                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="note">Customer Notes</label>
+                            <textarea id="note" name="note" rows="3" readonly></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="payment_proof">Proof of Payment</label>
+                            <div class="upload-container">
+                                <input type="file" id="payment_proof" name="payment_proof" accept="image/*" class="file-input">
+                                <div class="upload-button">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>Upload Image</span>
+                                </div>
+                                <div class="file-name">No file chosen</div>
+                            </div>
+                            <div id="image-preview" class="image-preview"></div>
                         </div>
                         <div class="form-actions">
                             <button type="submit" class="save-btn">
@@ -1041,6 +1349,96 @@ if (!$result) {
             background: rgba(0, 0, 0, 0.5);
             z-index: 1000;
             overflow-y: auto;
+        }
+
+        /* File Upload Styles */
+        .upload-container {
+            position: relative;
+            margin-top: 0.5rem;
+            border: 2px dashed var(--primary-color);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: rgba(7, 53, 63, 0.02);
+        }
+
+        .upload-container:hover {
+            border-color: var(--secondary-color);
+            background: rgba(60, 213, 237, 0.05);
+        }
+
+        .file-input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .upload-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin: 0 auto;
+            max-width: 200px;
+        }
+
+        .upload-button i {
+            font-size: 1.2rem;
+        }
+
+        .file-input:hover + .upload-button {
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .file-name {
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-color);
+            word-break: break-all;
+        }
+
+        .image-preview {
+            margin-top: 1rem;
+            max-width: 300px;
+            display: none;
+            margin: 1rem auto 0;
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .upload-container {
+                padding: 0.75rem;
+            }
+
+            .upload-button {
+                padding: 0.6rem 1rem;
+                font-size: 0.85rem;
+            }
+
+            .image-preview {
+                max-width: 100%;
+            }
         }
 
         .modal-content {
@@ -1119,11 +1517,40 @@ if (!$result) {
             transition: all 0.3s ease;
         }
 
-        .form-group input:focus,
-        .form-group select:focus {
+        /* Style for readonly inputs */
+        .form-group input[readonly],
+        .form-group textarea[readonly] {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+
+        /* Style for editable fields */
+        .form-group select#status,
+        .form-group select#employee_id {
+            background-color: white;
+            border: 1px solid var(--secondary-color);
+            cursor: pointer;
+        }
+
+        .form-group select#status:focus,
+        .form-group select#employee_id:focus {
             border-color: var(--secondary-color);
             box-shadow: 0 0 0 2px rgba(60, 213, 237, 0.2);
             outline: none;
+        }
+
+        .form-group textarea[readonly] {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 0.75rem;
+            width: 100%;
+            resize: vertical;
+            min-height: 80px;
+            color: var(--text-color);
+            cursor: default;
         }
 
         .form-actions {
@@ -1313,7 +1740,7 @@ if (!$result) {
     <script>
         function openEditModal(booking) {
             document.getElementById('booking_id').value = booking.id;
-            document.getElementById('username').value = booking.username;
+            document.getElementById('username').value = booking.customer_name;
             document.getElementById('service').value = booking.service;
             document.getElementById('location').value = booking.location;
             document.getElementById('phone').value = booking.phone;
@@ -1321,6 +1748,19 @@ if (!$result) {
             document.getElementById('appointment_time').value = booking.appointment_time;
             document.getElementById('status').value = booking.status;
             document.getElementById('employee_id').value = booking.employee_id || '';
+            document.getElementById('note').value = booking.note || '';
+
+            // Show existing payment proof if available
+            const imagePreview = document.getElementById('image-preview');
+            if (booking.payment_proof) {
+                // Add parent directory to make the path relative to admin folder
+                const imagePath = '../' + booking.payment_proof;
+                imagePreview.innerHTML = `<img src="${imagePath}" alt="Payment Proof">`;
+                imagePreview.style.display = 'block';
+            } else {
+                imagePreview.style.display = 'none';
+                imagePreview.innerHTML = '';
+            }
 
             const modal = document.getElementById('editBookingModal');
             modal.style.display = 'block';
@@ -1397,6 +1837,29 @@ if (!$result) {
             });
         }
 
+        // Handle file input change
+        document.getElementById('payment_proof').addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name;
+            const fileNameDisplay = e.target.parentElement.querySelector('.file-name');
+            const imagePreview = document.getElementById('image-preview');
+            
+            if (fileName) {
+                fileNameDisplay.textContent = fileName;
+                
+                // Show image preview
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    imagePreview.innerHTML = `<img src="${event.target.result}" alt="Payment Proof Preview">`;
+                    imagePreview.style.display = 'block';
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            } else {
+                fileNameDisplay.textContent = 'No file chosen';
+                imagePreview.style.display = 'none';
+                imagePreview.innerHTML = '';
+            }
+        });
+
         // Close modals when clicking outside
         window.onclick = function(event) {
             const editModal = document.getElementById('editBookingModal');
@@ -1411,3 +1874,4 @@ if (!$result) {
     </script>
 </body>
 </html>
+

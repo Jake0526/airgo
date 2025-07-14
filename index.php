@@ -2083,7 +2083,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </li>
                         <li>
                             <span class="icon">📍</span>
-                            <span>Serving Metro Manila and nearby areas</span>
+                            <span>Serving Davao City and nearby areas</span>
                         </li>
                     </ul>
                     <div class="social-buttons">

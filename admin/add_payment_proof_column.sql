@@ -1,0 +1,2 @@
+ALTER TABLE bookings
+ADD COLUMN payment_proof VARCHAR(255) DEFAULT NULL; 

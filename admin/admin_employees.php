@@ -5,37 +5,85 @@ if (!isset($_SESSION['admin_logged_in'])) {
     exit();
 }
 
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // Include the database connection
 require_once '../config/database.php';
 
 $message = "";
 
 // Get database connection
-$conn = Database::getConnection();
+try {
+    $conn = Database::getConnection();
+    if (!$conn) {
+        throw new Exception("Database connection failed");
+    }
+} catch (Exception $e) {
+    die("Database connection failed: " . $e->getMessage());
+}
 
 // ADD EMPLOYEE
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_employee'])) {
-    $name = mysqli_real_escape_string($conn, trim($_POST['name']));
-    $email = mysqli_real_escape_string($conn, trim($_POST['email']));
-    $position = mysqli_real_escape_string($conn, trim($_POST['position']));
-    $hire_date = mysqli_real_escape_string($conn, trim($_POST['hire_date']));
-    $status = mysqli_real_escape_string($conn, trim($_POST['status']));
-    $password_input = trim($_POST['password']);
-    $confirm_password = trim($_POST['confirm_password']);
+    try {
+        // Validate inputs
+        if (empty($_POST['name']) || empty($_POST['email']) || empty($_POST['position']) || 
+            empty($_POST['hire_date']) || empty($_POST['status']) || empty($_POST['password'])) {
+            throw new Exception("All fields are required");
+        }
 
-    if ($password_input !== $confirm_password) {
-        $message = "❌ Passwords do not match.";
-    } else {
+        $name = mysqli_real_escape_string($conn, trim($_POST['name']));
+        $email = mysqli_real_escape_string($conn, trim($_POST['email']));
+        $position = mysqli_real_escape_string($conn, trim($_POST['position']));
+        $hire_date = mysqli_real_escape_string($conn, trim($_POST['hire_date']));
+        $status = mysqli_real_escape_string($conn, trim($_POST['status']));
+        $password_input = trim($_POST['password']);
+        $confirm_password = trim($_POST['confirm_password']);
+
+        if ($password_input !== $confirm_password) {
+            throw new Exception("Passwords do not match");
+        }
+
+        // Check if email already exists
+        $check_email = $conn->prepare("SELECT id FROM employees WHERE email = ?");
+        if (!$check_email) {
+            throw new Exception("Failed to prepare email check statement: " . $conn->error);
+        }
+        
+        $check_email->bind_param("s", $email);
+        if (!$check_email->execute()) {
+            throw new Exception("Failed to check email: " . $check_email->error);
+        }
+        $result = $check_email->get_result();
+        
+        if ($result->num_rows > 0) {
+            throw new Exception("Email address already exists");
+        }
+        $check_email->close();
+
         $hashed_password = password_hash($password_input, PASSWORD_DEFAULT);
 
-        $sql_insert = "INSERT INTO employees (name, email, position, hire_date, status, password)
-                       VALUES ('$name', '$email', '$position', '$hire_date', '$status', '$hashed_password')";
-
-        if ($conn->query($sql_insert) === TRUE) {
-            $message = "✅ Employee added successfully!";
-        } else {
-            $message = "❌ Error: " . $conn->error;
+        // Use prepared statement for insert
+        $note = mysqli_real_escape_string($conn, trim($_POST['note'] ?? ''));
+        
+        $stmt = $conn->prepare("INSERT INTO employees (name, email, position, hire_date, status, password, note) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        if (!$stmt) {
+            throw new Exception("Failed to prepare insert statement: " . $conn->error);
         }
+
+        $stmt->bind_param("sssssss", $name, $email, $position, $hire_date, $status, $hashed_password, $note);
+        
+        if (!$stmt->execute()) {
+            throw new Exception("Failed to add employee: " . $stmt->error);
+        }
+
+        $message = "✅ Employee added successfully!";
+        $stmt->close();
+
+    } catch (Exception $e) {
+        $message = "❌ Error: " . $e->getMessage();
+        error_log("Error in admin_employees.php: " . $e->getMessage());
     }
 }
 
@@ -920,7 +968,6 @@ while ($row = $result_employees->fetch_assoc()) {
             <a href="dashboard.php" class="<?= basename($_SERVER['PHP_SELF']) === 'dashboard.php' ? 'active' : '' ?>"><i class="fas fa-chart-line"></i> Dashboard</a>
             <a href="admin_bookings.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_bookings.php' ? 'active' : '' ?>"><i class="fas fa-calendar-alt"></i> Bookings</a>
             <a href="admin_employees.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_employees.php' ? 'active' : '' ?>"><i class="fas fa-users"></i> Employees</a>
-            <a href="booking_history.php" class="<?= basename($_SERVER['PHP_SELF']) === 'booking_history.php' ? 'active' : '' ?>"><i class="fas fa-history"></i> Booking History</a>
             <!-- <a href="admin_register.php" class="<?= basename($_SERVER['PHP_SELF']) === 'admin_register.php' ? 'active' : '' ?>"><i class="fas fa-user-shield"></i> Administrator</a> -->
             <a href="login.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
@@ -937,7 +984,7 @@ while ($row = $result_employees->fetch_assoc()) {
 
         <div class="form-container">
             <h2>Add New Employee</h2>
-            <form method="POST" onsubmit="return confirmAddEmployee(this);">
+            <form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>" onsubmit="return confirmAddEmployee(this);">
                 <div class="form-row">
                     <div class="form-group">
                         <label for="name">Employee Name</label>
@@ -1261,6 +1308,13 @@ while ($row = $result_employees->fetch_assoc()) {
 
         function confirmAddEmployee(form) {
             showConfirmationModal('Are you sure you want to add this employee?', () => {
+                // Add a hidden input to indicate form submission
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'add_employee';
+                hiddenInput.value = '1';
+                form.appendChild(hiddenInput);
+                
                 form.submit();
             });
             return false;

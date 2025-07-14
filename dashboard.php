@@ -24,7 +24,10 @@ while($row = $table_info->fetch_assoc()) {
 
 // Fetch user's full name
 $user_full_name = 'User'; // Default value
-$user_query = $conn->prepare("SELECT CONCAT(fname, ' ', lname) as full_name FROM user WHERE id = ?");
+$user_contact = '';
+$user_district = '';
+$user_barangay = '';
+$user_query = $conn->prepare("SELECT CONCAT(fname, ' ', lname) as full_name, contact, district, barangay FROM user WHERE id = ?");
 if ($user_query) {
     $user_query->bind_param("i", $user_id);
     $user_query->execute();
@@ -32,6 +35,9 @@ if ($user_query) {
     error_log("Query result rows: " . print_r($user_result->num_rows, true));
     if ($user_data = $user_result->fetch_assoc()) {
         $user_full_name = $user_data['full_name'];
+        $user_contact = $user_data['contact'];
+        $user_district = $user_data['district'];
+        $user_barangay = $user_data['barangay'];
         error_log("Found user name: " . $user_full_name);
     } else {
         error_log("No user found for ID: " . $user_id);
@@ -436,7 +442,10 @@ $conn->close();
                             <label for="phone" class="form-label">Contact Number</label>
                             <div class="input-group">
                                 <span class="input-group-text">+639</span>
-                                <input type="tel" class="form-control" id="phone" name="phone" pattern="[0-9]{9}" maxlength="9" placeholder="123456789" required>
+                                <input type="tel" class="form-control" id="phone" name="phone" pattern="[0-9]{9}" maxlength="9" placeholder="123456789" required readonly>
+                                <button type="button" class="btn btn-outline-secondary" onclick="toggleEdit('phone')">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </button>
                             </div>
                             <small class="text-muted">Format: +639XXXXXXXXX</small>
                         </div>
@@ -460,26 +469,36 @@ $conn->close();
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="district" class="form-label">District</label>
-                                <select class="form-select" id="district" name="district" onchange="updateBarangays(); updateLocation()" required>
-                                    <option value="">Select District</option>
-                                    <option value="Poblacion">Poblacion</option>
-                                    <option value="Talomo">Talomo</option>
-                                    <option value="Agdao">Agdao</option>
-                                    <option value="Buhangin">Buhangin</option>
-                                    <option value="Bunawan">Bunawan</option>
-                                    <option value="Paquibato">Paquibato</option>
-                                    <option value="Baguio">Baguio</option>
-                                    <option value="Calinan">Calinan</option>
-                                    <option value="Marilog">Marilog</option>
-                                    <option value="Toril">Toril</option>
-                                    <option value="Tugbok">Tugbok</option>
-                                </select>
+                                <div class="input-group">
+                                    <select class="form-select" id="district" name="district" onchange="updateBarangays(); updateLocation()" required readonly>
+                                        <option value="">Select District</option>
+                                        <option value="Poblacion">Poblacion</option>
+                                        <option value="Talomo">Talomo</option>
+                                        <option value="Agdao">Agdao</option>
+                                        <option value="Buhangin">Buhangin</option>
+                                        <option value="Bunawan">Bunawan</option>
+                                        <option value="Paquibato">Paquibato</option>
+                                        <option value="Baguio">Baguio</option>
+                                        <option value="Calinan">Calinan</option>
+                                        <option value="Marilog">Marilog</option>
+                                        <option value="Toril">Toril</option>
+                                        <option value="Tugbok">Tugbok</option>
+                                    </select>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="toggleEdit('district')">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="barangay" class="form-label">Barangay</label>
-                                <select class="form-select" id="barangay" name="barangay" required onchange="updateLocation()">
-                                    <option value="">Select Barangay</option>
-                                </select>
+                                <div class="input-group">
+                                    <select class="form-select" id="barangay" name="barangay" required readonly>
+                                        <option value="">Select Barangay</option>
+                                    </select>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="toggleEdit('barangay')">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -1040,14 +1059,31 @@ window.showBookingForm = function(date, time) {
     document.getElementById('appointment_date').value = date;
     document.getElementById('appointment_time').value = time;
 
-    // Reset form fields
-    document.getElementById('full_name').value = '<?= $user_full_name ?>'; // Set user's full name
-    document.getElementById('phone').value = ''; // Clear phone number
-    document.getElementById('location').value = '';
-    document.getElementById('house_number').value = '';
-    document.getElementById('street').value = '';
-    document.getElementById('district').value = '';
-    document.getElementById('barangay').value = '';
+    // Set user's information
+    document.getElementById('full_name').value = '<?= htmlspecialchars($user_full_name) ?>';
+    
+    // Set contact number (remove +639 prefix if present)
+    let contact = '<?= htmlspecialchars($user_contact) ?>';
+    contact = contact.replace(/^\+639/, '');
+    document.getElementById('phone').value = contact;
+    
+    // Set district and trigger barangay update
+    const districtSelect = document.getElementById('district');
+    const userDistrict = '<?= htmlspecialchars($user_district) ?>';
+    if (userDistrict) {
+        districtSelect.value = userDistrict;
+        updateBarangays();
+        
+        // Set barangay after barangays are loaded
+        setTimeout(() => {
+            const barangaySelect = document.getElementById('barangay');
+            const userBarangay = '<?= htmlspecialchars($user_barangay) ?>';
+            if (userBarangay) {
+                barangaySelect.value = userBarangay;
+            }
+            updateLocation();
+        }, 100);
+    }
 
     // Hide time slots and show booking form
     timeSlotsList.style.display = 'none';
@@ -1056,6 +1092,35 @@ window.showBookingForm = function(date, time) {
     // Initialize form
     if (typeof updatePrice === 'function') {
         updatePrice();
+    }
+}
+
+// Function to toggle edit mode for a field
+window.toggleEdit = function(fieldId) {
+    const field = document.getElementById(fieldId);
+    const button = field.nextElementSibling;
+
+    if (field.hasAttribute('readonly')) {
+        // Enable editing
+        field.removeAttribute('readonly');
+        button.innerHTML = '<i class="fas fa-check"></i>';
+        button.classList.remove('btn-outline-secondary');
+        button.classList.add('btn-primary');
+        field.focus();
+    } else {
+        // Disable editing
+        field.setAttribute('readonly', '');
+        button.innerHTML = '<i class="fas fa-pencil-alt"></i>';
+        button.classList.remove('btn-primary');
+        button.classList.add('btn-outline-secondary');
+        
+        // If this is the district field, update barangays
+        if (fieldId === 'district') {
+            updateBarangays();
+        }
+        
+        // Update location after any field is edited
+        updateLocation();
     }
 }
 </script>
@@ -1159,6 +1224,60 @@ window.showBookingForm = function(date, time) {
 
 #successModal .fas.fa-calendar-check {
     color: #28a745;
+}
+
+/* Edit Button Styles */
+.input-group .btn-outline-secondary {
+    border-color: #ced4da;
+    color: #6c757d;
+    padding: 0.375rem 0.75rem;
+}
+
+.input-group .btn-outline-secondary:hover {
+    background-color: #f8f9fa;
+    color: var(--primary-color);
+}
+
+.input-group .btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.input-group .btn-primary:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+/* Readonly Field Styles */
+.form-control[readonly],
+.form-select[readonly] {
+    background-color: #f8f9fa;
+    opacity: 0.8;
+    cursor: not-allowed;
+}
+
+.form-control[readonly]:focus,
+.form-select[readonly]:focus {
+    background-color: #fff;
+    opacity: 1;
+    cursor: text;
+}
+
+/* Input Group Styles */
+.input-group {
+    position: relative;
+}
+
+.input-group .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    padding: 0;
+}
+
+.input-group .btn i {
+    font-size: 0.875rem;
 }
 </style>
 </body>
