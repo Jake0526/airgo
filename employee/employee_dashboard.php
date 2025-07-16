@@ -58,7 +58,7 @@ $stmt->close();
 // Get assigned bookings with pagination
 $stmt = $conn->prepare("
     SELECT b.id, b.user_id, u.username AS customer_name, b.service, b.created_at, b.location,
-           b.phone, b.appointment_date, b.appointment_time, b.status, b.price, b.note
+           b.phone, b.appointment_date, b.appointment_time, b.status, b.price, b.note, b.payment_proof
     FROM bookings b
     LEFT JOIN user u ON b.user_id = u.id
     WHERE b.employee_id = ? AND b.status != 'done'
@@ -373,6 +373,178 @@ $result = $stmt->get_result();
             font-size: 0.8rem;
         }
 
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .button {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: none;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px var(--card-shadow);
+            color: var(--primary-color);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 600px;
+            margin: 20px auto;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            transform: translateY(-20px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .modal-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: var(--secondary-color);
+            transform: scale(1.1);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        /* File Upload Styles */
+        .upload-container {
+            position: relative;
+            margin-top: 0.5rem;
+            border: 2px dashed var(--primary-color);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: rgba(7, 53, 63, 0.02);
+        }
+
+        .upload-container:hover {
+            border-color: var(--secondary-color);
+            background: rgba(60, 213, 237, 0.05);
+        }
+
+        .file-input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .upload-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin: 0 auto;
+            max-width: 200px;
+        }
+
+        .upload-button i {
+            font-size: 1.2rem;
+        }
+
+        .file-input:hover + .upload-button {
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .file-name {
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-color);
+            word-break: break-all;
+        }
+
+        .image-preview {
+            margin-top: 1rem;
+            max-width: 300px;
+            display: none;
+            margin: 1rem auto 0;
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
         @media (max-width: 991px) {
             body {
                 background: #f5f9fc;
@@ -480,20 +652,27 @@ $result = $stmt->get_result();
             }
         }
 
-        @media (max-width: 576px) {
-            .nav-links {
-                grid-template-columns: repeat(2, 1fr);
+        @media (max-width: 768px) {
+            .upload-container {
+                padding: 0.75rem;
             }
 
-            .pagination-container {
+            .upload-button {
+                padding: 0.6rem 1rem;
+                font-size: 0.85rem;
+            }
+
+            .image-preview {
+                max-width: 100%;
+            }
+
+            .action-buttons {
                 flex-direction: column;
-                gap: 1rem;
-                text-align: center;
             }
 
-            .pagination {
+            .button {
+                width: 100%;
                 justify-content: center;
-                flex-wrap: wrap;
             }
         }
     </style>
@@ -558,13 +737,19 @@ $result = $stmt->get_result();
                                     </span>
                                 </td>
                                 <td data-label="Price">₱<?= number_format($row['price'], 2) ?></td>
-                                <td data-label="Actions">
+                                <td data-label="Actions" class="action-buttons">
                                     <?php if (strtolower($row['status']) === 'approved'): ?>
                                         <a href="?done_id=<?= $row['id'] ?>" class="button" onclick="return confirm('Mark this booking as done?');">
                                             <i class="fas fa-check"></i> Done
                                         </a>
-                                    <?php else: ?>
-                                        <span style="color: #999;">No action needed</span>
+                                    <?php endif; ?>
+                                    <button class="button" onclick="openUploadModal(<?= htmlspecialchars(json_encode($row)) ?>)">
+                                        <i class="fas fa-upload"></i> Upload
+                                    </button>
+                                    <?php if ($row['payment_proof']): ?>
+                                        <button class="button" onclick="openViewImageModal('<?= htmlspecialchars($row['payment_proof']) ?>')">
+                                            <i class="fas fa-image"></i> View
+                                        </button>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -620,6 +805,159 @@ $result = $stmt->get_result();
             </div>
         <?php endif; ?>
     </div>
+
+    <!-- Upload Modal -->
+    <div class="modal" id="uploadModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-upload"></i> Upload Payment Proof</h2>
+                <button class="close-btn" onclick="closeUploadModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="uploadForm" onsubmit="uploadPaymentProof(event)">
+                    <input type="hidden" id="booking_id" name="booking_id">
+                    <div class="form-group">
+                        <label for="payment_proof">Upload Image</label>
+                        <div class="upload-container">
+                            <input type="file" id="payment_proof" name="payment_proof" accept="image/*" class="file-input">
+                            <div class="upload-button">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Upload Image</span>
+                            </div>
+                            <div class="file-name">No file chosen</div>
+                        </div>
+                        <div id="image-preview" class="image-preview"></div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="button">
+                            <i class="fas fa-save"></i> Save
+                        </button>
+                        <button type="button" class="button" onclick="closeUploadModal()">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Image Modal -->
+    <div class="modal" id="viewImageModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-image"></i> Payment Proof</h2>
+                <button class="close-btn" onclick="closeViewImageModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="image-display" class="image-preview" style="display: block;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openUploadModal(booking) {
+            document.getElementById('booking_id').value = booking.id;
+            const modal = document.getElementById('uploadModal');
+            modal.style.display = 'block';
+            setTimeout(() => modal.classList.add('active'), 10);
+
+            // Show existing payment proof if available
+            const imagePreview = document.getElementById('image-preview');
+            if (booking.payment_proof) {
+                const imagePath = '../' + booking.payment_proof;
+                imagePreview.innerHTML = `<img src="${imagePath}" alt="Payment Proof">`;
+                imagePreview.style.display = 'block';
+            } else {
+                imagePreview.style.display = 'none';
+                imagePreview.innerHTML = '';
+            }
+        }
+
+        function closeUploadModal() {
+            const modal = document.getElementById('uploadModal');
+            modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+
+        function openViewImageModal(imagePath) {
+            const modal = document.getElementById('viewImageModal');
+            const imageDisplay = document.getElementById('image-display');
+            imageDisplay.innerHTML = `<img src="../${imagePath}" alt="Payment Proof">`;
+            modal.style.display = 'block';
+            setTimeout(() => modal.classList.add('active'), 10);
+        }
+
+        function closeViewImageModal() {
+            const modal = document.getElementById('viewImageModal');
+            modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+
+        // Handle file input change
+        document.getElementById('payment_proof').addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name;
+            const fileNameDisplay = e.target.parentElement.querySelector('.file-name');
+            const imagePreview = document.getElementById('image-preview');
+            
+            if (fileName) {
+                fileNameDisplay.textContent = fileName;
+                
+                // Show image preview
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    imagePreview.innerHTML = `<img src="${event.target.result}" alt="Payment Proof Preview">`;
+                    imagePreview.style.display = 'block';
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            } else {
+                fileNameDisplay.textContent = 'No file chosen';
+                imagePreview.style.display = 'none';
+                imagePreview.innerHTML = '';
+            }
+        });
+
+        async function uploadPaymentProof(event) {
+            event.preventDefault();
+            
+            const form = event.target;
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch('upload_payment_proof.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('Payment proof uploaded successfully!');
+                    closeUploadModal();
+                    window.location.reload();
+                } else {
+                    alert(result.message || 'Error uploading payment proof');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while uploading the payment proof');
+            }
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const uploadModal = document.getElementById('uploadModal');
+            const viewImageModal = document.getElementById('viewImageModal');
+            if (event.target === uploadModal) {
+                closeUploadModal();
+            }
+            if (event.target === viewImageModal) {
+                closeViewImageModal();
+            }
+        }
+    </script>
 </body>
 </html>
 <?php $conn->close(); ?>

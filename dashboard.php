@@ -1,9 +1,9 @@
 <?php
 session_start();
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
+require_once 'includes/verify_check.php';
+
+// Set timezone
+date_default_timezone_set('Asia/Manila');
 
 // Get current page for active sidebar highlighting
 $current_page = basename($_SERVER['PHP_SELF']);
@@ -576,6 +576,32 @@ $conn->close();
     </div>
 </div>
 
+<!-- Notification Modal -->
+<div class="modal fade" id="notificationModal" tabindex="-1" aria-labelledby="notificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notificationModalLabel">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <span id="notificationTitle">Notification</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="mb-4">
+                    <i id="notificationIcon" class="fas fa-calendar-times text-warning" style="font-size: 4rem;"></i>
+                </div>
+                <p id="notificationMessage" class="mb-0" style="font-size: 1.1rem;"></p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-primary px-4" data-bs-dismiss="modal">
+                    <i class="fas fa-check me-2"></i>Okay
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // Define global functions first
@@ -686,6 +712,46 @@ function showConfirmation(message, details, callback) {
         
         callback(calendar);  // Pass calendar instance to callback
     });
+    
+    modal.show();
+}
+
+// Function to show notification modal
+function showNotification(title, message, icon = 'calendar-times', type = 'warning') {
+    const modalElement = document.getElementById('notificationModal');
+    if (!modalElement) return;
+
+    const modal = new bootstrap.Modal(modalElement);
+    
+    // Update title if element exists
+    const titleElement = document.getElementById('notificationTitle');
+    if (titleElement) {
+        titleElement.textContent = title;
+    }
+    
+    // Update message if element exists
+    const messageElement = document.getElementById('notificationMessage');
+    if (messageElement) {
+        messageElement.textContent = message;
+    }
+    
+    // Update icon if element exists
+    const iconElement = document.getElementById('notificationIcon');
+    if (iconElement) {
+        iconElement.className = `fas fa-${icon} text-${type}`;
+    }
+    
+    // Update header if element exists
+    const headerElement = modalElement.querySelector('.modal-header');
+    if (headerElement) {
+        headerElement.className = `modal-header bg-${type} text-white`;
+    }
+    
+    // Update button if element exists
+    const buttonElement = modalElement.querySelector('.modal-footer .btn');
+    if (buttonElement) {
+        buttonElement.className = `btn btn-${type} px-4`;
+    }
     
     modal.show();
 }
@@ -918,9 +984,30 @@ document.addEventListener('DOMContentLoaded', function () {
         events: <?= json_encode($calendar_events) ?>,
         dateClick: function (info) {
             selectedDate = info.dateStr;
-            const today = new Date().toISOString().split('T')[0];
+            // Get today's date in Asia/Manila timezone
+            const now = new Date();
+            const today = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' })).toISOString().split('T')[0];
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
             if (selectedDate < today) {
-                alert("You cannot select a past date.");
+                showNotification(
+                    'Invalid Date',
+                    'You cannot select a past date.',
+                    'calendar-times',
+                    'danger'
+                );
+                return;
+            }
+
+            if (selectedDate === today) {
+                showNotification(
+                    'Same Day Booking',
+                    'Same day booking is not allowed. Please select a future date.',
+                    'clock',
+                    'warning'
+                );
                 return;
             }
 
@@ -1278,6 +1365,86 @@ window.toggleEdit = function(fieldId) {
 
 .input-group .btn i {
     font-size: 0.875rem;
+}
+
+/* Notification Modal Styles */
+#notificationModal .modal-content {
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+#notificationModal .modal-header {
+    border-radius: 20px 20px 0 0;
+    border-bottom: none;
+    padding: 1.5rem;
+}
+
+#notificationModal .modal-body {
+    padding: 2.5rem;
+}
+
+#notificationModal .modal-footer {
+    border-top: none;
+    padding: 1.5rem;
+}
+
+#notificationModal .btn {
+    border-radius: 50px;
+    padding: 0.8rem 2rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+#notificationModal .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+#notificationModal .text-warning {
+    color: #ffc107 !important;
+}
+
+#notificationModal .text-danger {
+    color: #dc3545 !important;
+}
+
+#notificationModal .bg-warning {
+    background-color: #ffc107 !important;
+}
+
+#notificationModal .bg-danger {
+    background-color: #dc3545 !important;
+}
+
+#notificationModal .btn-warning {
+    background-color: #ffc107;
+    border: none;
+    color: #000;
+}
+
+#notificationModal .btn-danger {
+    background-color: #dc3545;
+    border: none;
+    color: #fff;
+}
+
+#notificationModal .btn-warning:hover {
+    background-color: #e0a800;
+}
+
+#notificationModal .btn-danger:hover {
+    background-color: #c82333;
+}
+
+#notificationModal .modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+#notificationModal #notificationMessage {
+    color: #495057;
+    line-height: 1.6;
 }
 </style>
 </body>

@@ -3,7 +3,7 @@
 session_start();
 
 // Include the database connection
-require_once 'db_connection.php';
+require_once 'config/database.php';
 
 // Check if the form is submitted
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -34,18 +34,63 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             // Verify the password
             if (password_verify($password, $user['password'])) {
-                // Password is correct, start the session and redirect
-                $_SESSION['user_id'] = $user['id']; // Store user ID in session
-                $_SESSION['email'] = $email; // Store username in session
-                header("Location: dashboard.php"); // Redirect to dashboard.php
+                // Check if the account is verified
+                if ($user['is_verified'] == 0) {
+                    // Generate new OTP
+                    $otp = sprintf("%06d", mt_rand(0, 999999));
+                    
+                    // Update OTP in database
+                    $update_stmt = $conn->prepare("UPDATE user SET otp_code = ? WHERE id = ?");
+                    $update_stmt->bind_param("si", $otp, $user['id']);
+                    
+                    if ($update_stmt->execute()) {
+                        // Send verification email
+                        require_once 'config/mailer.php';
+                        try {
+                            $mailer = Mailer::getInstance();
+                            $name = $user['fname'] . ' ' . $user['lname'];
+                            
+                            if ($mailer->sendVerificationEmail($email, $name, $otp)) {
+                                // Set only necessary session data for verification
+                                $_SESSION['user_id'] = $user['id'];
+                                $_SESSION['email'] = $email;
+                                $_SESSION['needs_verification'] = true;
+                                
+                                // Redirect to verification page
+                                header("Location: verify.php");
+                                exit();
+                            } else {
+                                $_SESSION['error_message'] = "Failed to send verification email. Please try again.";
+                                header("Location: login.php");
+                                exit();
+                            }
+                        } catch (Exception $e) {
+                            $_SESSION['error_message'] = "Error sending verification email. Please try again later.";
+                            header("Location: login.php");
+                            exit();
+                        }
+                    } else {
+                        $_SESSION['error_message'] = "Error updating verification code. Please try again.";
+                        header("Location: login.php");
+                        exit();
+                    }
+                }
+
+                // Account is verified, set full session data
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['email'] = $email;
+                $_SESSION['username'] = $user['username'];
+                $_SESSION['fname'] = $user['fname'];
+                $_SESSION['lname'] = $user['lname'];
+                header("Location: dashboard.php");
                 exit();
             } else {
                 // Password is incorrect
                 $error = "Invalid password.";
             }
         } else {
-            // Username not found
-            $error = "Invalid username.";
+            // Email not found
+            $error = "Invalid email.";
         }
 
         // Close the statement

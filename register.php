@@ -5,6 +5,40 @@ require_once 'config/database.php';
 // Start the session at the beginning of the file
 session_start();
 
+// Enable error reporting and output buffering like in test_email.php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ob_start();
+
+// Function to output debug messages (same as test_email.php)
+function debug_log($message, $type = 'info') {
+    $color = 'black';
+    switch($type) {
+        case 'error':
+            $color = '#dc3545';
+            break;
+        case 'success':
+            $color = '#28a745';
+            break;
+        case 'info':
+            $color = '#17a2b8';
+            break;
+        case 'warning':
+            $color = '#ffc107';
+            break;
+    }
+    echo "<div style='font-family: monospace; margin: 5px 0; padding: 10px; background: #f8f9fa; border-left: 4px solid {$color};'>";
+    echo "[" . date('Y-m-d H:i:s') . "] ";
+    echo htmlspecialchars($message);
+    echo "</div>";
+    
+    // Only flush if buffer exists
+    if (ob_get_level() > 0) {
+        ob_flush();
+        flush();
+    }
+}
+
 // Check for messages in session
 $error_message = "";
 if (isset($_SESSION['error_message'])) {
@@ -131,31 +165,75 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     header("Location: register.php");
                     exit();
                 } else {
+                    // Generate OTP
+                    $otp = sprintf("%06d", mt_rand(0, 999999));
+                    
                     // Hash the password
                     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-                    // Insert into user table
-                    $sql = "INSERT INTO user (fname, lname, username, password, email, contact, city, district, barangay, zipcode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    // Insert into user table with OTP and is_verified = 0
+                    $sql = "INSERT INTO user (fname, lname, username, password, email, contact, city, district, barangay, zipcode, otp_code, is_verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)";
                     if ($insert_stmt = $conn->prepare($sql)) {
-                        $insert_stmt->bind_param("ssssssssss", $fname, $lname, $username, $hashed_password, $email, $contact, $city, $district, $barangay, $zipcode);
+                        $insert_stmt->bind_param("ssssssssssss", $fname, $lname, $username, $hashed_password, $email, $contact, $city, $district, $barangay, $zipcode, $otp);
 
                         if ($insert_stmt->execute()) {
                             // Get the newly inserted user's ID
                             $user_id = $conn->insert_id;
                             
-                            // Set session variables for automatic login
-                            $_SESSION['user_id'] = $user_id;
-                            $_SESSION['username'] = $username;
-                            $_SESSION['fname'] = $fname;
-                            $_SESSION['lname'] = $lname;
-                            $_SESSION['email'] = $email;
-                            
-                            // Store success message in session
-                            $_SESSION['success_message'] = "Registration successful! Redirecting to dashboard...";
-                            
-                            // Redirect to dashboard
-                            header("Location: dashboard.php");
-                            exit();
+                            // Send verification email
+                            require_once 'config/mailer.php';
+                            try {
+                                debug_log("Starting email verification process...");
+                                debug_log("Initializing mailer...");
+                                
+                                $mailer = Mailer::getInstance();
+                                $name = $fname . ' ' . $lname;
+                                
+                                debug_log("Attempting to send verification email to: " . $email);
+                                debug_log("User details - Name: " . $name . ", Email: " . $email);
+                                
+                                if ($mailer->sendVerificationEmail($email, $name, $otp)) {
+                                    debug_log("Verification email sent successfully!", 'success');
+                                    // Set session variables
+                                    $_SESSION['user_id'] = $user_id;
+                                    $_SESSION['username'] = $username;
+                                    $_SESSION['fname'] = $fname;
+                                    $_SESSION['lname'] = $lname;
+                                    $_SESSION['email'] = $email;
+                                    $_SESSION['needs_verification'] = true;
+                                    
+                                    // Add debug information to session
+                                    $_SESSION['debug_info'] = ob_get_clean();
+                                    
+                                    // Redirect to verification page
+                                    header("Location: verify.php");
+                                    exit();
+                                } else {
+                                    debug_log("Failed to send verification email", 'error');
+                                    // Delete the user if email sending fails
+                                    $delete_stmt = $conn->prepare("DELETE FROM user WHERE id = ?");
+                                    $delete_stmt->bind_param("i", $user_id);
+                                    $delete_stmt->execute();
+                                    
+                                    $_SESSION['error_message'] = "Registration failed: Unable to send verification email. Please check if your email address is correct and try again.";
+                                    $_SESSION['debug_info'] = ob_get_clean();
+                                    header("Location: register.php");
+                                    exit();
+                                }
+                            } catch (Exception $e) {
+                                debug_log("Exception while sending verification email: " . $e->getMessage(), 'error');
+                                debug_log("Stack trace: " . $e->getTraceAsString(), 'error');
+                                
+                                // Delete the user if there's an exception
+                                $delete_stmt = $conn->prepare("DELETE FROM user WHERE id = ?");
+                                $delete_stmt->bind_param("i", $user_id);
+                                $delete_stmt->execute();
+                                
+                                $_SESSION['error_message'] = "Registration failed: " . $e->getMessage();
+                                $_SESSION['debug_info'] = ob_get_clean();
+                                header("Location: register.php");
+                                exit();
+                            }
                         } else {
                             $_SESSION['error_message'] = "Error: " . $insert_stmt->error;
                             header("Location: register.php");
