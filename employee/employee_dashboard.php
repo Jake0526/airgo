@@ -37,37 +37,6 @@ if (isset($_GET['done_id'])) {
     exit();
 }
 
-// Handle form submissions
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Add note
-    if (isset($_POST['add_note'])) {
-        $booking_id = intval($_POST['note_booking_id']);
-        $note_text = trim($_POST['note_text']);
-        if (!empty($note_text)) {
-            $stmt = $conn->prepare("INSERT INTO booking_notes (booking_id, employee_id, note) VALUES (?, ?, ?)");
-            $stmt->bind_param("iis", $booking_id, $employee_id, $note_text);
-            $stmt->execute();
-            $stmt->close();
-        }
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit();
-    }
-
-    // Edit note
-    if (isset($_POST['edit_note'])) {
-        $note_id = intval($_POST['edit_note_id']);
-        $edit_text = trim($_POST['edit_note_text']);
-        if (!empty($edit_text)) {
-            $stmt = $conn->prepare("UPDATE booking_notes SET note = ? WHERE id = ? AND employee_id = ?");
-            $stmt->bind_param("sii", $edit_text, $note_id, $employee_id);
-            $stmt->execute();
-            $stmt->close();
-        }
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit();
-    }
-}
-
 // Pagination setup
 $records_per_page = 10;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
@@ -88,7 +57,7 @@ $stmt->close();
 
 // Get assigned bookings with pagination
 $stmt = $conn->prepare("
-    SELECT b.id, u.username AS customer_name, b.service, b.created_at, b.location,
+    SELECT b.id, b.user_id, u.username AS customer_name, b.service, b.created_at, b.location,
            b.phone, b.appointment_date, b.appointment_time, b.status, b.price, b.note
     FROM bookings b
     LEFT JOIN user u ON b.user_id = u.id
@@ -353,41 +322,6 @@ $result = $stmt->get_result();
             color: white;
         }
 
-        .note-form {
-            background: var(--card-bg);
-            padding: 1rem;
-            border-radius: 12px;
-            margin-top: 1rem;
-            box-shadow: 0 4px 12px var(--card-shadow);
-        }
-
-        .note-form textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            font-family: 'Poppins', sans-serif;
-            resize: vertical;
-        }
-
-        .note-list {
-            background: rgba(60, 213, 237, 0.1);
-            padding: 1rem;
-            border-radius: 8px;
-            margin-top: 1rem;
-        }
-
-        .note-list strong {
-            color: var(--primary-color);
-        }
-
-        .edit-icon {
-            color: var(--primary-color);
-            cursor: pointer;
-            margin-left: 0.5rem;
-        }
-
         /* Pagination Styles */
         .pagination-container {
             display: flex;
@@ -594,6 +528,7 @@ $result = $stmt->get_result();
                 <thead>
                     <tr>
                         <th>Customer</th>
+                        <th>User ID</th>
                         <th>Service</th>
                         <th>Location</th>
                         <th>Contact</th>
@@ -610,6 +545,7 @@ $result = $stmt->get_result();
                         <?php while ($row = $result->fetch_assoc()): ?>
                             <tr>
                                 <td data-label="Customer"><?= htmlspecialchars($row['customer_name']) ?></td>
+                                <td data-label="User ID"><?= htmlspecialchars($row['user_id']) ?></td>
                                 <td data-label="Service"><?= htmlspecialchars($row['service']) ?></td>
                                 <td data-label="Location"><?= htmlspecialchars($row['location']) ?></td>
                                 <td data-label="Contact"><?= htmlspecialchars($row['phone']) ?></td>
@@ -627,61 +563,15 @@ $result = $stmt->get_result();
                                         <a href="?done_id=<?= $row['id'] ?>" class="button" onclick="return confirm('Mark this booking as done?');">
                                             <i class="fas fa-check"></i> Done
                                         </a>
-                                        <button class="button secondary" onclick="document.getElementById('note-form-<?= $row['id'] ?>').style.display='block';">
-                                            <i class="fas fa-note-sticky"></i> Add Note
-                                        </button>
                                     <?php else: ?>
                                         <span style="color: #999;">No action needed</span>
                                     <?php endif; ?>
                                 </td>
                             </tr>
-                            <tr>
-                                <td colspan="10">
-                                    <div id="note-form-<?= $row['id'] ?>" class="note-form" style="display:none;">
-                                        <form method="post">
-                                            <input type="hidden" name="note_booking_id" value="<?= $row['id'] ?>">
-                                            <textarea name="note_text" placeholder="Enter additional services or notes..." rows="3"></textarea>
-                                            <button type="submit" name="add_note" class="button secondary">
-                                                <i class="fas fa-save"></i> Save Note
-                                            </button>
-                                        </form>
-                                    </div>
-
-                                    <?php
-                                    $stmt_notes = $conn->prepare("SELECT id, note, created_at FROM booking_notes WHERE booking_id = ? ORDER BY created_at DESC");
-                                    $stmt_notes->bind_param("i", $row['id']);
-                                    $stmt_notes->execute();
-                                    $notes_result = $stmt_notes->get_result();
-                                    if ($notes_result->num_rows > 0):
-                                    ?>
-                                    <div class="note-list">
-                                        <strong><i class="fas fa-notes-medical"></i> Notes:</strong><br>
-                                        <?php while ($note = $notes_result->fetch_assoc()): ?>
-                                            <div>
-                                                • <?= htmlspecialchars($note['note']) ?>
-                                                <em>(<?= date("F j, Y g:i A", strtotime($note['created_at'])) ?>)</em>
-                                                <span class="edit-icon" onclick="document.getElementById('edit-form-<?= $note['id'] ?>').style.display='block';">
-                                                    <i class="fas fa-edit"></i>
-                                                </span>
-                                                <div id="edit-form-<?= $note['id'] ?>" class="note-form" style="display:none;">
-                                                    <form method="post">
-                                                        <input type="hidden" name="edit_note_id" value="<?= $note['id'] ?>">
-                                                        <textarea name="edit_note_text" rows="3"><?= htmlspecialchars($note['note']) ?></textarea>
-                                                        <button type="submit" name="edit_note" class="button secondary">
-                                                            <i class="fas fa-save"></i> Update Note
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        <?php endwhile; ?>
-                                    </div>
-                                    <?php endif; $stmt_notes->close(); ?>
-                                </td>
-                            </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="10" style="text-align: center; padding: 2rem;">
+                            <td colspan="11" style="text-align: center; padding: 2rem;">
                                 <i class="fas fa-inbox" style="font-size: 2rem; color: #999; margin-bottom: 1rem; display: block;"></i>
                                 No assigned bookings at the moment.
                             </td>

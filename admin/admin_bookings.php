@@ -64,6 +64,15 @@ if (!empty($filter_location)) {
     $where .= " b.location LIKE '%$filter_location%'";
 }
 
+// Add date range filter
+$start_date = isset($_GET['start_date']) ? mysqli_real_escape_string($conn, $_GET['start_date']) : '';
+$end_date = isset($_GET['end_date']) ? mysqli_real_escape_string($conn, $_GET['end_date']) : '';
+
+if (!empty($start_date) && !empty($end_date)) {
+    $where .= $where ? " AND" : "WHERE";
+    $where .= " b.appointment_date BETWEEN '$start_date' AND '$end_date'";
+}
+
 // Get total count for pagination
 $count_sql = "SELECT COUNT(*) as total FROM bookings b
               LEFT JOIN user u ON b.user_id = u.id
@@ -283,6 +292,7 @@ if (!$result) {
         .export-container {
             display: flex;
             justify-content: flex-end;
+            gap: 2rem;  /* Increased from 1rem to 2rem */
             margin: 1rem 0;
             padding: 0 1rem;
         }
@@ -312,14 +322,24 @@ if (!$result) {
             font-size: 1.1rem;
         }
 
+        .sales-report-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .sales-report-btn:hover {
+            background-color: #0a4956;
+        }
+
         @media (max-width: 768px) {
             .export-container {
+                flex-direction: column;
                 padding: 0 0.75rem;
             }
 
             .export-btn {
-                width: auto;
-                padding: 0.6rem 1.2rem;
+                width: 100%;
+                justify-content: center;
             }
         }
 
@@ -1024,6 +1044,16 @@ if (!$result) {
                         <input type="text" id="filter_location" name="filter_location" value="<?= htmlspecialchars($_GET['filter_location'] ?? '') ?>" placeholder="Search by location..."/>
                     </div>
                 </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="start_date">Start Date</label>
+                        <input type="date" id="start_date" name="start_date" value="<?= htmlspecialchars($_GET['start_date'] ?? '') ?>"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="end_date">End Date</label>
+                        <input type="date" id="end_date" name="end_date" value="<?= htmlspecialchars($_GET['end_date'] ?? '') ?>"/>
+                    </div>
+                </div>
                 <div class="form-actions">
                     <button type="submit" class="filter-btn">
                         <i class="fas fa-filter"></i> Apply Filters
@@ -1040,6 +1070,10 @@ if (!$result) {
                 <a href="export_completed.php" class="export-btn">
                     <i class="fas fa-file-excel"></i>
                     Export to Excel
+                </a>
+                <a href="#" onclick="exportSalesReport(event)" class="export-btn sales-report-btn">
+                    <i class="fas fa-chart-line"></i>
+                    Export Sales Report
                 </a>
             </div>
         <?php endif; ?>
@@ -1088,6 +1122,7 @@ if (!$result) {
         .export-container {
             display: flex;
             justify-content: flex-end;
+            gap: 2rem;  /* Increased from 1rem to 2rem */
             margin: 1rem 0;
             padding: 0 1rem;
         }
@@ -1115,6 +1150,15 @@ if (!$result) {
             font-size: 1rem;
         }
 
+        .sales-report-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .sales-report-btn:hover {
+            background-color: #0a4956;
+        }
+
         @media (max-width: 768px) {
             .form-actions {
                 flex-direction: column;
@@ -1126,11 +1170,13 @@ if (!$result) {
             }
 
             .export-container {
+                flex-direction: column;
                 padding: 0 0.75rem;
             }
 
             .export-btn {
-                width: auto;
+                width: 100%;
+                justify-content: center;
             }
         }
         </style>
@@ -1859,6 +1905,31 @@ if (!$result) {
                 imagePreview.innerHTML = '';
             }
         });
+
+        function exportSalesReport(event) {
+            event.preventDefault();
+            
+            // Get date range values
+            const startDate = document.getElementById('start_date').value;
+            const endDate = document.getElementById('end_date').value;
+            
+            // Validate date range
+            if (!startDate || !endDate) {
+                alert('Please select both start and end dates for the sales report.');
+                return;
+            }
+            
+            if (startDate > endDate) {
+                alert('Start date cannot be later than end date.');
+                return;
+            }
+            
+            // Generate the URL with date parameters
+            const url = `../generate_sales_report.php?start_date=${startDate}&end_date=${endDate}`;
+            
+            // Redirect to the report generation script
+            window.location.href = url;
+        }
 
         // Close modals when clicking outside
         window.onclick = function(event) {
