@@ -174,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     // Insert into user table with OTP and is_verified = 0
                     $sql = "INSERT INTO user (fname, lname, username, password, email, contact, city, district, barangay, zipcode, otp_code, is_verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)";
                     if ($insert_stmt = $conn->prepare($sql)) {
-                        $insert_stmt->bind_param("ssssssssssss", $fname, $lname, $username, $hashed_password, $email, $contact, $city, $district, $barangay, $zipcode, $otp);
+                        $insert_stmt->bind_param("sssssssssss", $fname, $lname, $username, $hashed_password, $email, $contact, $city, $district, $barangay, $zipcode, $otp);
 
                         if ($insert_stmt->execute()) {
                             // Get the newly inserted user's ID
@@ -183,17 +183,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             // Send verification email
                             require_once 'config/mailer.php';
                             try {
-                                debug_log("Starting email verification process...");
-                                debug_log("Initializing mailer...");
-                                
                                 $mailer = Mailer::getInstance();
                                 $name = $fname . ' ' . $lname;
                                 
-                                debug_log("Attempting to send verification email to: " . $email);
-                                debug_log("User details - Name: " . $name . ", Email: " . $email);
-                                
                                 if ($mailer->sendVerificationEmail($email, $name, $otp)) {
-                                    debug_log("Verification email sent successfully!", 'success');
                                     // Set session variables
                                     $_SESSION['user_id'] = $user_id;
                                     $_SESSION['username'] = $username;
@@ -202,35 +195,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     $_SESSION['email'] = $email;
                                     $_SESSION['needs_verification'] = true;
                                     
-                                    // Add debug information to session
-                                    $_SESSION['debug_info'] = ob_get_clean();
-                                    
                                     // Redirect to verification page
                                     header("Location: verify.php");
                                     exit();
                                 } else {
-                                    debug_log("Failed to send verification email", 'error');
                                     // Delete the user if email sending fails
                                     $delete_stmt = $conn->prepare("DELETE FROM user WHERE id = ?");
                                     $delete_stmt->bind_param("i", $user_id);
                                     $delete_stmt->execute();
                                     
                                     $_SESSION['error_message'] = "Registration failed: Unable to send verification email. Please check if your email address is correct and try again.";
-                                    $_SESSION['debug_info'] = ob_get_clean();
                                     header("Location: register.php");
                                     exit();
                                 }
                             } catch (Exception $e) {
-                                debug_log("Exception while sending verification email: " . $e->getMessage(), 'error');
-                                debug_log("Stack trace: " . $e->getTraceAsString(), 'error');
-                                
                                 // Delete the user if there's an exception
                                 $delete_stmt = $conn->prepare("DELETE FROM user WHERE id = ?");
                                 $delete_stmt->bind_param("i", $user_id);
                                 $delete_stmt->execute();
                                 
                                 $_SESSION['error_message'] = "Registration failed: " . $e->getMessage();
-                                $_SESSION['debug_info'] = ob_get_clean();
                                 header("Location: register.php");
                                 exit();
                             }

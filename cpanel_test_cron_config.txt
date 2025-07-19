@@ -1,0 +1,53 @@
+# cPanel Test Cron Job Configuration (Every 1 Minute)
+
+# Command to run every minute:
+* * * * * /usr/local/bin/php /home/username/public_html/test_cron_email.php
+
+# Steps to set up in cPanel:
+# 1. Login to cPanel
+# 2. Go to "Advanced" section
+# 3. Click "Cron Jobs"
+# 4. Under "Add New Cron Job":
+#    - Select "Once Per Minute" from Common Settings
+#    OR manually set:
+#    - Minute: *
+#    - Hour: *
+#    - Day: *
+#    - Month: *
+#    - Weekday: *
+#    - Command: Copy the command above (replace 'username' with your cPanel username)
+# 5. Click "Add New Cron Job"
+
+# Important Notes:
+# 1. Make sure test_cron_email.php has permissions 644:
+#    - In cPanel File Manager, right-click the file
+#    - Select "Change Permissions"
+#    - Set to 644
+#
+# 2. The PHP path might be different on your hosting.
+#    Common PHP paths in cPanel:
+#    - /usr/local/bin/php
+#    - /usr/bin/php
+#    - /opt/cpanel/ea-php74/root/usr/bin/php (for EA-PHP)
+#    Ask your hosting provider for the correct path if unsure
+#
+# 3. Check the cron_test_log file in the same directory as test_cron_email.php
+#    for any error messages or successful execution logs
+#
+# 4. This test script will:
+#    - Check for today's appointments (without time restriction)
+#    - Check for tomorrow's appointments
+#    - Send test emails to actual users with appointments
+#    - Add [TEST] prefix to all subjects and messages
+#    - Log all actions with [TEST] prefix
+#
+# 5. IMPORTANT: This is for testing only. 
+#    Remove this cron job after testing is complete to avoid:
+#    - Sending too many test emails
+#    - Unnecessary server load
+#    - Confusion for users
+#
+# 6. To remove the cron job after testing:
+#    - Go back to cPanel > Cron Jobs
+#    - Find this cron job
+#    - Click "Delete" or remove the line from the crontab 

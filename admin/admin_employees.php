@@ -390,29 +390,31 @@ while ($row = $result_employees->fetch_assoc()) {
         table {
             width: 100%;
             background: var(--card-bg);
-            border-radius: 20px;
-            box-shadow: 0 10px 20px var(--card-shadow);
-            border-collapse: separate;
-            border-spacing: 0;
+            border-radius: 8px;
+            border-collapse: collapse;
+            margin-top: 1rem;
             overflow: hidden;
-        }
-
-        th, td {
-            padding: 1.2rem 1.5rem;
-            text-align: left;
         }
 
         th {
             background: var(--primary-color);
-            color: var(--card-bg);
+            color: white;
             font-weight: 600;
-            font-size: 0.9rem;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            font-size: 0.9rem;
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 2px solid var(--secondary-color);
+        }
+
+        td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         tr:nth-child(even) {
-            background: var(--background-color);
+            background: rgba(208, 240, 255, 0.1);
         }
 
         tbody tr {
@@ -420,9 +422,54 @@ while ($row = $result_employees->fetch_assoc()) {
         }
 
         tbody tr:hover {
-            background: var(--secondary-color);
+            background: rgba(60, 213, 237, 0.1);
+        }
+
+        td[data-status="Active"] {
+            color: #198754;
+            font-weight: 500;
+        }
+
+        td[data-status="Inactive"] {
+            color: #dc3545;
+            font-weight: 500;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .action-button {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            color: white;
+        }
+
+        .view-btn {
+            background: var(--primary-color);
+        }
+
+        .edit-btn {
+            background: var(--primary-color);
+        }
+
+        .delete-btn {
+            background: #dc3545;
+        }
+
+        .action-button:hover {
             transform: translateY(-2px);
-            color: var(--primary-color);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
         .action-buttons {
@@ -750,15 +797,21 @@ while ($row = $result_employees->fetch_assoc()) {
             }
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 991px) {
             body {
+                background: #f5f9fc;
+                min-height: 100vh;
+                display: flex;
                 flex-direction: column;
             }
+
             .sidebar {
                 width: 100%;
                 height: auto;
                 position: relative;
                 padding: 1rem;
+                background: var(--primary-color);
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             }
 
             .sidebar h2 {
@@ -798,109 +851,81 @@ while ($row = $result_employees->fetch_assoc()) {
             }
 
             .main {
-                margin-left: 0;
+                margin: 0;
                 width: 100%;
-                padding: 1.5rem;
+                padding: 1rem;
+                background: #f5f9fc;
+                min-height: calc(100vh - 80px);
+                flex: 1;
             }
+
+            .main h1 {
+                font-size: 1.5rem;
+                margin-bottom: 1.25rem;
+                color: var(--primary-color);
+                font-weight: 600;
+                padding: 0;
+            }
+
             .form-row {
                 flex-direction: column;
             }
 
             /* Card style for table rows */
-            table, thead, tbody, th, td, tr {
-                display: block;
+            table {
+                background: transparent;
+                border-radius: 0;
             }
 
             thead {
                 display: none;
             }
 
-            tr {
-                margin-bottom: 1rem;
+            tbody tr {
+                display: block;
                 background: white;
-                border-radius: 12px;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-                overflow: hidden;
+                border-radius: 8px;
+                margin-bottom: 1rem;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
                 position: relative;
             }
 
-            /* Name header */
-            td:first-child {
-                background: var(--primary-color);
-                color: white;
-                font-size: 1rem;
-                font-weight: 500;
-                padding: 1rem;
-                margin: -1px;
-                border-radius: 12px 12px 0 0;
-                border-bottom: none;
+            td {
                 display: flex;
-                justify-content: space-between;
-                align-items: center;
-                position: relative;
-                width: calc(100% + 2px);
-            }
-
-            /* Left border accent */
-            tr::before {
-                content: '';
-                position: absolute;
-                left: 0;
-                top: 0;
-                bottom: 0;
-                width: 4px;
-                background: var(--secondary-color);
-                border-radius: 12px 0 0 12px;
-            }
-
-            /* Actions buttons */
-            td:last-child {
                 padding: 0.75rem 1rem;
-                display: flex;
-                gap: 0.5rem;
-                flex-wrap: wrap;
-                justify-content: flex-start;
-                background: #f8f9fa;
-                border-radius: 0 0 12px 12px;
-            }
-
-            td:last-child .action-button {
-                flex: 1;
-                min-width: 120px;
-                justify-content: center;
-                font-size: 0.85rem;
-            }
-
-            /* Content rows */
-            td:not(:first-child):not(:last-child) {
-                padding: 0.75rem 1rem;
-                font-size: 0.9rem;
-                display: flex;
                 align-items: center;
-                gap: 0.5rem;
                 border-bottom: 1px solid rgba(0, 0, 0, 0.05);
             }
 
-            td:not(:first-child):not(:last-child):before {
+            td:before {
                 content: attr(data-label);
                 font-weight: 500;
                 color: var(--primary-color);
+                min-width: 120px;
+                padding-right: 1rem;
+            }
+
+            td:last-child {
+                border-bottom: none;
+            }
+
+            .action-buttons {
+                justify-content: flex-start;
+                padding: 0.5rem 1rem;
+                background: #f8f9fa;
+                border-radius: 0 0 8px 8px;
+                margin-top: -1px;
+            }
+
+            .action-button {
+                flex: 1;
+                justify-content: center;
                 min-width: 100px;
+                max-width: 150px;
             }
 
-            /* Status styling */
-            td[data-label="Status"] {
-                padding: 0.75rem 1rem;
-            }
-
-            td[data-label="Status"]:before {
-                content: attr(data-label);
-                font-weight: 500;
-                color: var(--primary-color);
-                min-width: 100px;
-            }
-
-            td[data-label="Status"] {
+            td[data-status="Active"],
+            td[data-status="Inactive"] {
                 font-weight: 500;
             }
 
@@ -934,6 +959,69 @@ while ($row = $result_employees->fetch_assoc()) {
                 min-width: 32px;
                 height: 32px;
                 font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 575px) {
+            .sidebar {
+                padding: 0.5rem;
+            }
+
+            .nav-links {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .nav-links a {
+                padding: 0.6rem;
+                font-size: 0.85rem;
+            }
+
+            .nav-links a i {
+                font-size: 1rem;
+            }
+
+            .main {
+                padding: 0.75rem;
+            }
+
+            tr {
+                margin-bottom: 0.75rem;
+            }
+
+            td:first-child {
+                font-size: 0.95rem;
+                padding: 0.75rem;
+            }
+
+            td:not(:first-child):not(:last-child) {
+                padding: 0.6rem 0.75rem;
+                font-size: 0.85rem;
+            }
+
+            td:not(:first-child):not(:last-child):before {
+                min-width: 90px;
+                font-size: 0.8rem;
+            }
+
+            .pagination-container {
+                padding: 0.75rem;
+                margin-top: 1rem;
+            }
+
+            .pagination-btn {
+                padding: 0.4rem 0.6rem;
+                min-width: 32px;
+                height: 32px;
+                font-size: 0.8rem;
+            }
+
+            td:last-child {
+                padding-right: 0.5rem;
+            }
+
+            td:last-child .action-button {
+                width: 100%;
+                justify-content: center;
             }
         }
 
@@ -1043,12 +1131,12 @@ while ($row = $result_employees->fetch_assoc()) {
         <div class="form-container filter-container">
             <h2>Filter Employees</h2>
             <form method="GET" class="filter-form">
-                <div class="form-row">
-                    <div class="form-group">
+                <div class="filter-grid">
+                    <div class="filter-group">
                         <label for="filter_name">Name</label>
                         <input type="text" id="filter_name" name="filter_name" value="<?= htmlspecialchars($filter_name) ?>" placeholder="Search by name..."/>
                     </div>
-                    <div class="form-group">
+                    <div class="filter-group">
                         <label for="filter_position">Position</label>
                         <select id="filter_position" name="filter_position">
                             <option value="">All Positions</option>
@@ -1059,7 +1147,7 @@ while ($row = $result_employees->fetch_assoc()) {
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="filter-group">
                         <label for="filter_status">Status</label>
                         <select id="filter_status" name="filter_status">
                             <option value="">All Status</option>
@@ -1068,19 +1156,123 @@ while ($row = $result_employees->fetch_assoc()) {
                         </select>
                     </div>
                 </div>
-                <button type="submit" class="filter-btn">
-                    <i class="fas fa-filter"></i> Apply Filters
-                </button>
-                <a href="admin_employees.php" class="reset-btn">
-                    <i class="fas fa-undo"></i> Reset Filters
-                </a>
+                <div class="filter-actions">
+                    <button type="submit" class="filter-btn">
+                        <i class="fas fa-filter"></i> Apply Filters
+                    </button>
+                    <a href="admin_employees.php" class="reset-btn">
+                        <i class="fas fa-undo"></i> Reset Filters
+                    </a>
+                </div>
             </form>
         </div>
+
+        <style>
+        .filter-container {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .filter-container h2 {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            font-weight: 500;
+            color: var(--primary-color);
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 2px rgba(60, 213, 237, 0.1);
+            outline: none;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .filter-btn,
+        .reset-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .filter-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .reset-btn {
+            background: #f1f5f9;
+            color: var(--primary-color);
+        }
+
+        .filter-btn:hover,
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 991px) {
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-actions {
+                flex-direction: column;
+            }
+
+            .filter-btn,
+            .reset-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        </style>
 
         <table>
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Name</th>
                     <th>Email</th>
                     <th>Position</th>
@@ -1093,16 +1285,17 @@ while ($row = $result_employees->fetch_assoc()) {
                 <?php if (count($employees) > 0): ?>
                     <?php foreach ($employees as $employee): ?>
                         <tr>
-                            <td data-label="ID"><?= htmlspecialchars($employee['id'] ?? '') ?></td>
                             <td data-label="Name"><?= htmlspecialchars($employee['name'] ?? '') ?></td>
                             <td data-label="Email"><?= htmlspecialchars($employee['email'] ?? '') ?></td>
                             <td data-label="Position"><?= htmlspecialchars($employee['position'] ?? '') ?></td>
                             <td data-label="Hire Date"><?= htmlspecialchars($employee['hire_date'] ?? '') ?></td>
-                            <td data-label="Status" data-status="<?= htmlspecialchars($employee['status'] ?? '') ?>"><?= htmlspecialchars($employee['status'] ?? '') ?></td>
+                            <td data-label="Status" data-status="<?= htmlspecialchars($employee['status'] ?? '') ?>">
+                                <span><?= htmlspecialchars($employee['status'] ?? '') ?></span>
+                            </td>
                             <td data-label="Actions" class="action-buttons">
-                                <a href="employee_bookings.php?employee_id=<?= $employee['id'] ?? '' ?>" class="action-button view-btn">
+                                <button class="action-button view-btn" onclick='openBookingsModal(<?= json_encode($employee) ?>)'>
                                     <i class="fas fa-calendar-check"></i> Bookings
-                                </a>
+                                </button>
                                 <button class="action-button edit-btn" onclick='openEditModal(<?= json_encode($employee) ?>)'>
                                     <i class="fas fa-edit"></i> Edit
                                 </button>
@@ -1116,7 +1309,7 @@ while ($row = $result_employees->fetch_assoc()) {
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="7" style="text-align: center;">No employees found.</td>
+                        <td colspan="6" style="text-align: center;">No employees found.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
@@ -1216,6 +1409,25 @@ while ($row = $result_employees->fetch_assoc()) {
     </div>
 
     <script>
+        // Employee Bookings Modal Functions
+        function openBookingsModal(employee) {
+            document.getElementById('bookingsEmployeeName').textContent = employee.name;
+            document.getElementById('bookings_employee_id').value = employee.id;
+            
+            const modal = document.getElementById('employeeBookingsModal');
+            modal.style.display = 'block';
+            setTimeout(() => modal.classList.add('active'), 10);
+            
+            loadEmployeeBookings(employee.id);
+        }
+
+        function closeBookingsModal() {
+            const modal = document.getElementById('employeeBookingsModal');
+            modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+
+        // Employee Edit Modal Functions
         function openEditModal(employee) {
             document.getElementById('employee_id').value = employee.id;
             document.getElementById('edit_name').value = employee.name;
@@ -1346,5 +1558,314 @@ while ($row = $result_employees->fetch_assoc()) {
             }
         }
     </script>
+
+    <!-- Employee Bookings Modal -->
+    <div class="modal" id="employeeBookingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-calendar-check"></i> <span id="bookingsEmployeeName"></span>'s Bookings</h2>
+                <button type="button" class="close-btn" onclick="closeBookingsModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="bookings-filter">
+                    <form id="bookingsFilterForm">
+                        <input type="hidden" id="bookings_employee_id" name="employee_id">
+                        <div class="filter-row">
+                            <div class="filter-col">
+                                <label>Status</label>
+                                <select id="booking_filter_status" name="filter_status">
+                                    <option value="">All Status</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Approved">Approved</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                            <div class="filter-col">
+                                <label>Date From</label>
+                                <input type="date" id="booking_filter_date_from" name="date_from">
+                            </div>
+                            <div class="filter-col">
+                                <label>Date To</label>
+                                <input type="date" id="booking_filter_date_to" name="date_to">
+                            </div>
+                        </div>
+                        <div class="filter-actions">
+                            <button type="submit" class="apply-btn">
+                                <i class="fas fa-filter"></i> Apply Filters
+                            </button>
+                            <button type="button" class="reset-btn" onclick="resetBookingsFilters()">
+                                <i class="fas fa-undo"></i> Reset Filters
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <style>
+                .bookings-filter {
+                    padding: 1.5rem;
+                    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+                }
+
+                .filter-row {
+                    display: flex;
+                    gap: 1rem;
+                    margin-bottom: 1rem;
+                }
+
+                .filter-col {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.5rem;
+                }
+
+                .filter-col label {
+                    font-weight: 500;
+                    color: var(--primary-color);
+                }
+
+                .filter-col select,
+                .filter-col input {
+                    padding: 0.75rem;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 6px;
+                    font-size: 0.9rem;
+                    width: 100%;
+                }
+
+                .filter-actions {
+                    display: flex;
+                    gap: 1rem;
+                }
+
+                .apply-btn,
+                .reset-btn {
+                    padding: 0.75rem 1.5rem;
+                    border-radius: 6px;
+                    font-size: 0.9rem;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    cursor: pointer;
+                    border: none;
+                }
+
+                .apply-btn {
+                    background: var(--primary-color);
+                    color: white;
+                }
+
+                .reset-btn {
+                    background: #f1f5f9;
+                    color: var(--primary-color);
+                }
+
+                @media (max-width: 768px) {
+                    .filter-row {
+                        flex-direction: column;
+                    }
+
+                    .filter-actions {
+                        flex-direction: column;
+                    }
+
+                    .apply-btn,
+                    .reset-btn {
+                        width: 100%;
+                        justify-content: center;
+                    }
+                }
+                </style>
+
+                <div class="bookings-table-container">
+                    <table id="bookingsTable">
+                        <thead>
+                            <tr>
+                                <th>Customer Name</th>
+                                <th>Service</th>
+                                <th>Location</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bookingsTableBody">
+                            <!-- Bookings will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Employee Bookings Modal Functions
+        function openBookingsModal(employee) {
+            document.getElementById('bookingsEmployeeName').textContent = employee.name;
+            document.getElementById('bookings_employee_id').value = employee.id;
+            
+            const modal = document.getElementById('employeeBookingsModal');
+            modal.style.display = 'block';
+            setTimeout(() => modal.classList.add('active'), 10);
+            
+            loadEmployeeBookings(employee.id);
+        }
+
+        function closeBookingsModal() {
+            const modal = document.getElementById('employeeBookingsModal');
+            modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+
+        async function loadEmployeeBookings(employeeId, filters = {}) {
+            try {
+                const queryParams = new URLSearchParams({
+                    employee_id: employeeId,
+                    ...filters
+                });
+
+                const response = await fetch(`get_employee_bookings.php?${queryParams}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                const tbody = document.getElementById('bookingsTableBody');
+                tbody.innerHTML = '';
+
+                if (data.bookings && data.bookings.length > 0) {
+                    data.bookings.forEach(booking => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td data-label="Customer Name">${escapeHtml(booking.customer_name || '')}</td>
+                            <td data-label="Service">${escapeHtml(booking.service || '')}</td>
+                            <td data-label="Location">${escapeHtml(booking.location || '')}</td>
+                            <td data-label="Date">${escapeHtml(booking.appointment_date || '')}</td>
+                            <td data-label="Time">${escapeHtml(booking.appointment_time || '')}</td>
+                            <td data-label="Status" data-status="${escapeHtml(booking.status?.toLowerCase() || '')}">
+                                <span class="status-badge">${escapeHtml(booking.status || '')}</span>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No bookings found for this employee.</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error loading bookings:', error);
+                showErrorMessage('Failed to load employee bookings: ' + error.message);
+            }
+        }
+
+        // Helper function to escape HTML and prevent XSS
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function resetBookingsFilters() {
+            const form = document.getElementById('bookingsFilterForm');
+            form.reset();
+            const employeeId = document.getElementById('bookings_employee_id').value;
+            loadEmployeeBookings(employeeId);
+        }
+
+        // Initialize form handlers when document is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterForm = document.getElementById('bookingsFilterForm');
+            
+            filterForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(filterForm);
+                const filters = {
+                    status: document.getElementById('booking_filter_status').value,
+                    date_from: document.getElementById('booking_filter_date_from').value,
+                    date_to: document.getElementById('booking_filter_date_to').value
+                };
+                loadEmployeeBookings(formData.get('employee_id'), filters);
+            });
+        });
+    </script>
+
+    <style>
+        /* Employee Bookings Modal Styles */
+        #employeeBookingsModal .modal-content {
+            max-width: 1000px;
+        }
+
+        #employeeBookingsModal .modal-body {
+            padding: 0;
+        }
+
+        #employeeBookingsModal .filter-container {
+            padding: 1.5rem;
+            border-radius: 0;
+            box-shadow: none;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            margin-bottom: 0;
+        }
+
+        .bookings-table-container {
+            padding: 1.5rem;
+            overflow-x: auto;
+        }
+
+        #bookingsTable {
+            margin-top: 0;
+        }
+
+        .status-badge {
+            padding: 0.4rem 0.8rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        td[data-status="pending"] .status-badge {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        td[data-status="approved"] .status-badge {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        td[data-status="completed"] .status-badge {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        td[data-status="cancelled"] .status-badge {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        @media (max-width: 991px) {
+            #employeeBookingsModal .modal-content {
+                width: 95%;
+                margin: 1rem auto;
+            }
+
+            #bookingsTable td:before {
+                content: attr(data-label);
+                font-weight: 500;
+                color: var(--primary-color);
+                min-width: 120px;
+                padding-right: 1rem;
+            }
+        }
+    </style>
+
 </body>
 </html>
+

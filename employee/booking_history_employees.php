@@ -31,7 +31,7 @@ $sql = "SELECT
         FROM bookings b
         LEFT JOIN user u ON b.user_id = u.id
         LEFT JOIN employees e ON b.employee_id = e.id
-        WHERE b.status IN ('done', 'cancelled', 'completed', 'rejected')
+        WHERE b.status != 'pending'
           AND b.employee_id = ?
         ORDER BY b.appointment_date DESC, b.created_at DESC";
      

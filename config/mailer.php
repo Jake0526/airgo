@@ -15,14 +15,14 @@ class Mailer {
         try {
             // Server settings
             $this->mailer->isSMTP();
-            $this->mailer->Host = 'smtp.gmail.com';
+            $this->mailer->Host = 'mail.airgoaircon.com';  // Your cPanel mail server
             $this->mailer->SMTPAuth = true;
-            $this->mailer->Username = 'donotreplyairgo@gmail.com';
-            $this->mailer->Password = 'xyqr bivw gtij kyih';
-            $this->mailer->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-            $this->mailer->Port = 465;
+            $this->mailer->Username = 'donotreply@airgoaircon.com';  // Your cPanel email
+            $this->mailer->Password = 'jX^)U_Pp,V_({Mj9';  // Your email password
+            $this->mailer->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;  // SSL encryption
+            $this->mailer->Port = 465;  // SSL port
             
-            // Connection options
+            // Connection options for SSL verification
             $this->mailer->SMTPOptions = array(
                 'ssl' => array(
                     'verify_peer' => false,
@@ -37,7 +37,7 @@ class Mailer {
             
             // Default settings
             $this->mailer->isHTML(true);
-            $this->mailer->setFrom('donotreplyairgo@gmail.com', 'AirGo');
+            $this->mailer->setFrom('donotreply@airgoaircon.com', 'AirGo');
             $this->mailer->CharSet = 'UTF-8';
             
         } catch (Exception $e) {
@@ -89,6 +89,25 @@ class Mailer {
             
             return $this->mailer->send();
         } catch (Exception $e) {
+            error_log("Failed to send verification email: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function sendEmail($to, $subject, $message) {
+        try {
+            // Clear all addresses and attachments
+            $this->mailer->clearAllRecipients();
+            $this->mailer->clearAttachments();
+            
+            // Add recipient
+            $this->mailer->addAddress($to);
+            $this->mailer->Subject = $subject;
+            $this->mailer->Body = $message;
+            
+            return $this->mailer->send();
+        } catch (Exception $e) {
+            error_log("Failed to send email: " . $e->getMessage());
             return false;
         }
     }

@@ -58,6 +58,7 @@ try {
     $created_at = date('Y-m-d H:i:s');
 
     // Check if the time slot is still available
+    $max_per_slot = 8; // Maximum bookings allowed per time slot
     $check_sql = "SELECT COUNT(*) as count FROM bookings WHERE appointment_date = ? AND appointment_time = ? AND status != 'Cancelled'";
     $check_stmt = $conn->prepare($check_sql);
     $check_stmt->bind_param("ss", $appointment_date, $appointment_time);
@@ -65,7 +66,7 @@ try {
     $result = $check_stmt->get_result();
     $row = $result->fetch_assoc();
 
-    if ($row['count'] > 0) {
+    if ($row['count'] >= $max_per_slot) {
         throw new Exception('This time slot is no longer available. Please select another time.');
     }
 

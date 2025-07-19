@@ -1,0 +1,31 @@
+# cPanel Cron Job Configuration for Airgo Appointment Reminders
+
+# Command format for 5:00 AM daily reminder (today's appointments):
+/usr/local/bin/php /home/username/public_html/send_appointment_reminders.php
+
+# Command format for 10:00 AM daily reminder (tomorrow's appointments):
+/usr/local/bin/php /home/username/public_html/send_appointment_reminders.php
+
+# Steps to set up in cPanel:
+# 1. Login to cPanel
+# 2. Go to "Advanced" section
+# 3. Click "Cron Jobs"
+# 4. Under "Add New Cron Job":
+#    - Select "Once Per Day" from Common Settings
+#    - For 5 AM reminder: Set the hour to 5
+#    - For 10 AM reminder: Set the hour to 10
+#    - Copy and paste the command above (replace 'username' with your actual cPanel username)
+#    - Click "Add New Cron Job"
+
+# Note: The PHP path (/usr/local/bin/php) might be different on your hosting.
+# To find the correct PHP path, you can:
+# 1. Contact your hosting provider
+# 2. Use the command 'which php' via SSH if you have access
+# Common PHP paths in cPanel:
+# - /usr/local/bin/php
+# - /usr/bin/php
+# - /opt/cpanel/ea-php74/root/usr/bin/php (for EA-PHP)
+
+# Important: Make sure send_appointment_reminders.php has permissions 644
+# You can set this in cPanel File Manager or via SSH:
+# chmod 644 /home/username/public_html/send_appointment_reminders.php 
