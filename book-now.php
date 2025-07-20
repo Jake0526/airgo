@@ -484,20 +484,6 @@ $conn->close();
                 <input type="hidden" id="reschedule_booking_id">
                 <input type="hidden" id="reschedule_current_date">
                 <div class="calendar-container">
-                    <div class="calendar-legend">
-                        <div class="legend-item">
-                            <div class="legend-color legend-available"></div>
-                            <span>Available</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color legend-booked"></div>
-                            <span>Fully Booked</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color legend-your-booking"></div>
-                            <span>Your Booking</span>
-                        </div>
-                    </div>
                     <div id="rescheduleCalendar"></div>
                 </div>
             </div>
@@ -1019,9 +1005,28 @@ function showConfirmation(message, callback) {
 document.querySelectorAll('.cancel-form').forEach(form => {
     form.onsubmit = function(e) {
         e.preventDefault();
-        showConfirmation('Are you sure you want to cancel this booking?', () => {
+        const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+        document.getElementById('confirmationMessage').textContent = 'Are you sure you want to cancel this booking?';
+        
+        // Remove any existing click handlers
+        const confirmBtn = document.getElementById('confirmActionBtn');
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        
+        // Add new click handler
+        newConfirmBtn.addEventListener('click', function() {
+            // Show loading state
+            this.disabled = true;
+            this.innerHTML = `
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                Processing...
+            `;
+            
+            // Submit the form
             form.submit();
         });
+        
+        modal.show();
     };
 });
 
@@ -1346,22 +1351,16 @@ function handleTimeSlotSelection(date, time) {
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    // Close all modals
-                    const modals = document.querySelectorAll('.modal');
-                    modals.forEach(modalEl => {
-                        const modal = bootstrap.Modal.getInstance(modalEl);
-                        if (modal) modal.hide();
-                    });
+                                    if (data.success) {
+                        // Close all modals
+                        const modals = document.querySelectorAll('.modal');
+                        modals.forEach(modalEl => {
+                            const modal = bootstrap.Modal.getInstance(modalEl);
+                            if (modal) modal.hide();
+                        });
 
-                    // Show success notification and reload
-                    showNotification(
-                        'Success',
-                        'Your booking has been successfully rescheduled.',
-                        'check-circle',
-                        'success'
-                    );
-                    setTimeout(() => window.location.reload(), 2000);
+                        // Immediately reload the page
+                        window.location.reload();
                 } else {
                     throw new Error(data.message || 'Failed to reschedule booking');
                 }
