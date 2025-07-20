@@ -55,8 +55,6 @@ if ($user_query) {
 $calendar_events = [];
 $date_counts = [];
 $today = date('Y-m-d');
-
-// Get all bookings for slot availability
 $all_result = $conn->query("SELECT appointment_date FROM bookings WHERE status != 'Cancelled'");
 while ($row = $all_result->fetch_assoc()) {
     $date = $row['appointment_date'];
@@ -64,42 +62,6 @@ while ($row = $all_result->fetch_assoc()) {
     $date_counts[$date]++;
 }
 
-// Get user's bookings
-$user_bookings = [];
-$user_stmt = $conn->prepare("
-    SELECT appointment_date, appointment_time, service, status 
-    FROM bookings 
-    WHERE user_id = ? 
-    AND status != 'Cancelled'
-    AND appointment_date >= CURDATE()
-");
-$user_stmt->bind_param("i", $user_id);
-$user_stmt->execute();
-$user_result = $user_stmt->get_result();
-
-// Add user's bookings first
-while ($row = $user_result->fetch_assoc()) {
-    // Create a DateTime object for the appointment date
-    $appointmentDate = new DateTime($row['appointment_date']);
-    $appointmentDate->setTime(0, 0, 0); // Set time to midnight
-
-    $calendar_events[] = [
-        "title" => $row['service'] . ' (' . $row['status'] . ')',
-        "start" => $appointmentDate->format('Y-m-d'), // Use only the date part
-        "display" => "block",
-        "backgroundColor" => "#0ea5e9",
-        "textColor" => "#ffffff",
-        "classNames" => ["user-booking"],
-        "allDay" => true,
-        "extendedProps" => [
-            "type" => "user_booking",
-            "time" => $row['appointment_time']
-        ]
-    ];
-}
-$user_stmt->close();
-
-// Then add availability background events
 $max_slots_per_day = 46;
 $range_start = strtotime('-1 month');
 $range_end = strtotime('+3 months');
@@ -114,21 +76,17 @@ for ($i = $range_start; $i <= $range_end; $i += 86400) {
         $title = "";
     } elseif ($remaining <= 0) {
         $color = "#ff6b6b";
-        $title = "Fully Booked";
+        $title = "";
     } else {
         $color = "#48c78e";
-        $title = "$remaining Slots Left";
+        $title = "";
     }
 
     $calendar_events[] = [
         "title" => $title,
         "start" => $date,
         "display" => "background",
-        "color" => $color,
-        "classNames" => ["availability-indicator"],
-        "extendedProps" => [
-            "type" => "availability"
-        ]
+        "color" => $color
     ];
 }
 
@@ -145,7 +103,7 @@ $conn->close();
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%2307353f'/%3E%3Cpath d='M30 50c0-11 9-20 20-20s20 9 20 20-9 20-20 20-20-9-20-20zm35 0c0-8.3-6.7-15-15-15s-15 6.7-15 15 6.7 15 15 15 15-6.7 15-15z' fill='%233cd5ed'/%3E%3Cpath d='M50 60c-5.5 0-10-4.5-10-10s4.5-10 10-10 10 4.5 10 10-4.5 10-10 10z' fill='white'/%3E%3C/svg%3E" />
     <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAABKhJREFUWEe9V21sU2UUfu7H3a7dmDAgKgwQPxAkKAYnJsyPGCGK0ZAQFfEHJGpigkT8gYrxB5pI/GD+QBNjNCr+ICYaEzWBRDBRIQQIiCIIKLIvGIPtbrfb7b3XnHPvbVc2trs3bU/S7H7c877Pec95z3veK+AeHOIe4MN/B0CWZVkQhHui3LquX5YkSboXk+u6PqwoCud3HEAkEuH8qqrS0NBQYWxsLDY2NhaNRqNRVVVjmqYpuq4rpHwwGHQHAgG3y+VyezweN/1yu91uQRDcBIr+CoIgCILAf222GfRqgKZpGsdHYDRNm6Xr+llZlr1/CcDQ0BCNjZumxXVdVxVFiWmaFlVVNaooSjQejxPQEUVRYpqmxXRd5+vpuu5yOBwet9vtczgcPofD4SWQBMjpdLodDofL6XS6nE4nARFFUeR7QRAIJIMxAVJVVWPQODNBkiSvLMsDkiTJt23BwMAAjVEURY3H4zFFUaKqqkYJiKqqUU3T6G9UVdW4pmkxAqfrOgMWRdHjdDq9BNDhcPgcDofX5XL5XS6Xz+12+10ul9fpdHoJqMvlcjudTjcBJVOYQOm6rsXjcS0Wi8UjkUiU/kYikWgsFovF4/F4LBaLxePxeDQaZUDWFPT39xMAVVXVWCwWVRQlqihKhEAqihIxmUxRXdf52WQyEQCPKIo+URR9BNDpdPqtVqvfYrH4rFar3263++12u89ms3ltNpvXZrN5rFYrAXWRDgioYU7DnMSUoihsXkVRFPJEJBKJRKPR8O0a6O3tNQNgJlRVNayqaphAEgOSJIUlSQobDLgoK0RR9JEGLBaL32q1+m02m5/AEli73e6z2+0+q9Xqc7lcXrvd7rFarW6r1eq2WCwExk2ZQCDJ75IkhXVdD+u6HtZ1PazrehiYEtZ1XTYykCRJYdu27du3j8YbIAJGbIQJpKqqYUmSwgTSYMFNLJAGHA6H32Kx+G02m5/AElgCabfbfTabzWu1Wj0ul8tjs9k8VqvVbbFY3E6n0+10Ot0EkjQgSVKY7qmqGqbxkiSFVVUNU8FTVTVEz7IsywkNbN682QyAM0BV1RCZkEBKkhTSNC0kSVKIGHA4HD6n0+mzWCw+AksmtNlsXpvN5rXb7R6Xy+UhoFar1W21Wl0EkoAaZg1rmhYi89F4TdNCmqaFVFUNkXkTNZHNZvts27aNxhuNCIEI0T2ZkN4bLLhEUfQaueAjDdhsNi+BJD0QUKfT6SYdEFDKAEmSQoqihOjeAJG4/gQ7W7duzQXwP9cBnNexpjhBAAAAAElFTkSuQmCC" />
-    <link rel="icon" type="image/png" sizes="16x16" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAlpJREFUOE+Nk0tIVFEYx//n3jtz544z4zg6OuqoqKVp9LDUMAqKFtGiWtSiWkQkEUEtahERRBQVLYJoUW2iRdCiKKJFD4JqE0REDxQfw1hq5DiOztz5mHvPPeeMjlr2wVl8fN/v+z++c87HsB8f24d9+H8A0un0IcbYUdd1PSLyiIg8z3MJyPU8zyEix/M8h4hcz/McInI9z7WJyLJt27Isy7IsS7YsS7IsS7YsW2aMWbZtW5ZlWaZpEsdxEgghDCGEwRjbBpBKpQ4yxo66rusRkedRwQQgEpHreZ5DRK7neQ4RuZ7nOZ7n2a7rWo7jWLZtW47jyI7jSLZty47jSI7jSJZlSYwxadOvCSGMbQDJZPIQY+yI67qe53ke/QsgItf1XIeIHNd1Hdd1Hc/zbNu2Ldu2ZMexJMexJNu2JcaYtAXAGDM2AWKx2GHG2BEiIiLPIyLPdd0CQK7ruq7ruq5t25Zt25LjOLLjOJLjOJLjOBJjTNoUlzFmbAJEo9EjjLHDRERE5BERua7rFgByXdd1Xde1bdu2bNuWHceWHceWHMeSHMeSbNuWGGPSFgBjzNgEiEQihxljh4iIiMgjInJd1y0A5Lqu67qu69i2bdm2LTmOLTmOLTmOJTmOJdm2LTHGpC1xGWPGJkA4HD7CGDtIRJ7neUREnut6BYBc13Ud27Yt27Ylx7Elx7Ekx7Ekx7Ek27YlxpgkSRJjjBkbAMFg8BBj7IDruh4ReUREnut6BYBc13Ud27Yt27Ylx7Elx7Ekx7Ek27YlxpgkSRJjjBl/AQgEAgcZY/uJyPsJ8AOvgZzXMm3oPQAAAABJRU5ErkJggg==" />
+    <link rel="icon" type="image/png" sizes="16x16" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAlpJREFUOE+Nk0tIVFEYx//n3jtz544z4zg6OuqoqKVp9LDUMAqKFtGiWtSiWkQkEUEtahERRBQVLYJoUW2iRdCiKKJFD4JqE0REDxQfw1hq5DiOztz5mHvPPeeMjlr2wVl8fN/v+z++c87HsB8f24d9+H8A0un0IcbYUdd1PSLyiIg8z3MJyPU8zyEix/M8h4hcz/McInI9z7WJyLJt27Isy7IsS7YsS7IsS7YsW2aMWbZtW5ZlWaZpEsdxEgghDCGEwRjbBpBKpQ4yxo66rusRkedRwQQgEpHreZ5DRK7neQ4RuZ7nOZ7n2a7rWo7jWLZtW47jyI7jSLZty47jSI7jSJZlSYwxadOvCSGMbQDJZPIQY+yI67qe53ke/QsgItf1XIeIHNd1Hdd1Hc/zbNu2Ldu2ZMexJMexJNu2JcaYtAXAGDM2AWKx2GHG2BEiIiLPIyLPdd0CQK7ruq7ruq5t25Zt25LjOLLjOJLjOJLjOJLjOBJjTNoUlzFmbAJEo9EjjLHDRERE5BERua7rFgByXdd1Xde1bdu2bNuWHceWHceWHMeSHMeSbNuWGGPSFgBjzNgEiEQihxljh4iIiMgjInJd1y0A5Lqu67qu69i2bdm2LTmOLTmOLTmOJTmOJdm2LTHGpC1xGWPGJkA4HD7CGDtIRJ7neUREnut6BYBc13Ud27Yt27Ylx7Elx7Ekx7Ekx7Ek27YlxpgkSRJjjBkbAMFg8BBj7IDruh4ReUREnut6BYBc13Ud27Yt27Ylx7Elx7Ekx7Ek27YlxpgkSRJjjBl/AQgEAgcZY/uJyPsJ8AOvgZzXMm3oPQAAAABJRU5ErkJggg==" />
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -428,25 +386,9 @@ $conn->close();
 
 <div class="main-container">
     <div class="calendar-container">
-        <div class="calendar-header">
-            <div class="calendar-title">
-                <i class="fas fa-calendar-check"></i>
-                Select a Date to Book
-            </div>
-        </div>
-        <div class="calendar-legend">
-            <div class="legend-item">
-                <div class="legend-color legend-available"></div>
-                <span>Available</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color legend-booked"></div>
-                <span>Fully Booked</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color legend-your-booking"></div>
-                <span>Your Booking</span>
-            </div>
+        <div class="label-title">
+            <i class="fas fa-calendar-check"></i>
+            Select a Date to Book
         </div>
         <div id="calendar"></div>
     </div>
@@ -616,7 +558,7 @@ $conn->close();
                     <i class="fas fa-check-circle me-2"></i>
                     Booking Successful
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" onclick="window.location.reload();"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-center py-4">
                 <div class="mb-4">
@@ -626,7 +568,7 @@ $conn->close();
                 <p class="mb-0">Your appointment has been successfully scheduled.</p>
             </div>
             <div class="modal-footer justify-content-center">
-                <button type="button" class="btn btn-success px-4" onclick="window.location.reload();">
+                <button type="button" class="btn btn-success px-4" data-bs-dismiss="modal">
                     <i class="fas fa-check me-2"></i>Done
                 </button>
             </div>
@@ -1014,8 +956,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     const successModal = new bootstrap.Modal(document.getElementById('successModal'));
                     successModal.show();
 
-                    // Refresh calendar data
-                    window.location.reload(); // This will refresh the entire page to get fresh calendar data
+                    // Refresh calendar events
+                    if (calendar && typeof calendar.refetchEvents === 'function') {
+                        calendar.refetchEvents();
+                    }
                 } else {
                     throw new Error(data.message || 'Failed to submit booking');
                 }
@@ -1038,20 +982,15 @@ document.addEventListener('DOMContentLoaded', function () {
         height: 650,
         selectable: true,
         events: <?= json_encode($calendar_events) ?>,
-        eventDidMount: function(info) {
-            // Add tooltip for user's bookings
-            if (info.event.display === 'block') {
-                info.el.title = info.event.title;
-            }
-        },
         dateClick: function (info) {
             selectedDate = info.dateStr;
-            
             // Get today's date in Asia/Manila timezone
             const now = new Date();
             const today = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' })).toISOString().split('T')[0];
-            
-            // Check if selected date is in the past
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
             if (selectedDate < today) {
                 showNotification(
                     'Invalid Date',
@@ -1062,7 +1001,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            // Check if trying to book for today
             if (selectedDate === today) {
                 showNotification(
                     'Same Day Booking',
@@ -1073,52 +1011,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            // Find user bookings for the selected date
-            const userBookings = calendar.getEvents().filter(event => {
-                // Only look at user booking events
-                if (!event.extendedProps || event.extendedProps.type !== 'user_booking') {
-                    return false;
-                }
-                
-                // Get event date without time component
-                const eventStart = new Date(event.start);
-                const eventDate = new Date(
-                    eventStart.getFullYear(),
-                    eventStart.getMonth(),
-                    eventStart.getDate()
-                ).toISOString().split('T')[0];
-
-                // Get selected date without time component
-                const selectedDateObj = new Date(selectedDate);
-                const compareDate = new Date(
-                    selectedDateObj.getFullYear(),
-                    selectedDateObj.getMonth(),
-                    selectedDateObj.getDate()
-                ).toISOString().split('T')[0];
-
-                // Compare the dates
-                return eventDate === compareDate;
-            });
-
-            if (userBookings.length > 0) {
-                const booking = userBookings[0];
-                const formattedDate = new Date(selectedDate).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-                
-                showNotification(
-                    'Booking Already Exists',
-                    `You already have a booking for ${booking.title} on ${formattedDate}. Please select a different date.`,
-                    'calendar-times',
-                    'warning'
-                );
-                return;
-            }
-
-            // If we get here, it's a valid date with no existing booking
             showTimeSlots(selectedDate);
             timeSlotsModal.show();
         }
@@ -1321,194 +1213,270 @@ window.toggleEdit = function(fieldId) {
 </script>
 
 <style>
-    /* Calendar container styles */
-    .calendar-container {
-        background: white;
-        padding: 2rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        margin-bottom: 2rem;
-    }
+/* Confirmation Modal Styles */
+#confirmationModal .modal-header {
+    background: var(--primary-color);
+    color: white;
+}
 
-    .calendar-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 1.5rem;
-    }
+#confirmationModal .modal-content {
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 20px 40px var(--card-shadow);
+}
 
-    .calendar-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #07353f;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
+#confirmationModal .modal-body {
+    padding: 2rem;
+}
 
-    .calendar-title i {
-        color: #0ea5e9;
-    }
+#confirmationModal .booking-details {
+    background: rgba(7, 53, 63, 0.05);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-top: 1rem;
+}
 
-    .calendar-legend {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 1rem;
-        padding: 0.5rem;
-        background: rgba(0, 0, 0, 0.02);
-        border-radius: 8px;
-    }
+#confirmationModal .booking-details p {
+    margin-bottom: 0.5rem;
+}
 
-    .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.875rem;
-        color: #64748b;
-    }
+#confirmationModal .booking-details strong {
+    color: var(--primary-color);
+}
 
-    .legend-color {
-        width: 1rem;
-        height: 1rem;
-        border-radius: 4px;
-    }
+#confirmationModal .modal-footer {
+    justify-content: center;
+    padding: 1.5rem;
+    border-top: 1px solid rgba(0,0,0,0.1);
+}
 
-    .legend-available {
-        background-color: #48c78e;
-    }
+#confirmationModal .btn {
+    padding: 0.8rem 1.5rem;
+    border-radius: 50px;
+    font-weight: 500;
+    min-width: 120px;
+    transition: all 0.3s ease;
+}
 
-    .legend-booked {
-        background-color: #ff6b6b;
-    }
+#confirmationModal .btn-primary {
+    background-color: var(--primary-color);
+    border: none;
+}
 
-    .legend-your-booking {
-        background-color: #0ea5e9;
-    }
+#confirmationModal .btn-primary:hover {
+    background-color: var(--secondary-color);
+    transform: translateY(-2px);
+}
 
-    /* Existing calendar event styles */
-    .fc-event {
-        border-radius: 4px;
-        padding: 2px 4px;
-        margin-bottom: 2px;
-        font-size: 0.85em;
-    }
+#confirmationModal .btn-secondary {
+    background-color: #6c757d;
+    border: none;
+}
 
-    .fc-event[style*="background-color: rgb(14, 165, 233)"] {
-        border: none;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
+#confirmationModal .btn-secondary:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+}
 
-    .fc-event[style*="background-color: rgb(14, 165, 233)"]:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: all 0.2s ease;
-    }
+/* Success Modal Styles */
+#successModal .modal-header {
+    background: #28a745;
+    color: white;
+    border-bottom: none;
+}
 
-    /* Calendar event styles */
-    .fc-event {
-        border-radius: 4px;
-        padding: 2px 4px;
-        margin-bottom: 2px;
-        font-size: 0.85em;
-    }
+#successModal .modal-content {
+    border-radius: 20px;
+    border: none;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
 
-    /* User booking styles */
-    .user-booking {
-        border: none !important;
-        margin: 2px 4px !important;
-        padding: 4px 8px !important;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        z-index: 2 !important; /* Ensure user bookings appear above background colors */
-    }
+#successModal .modal-body {
+    padding: 2.5rem;
+}
 
-    .user-booking:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: all 0.2s ease;
-    }
+#successModal .btn-success {
+    background-color: #28a745;
+    border: none;
+    padding: 0.8rem 2rem;
+    font-weight: 500;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+}
 
-    /* Availability indicator styles */
-    .availability-indicator {
-        z-index: 1 !important; /* Keep background colors behind user bookings */
-        opacity: 0.3; /* Make background colors more subtle */
-    }
+#successModal .btn-success:hover {
+    background-color: #218838;
+    transform: translateY(-2px);
+}
 
-    .fc-daygrid-day-events {
-        min-height: 2em;
-        pointer-events: none; /* This ensures clicks go to the date cell */
-    }
+#successModal .fas.fa-calendar-check {
+    color: #28a745;
+}
 
-    .fc-daygrid-day-events > * {
-        pointer-events: auto; /* Re-enable pointer events for actual events */
-    }
+/* Edit Button Styles */
+.input-group .btn-outline-secondary {
+    border-color: #ced4da;
+    color: #6c757d;
+    padding: 0.375rem 0.75rem;
+}
 
-    .fc-daygrid-day.fc-day-today {
-        background-color: rgba(14, 165, 233, 0.1) !important;
-    }
+.input-group .btn-outline-secondary:hover {
+    background-color: #f8f9fa;
+    color: var(--primary-color);
+}
 
-    .fc-daygrid-day.fc-day-past {
-        background-color: rgba(0, 0, 0, 0.05);
-    }
+.input-group .btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
 
-    /* Calendar navigation buttons */
-    .fc-button-primary {
-        background-color: #07353f !important;
-        border-color: #07353f !important;
-    }
+.input-group .btn-primary:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
 
-    .fc-button-primary:hover {
-        background-color: #0ea5e9 !important;
-        border-color: #0ea5e9 !important;
-    }
+/* Readonly Field Styles */
+.form-control[readonly],
+.form-select[readonly] {
+    background-color: #f8f9fa;
+    opacity: 0.8;
+    cursor: not-allowed;
+}
 
-    .fc-button-primary:disabled {
-        background-color: #64748b !important;
-        border-color: #64748b !important;
-    }
+.form-control[readonly]:focus,
+.form-select[readonly]:focus {
+    background-color: #fff;
+    opacity: 1;
+    cursor: text;
+}
 
-    /* Booking info styles */
-    .booking-info {
-        background: rgba(14, 165, 233, 0.1);
-        border: 1px solid rgba(14, 165, 233, 0.2);
-        border-radius: 8px;
-        padding: 1rem;
-        margin: 1rem 0;
-    }
+/* Input Group Styles */
+.input-group {
+    position: relative;
+}
 
-    .booking-info p {
-        margin-bottom: 0.5rem;
-        color: #07353f;
-    }
+.input-group .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    padding: 0;
+}
 
-    .booking-info strong {
-        color: #0ea5e9;
-        font-size: 1.1em;
-    }
+.input-group .btn i {
+    font-size: 0.875rem;
+}
 
-    /* Modal notification enhancements */
-    #notificationModal .modal-body {
-        padding: 2rem;
-    }
+/* Notification Modal Styles */
+#notificationModal .modal-content {
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
 
-    #notificationModal .text-info {
-        color: #0ea5e9 !important;
-    }
+#notificationModal .modal-header {
+    border-radius: 20px 20px 0 0;
+    border-bottom: none;
+    padding: 1.5rem;
+}
 
-    #notificationModal .btn-info {
-        background-color: #0ea5e9;
-        border-color: #0ea5e9;
-        color: white;
-    }
+#notificationModal .modal-body {
+    padding: 2.5rem;
+}
 
-    #notificationModal .btn-info:hover {
-        background-color: #0284c7;
-        border-color: #0284c7;
-        transform: translateY(-1px);
-    }
+#notificationModal .modal-footer {
+    border-top: none;
+    padding: 1.5rem;
+}
 
-    #notificationModal .text-muted {
-        color: #64748b !important;
-    }
+#notificationModal .btn {
+    border-radius: 50px;
+    padding: 0.8rem 2rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+#notificationModal .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+#notificationModal .text-warning {
+    color: #ffc107 !important;
+}
+
+#notificationModal .text-danger {
+    color: #dc3545 !important;
+}
+
+#notificationModal .bg-warning {
+    background-color: #ffc107 !important;
+}
+
+#notificationModal .bg-danger {
+    background-color: #dc3545 !important;
+}
+
+#notificationModal .btn-warning {
+    background-color: #ffc107;
+    border: none;
+    color: #000;
+}
+
+#notificationModal .btn-danger {
+    background-color: #dc3545;
+    border: none;
+    color: #fff;
+}
+
+#notificationModal .btn-warning:hover {
+    background-color: #e0a800;
+}
+
+#notificationModal .btn-danger:hover {
+    background-color: #c82333;
+}
+
+#notificationModal .modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+#notificationModal #notificationMessage {
+    color: #495057;
+    line-height: 1.6;
+}
+
+/* Update the modal backdrop styles */
+.modal-backdrop {
+    --bs-backdrop-opacity: 0.8;
+    --bs-backdrop-bg: #000;
+    background-color: var(--bs-backdrop-bg);
+    z-index: 1040;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.modal-backdrop.show {
+    opacity: var(--bs-backdrop-opacity) !important;
+}
+
+.modal-backdrop.fade {
+    opacity: 0;
+}
+
+.modal {
+    z-index: 1045;
+}
+
+/* Add transition to modal itself for smoother appearance */
+.modal.fade .modal-dialog {
+    transition: transform 0.2s ease-out;
+    transform: translateY(-20px);
+}
+
+.modal.show .modal-dialog {
+    transform: translateY(0);
+}
 </style>
 </body>
 </html>
