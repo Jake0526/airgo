@@ -1222,6 +1222,11 @@ if (!$result) {
                                 <button class="button edit-btn" onclick="openEditModal(<?= htmlspecialchars(json_encode($row)) ?>)">
                                     <i class="fas fa-edit"></i>
                                 </button>
+                                <?php if (!empty($row['payment_proof'])): ?>
+                                    <button class="button view-image-btn" onclick="openImageModal('../<?= htmlspecialchars($row['payment_proof']) ?>')">
+                                        <i class="fas fa-image"></i>
+                                    </button>
+                                <?php endif; ?>
                             </td>
                         </tr>
                         <?php endwhile; ?>
@@ -1379,6 +1384,21 @@ if (!$result) {
                 <button class="cancel-btn" onclick="closeConfirmationModal()">
                     <i class="fas fa-times"></i> Cancel
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div class="image-modal" id="imageModal">
+        <div class="image-modal-content">
+            <div class="image-modal-header">
+                <h3><i class="fas fa-image"></i> Payment Proof</h3>
+                <button class="close-btn" onclick="closeImageModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="image-modal-body">
+                <img id="modalImage" src="" alt="Payment Proof">
             </div>
         </div>
     </div>
@@ -1787,6 +1807,81 @@ if (!$result) {
                 margin: 1rem;
             }
         }
+
+        /* Image Modal Styles */
+        .image-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .image-modal.active {
+            display: flex;
+        }
+
+        .image-modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow: hidden;
+            position: relative;
+            transform: scale(0.7);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .image-modal.active .image-modal-content {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .image-modal-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .image-modal-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .image-modal-body {
+            padding: 1rem;
+            overflow: auto;
+            max-height: calc(90vh - 60px);
+        }
+
+        .image-modal-body img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .image-modal-content {
+                width: 95%;
+            }
+
+            td[data-label="Actions"] {
+                justify-content: flex-end;
+            }
+        }
     </style>
 
     <script>
@@ -1983,15 +2078,37 @@ if (!$result) {
             window.location.href = url;
         }
 
+        function openImageModal(imagePath) {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            
+            modalImage.src = imagePath;
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('active'), 10);
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                document.getElementById('modalImage').src = '';
+            }, 300);
+        }
+
         // Close modals when clicking outside
         window.onclick = function(event) {
             const editModal = document.getElementById('editBookingModal');
             const confirmationModal = document.getElementById('confirmationModal');
+            const imageModal = document.getElementById('imageModal');
             if (event.target === editModal) {
                 closeEditModal();
             }
             if (event.target === confirmationModal) {
                 closeConfirmationModal();
+            }
+            if (event.target === imageModal) {
+                closeImageModal();
             }
         }
     </script>
