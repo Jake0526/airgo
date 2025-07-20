@@ -550,7 +550,7 @@ while ($row = $result->fetch_assoc()) {
     </div>
 
     <style>
-        /* Modal Styles */
+        /* Update modal styles */
         .modal {
             display: none;
             position: fixed;
@@ -558,9 +558,25 @@ while ($row = $result->fetch_assoc()) {
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
+            z-index: 1045;
             overflow-y: auto;
+        }
+
+        .modal::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            z-index: -1;
+        }
+
+        .modal.active::before {
+            opacity: 0.8;
         }
 
         .modal-content {
@@ -573,7 +589,7 @@ while ($row = $result->fetch_assoc()) {
             position: relative;
             transform: translateY(-20px);
             opacity: 0;
-            transition: all 0.3s ease;
+            transition: transform 0.2s ease-out, opacity 0.2s ease-out;
         }
 
         .modal.active .modal-content {

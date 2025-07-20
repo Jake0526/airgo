@@ -28,101 +28,16 @@ $services_prices = [
 
 $user_id = $_SESSION['user_id'];
 
-// Move Cancelled/Done/Rejected bookings to history
-$move_query = "SELECT * FROM bookings WHERE user_id = ? AND status IN ('Cancelled', 'Done', 'Rejected')";
-$move_stmt = $conn->prepare($move_query);
-$move_stmt->bind_param("i", $user_id);
-$move_stmt->execute();
-$move_result = $move_stmt->get_result();
-
-while ($booking = $move_result->fetch_assoc()) {
-    $employee_id = $booking['employee_id'];
-    $technician_name = 'N/A';
-
-    if ($employee_id) {
-        $tech_stmt = $conn->prepare("SELECT name FROM employees WHERE id = ?");
-        $tech_stmt->bind_param("i", $employee_id);
-        $tech_stmt->execute();
-        $tech_stmt->bind_result($technician_name);
-        $tech_stmt->fetch();
-        $tech_stmt->close();
-    }
-
-    $check = $conn->prepare("SELECT id FROM booking_history_customer WHERE user_id = ? AND booking_date = ? AND booking_time = ?");
-    $check->bind_param("iss", $booking['user_id'], $booking['appointment_date'], $booking['appointment_time']);
-    $check->execute();
-    $check->store_result();
-
-    if ($check->num_rows === 0) {
-        $insert = $conn->prepare("INSERT INTO booking_history_customer 
-            (user_id, service_type, booking_date, booking_time, phone, technician_name, status, moved_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
-        $insert->bind_param("issssss",
-            $booking['user_id'],
-            $booking['service'],
-            $booking['appointment_date'],
-            $booking['appointment_time'],
-            $booking['phone'],
-            $technician_name,
-            $booking['status']
-        );
-        $insert->execute();
-        $insert->close();
-    }
-
-    $check->close();
-    $delete = $conn->prepare("DELETE FROM bookings WHERE id = ?");
-    $delete->bind_param("i", $booking['id']);
-    $delete->execute();
-    $delete->close();
-}
-$move_stmt->close();
-
 // Cancel Booking
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_booking_id'])) {
     $booking_id = intval($_POST['cancel_booking_id']);
 
-    $fetch = $conn->prepare("SELECT * FROM bookings WHERE id = ? AND user_id = ? AND status = 'Pending'");
-    $fetch->bind_param("ii", $booking_id, $user_id);
-    $fetch->execute();
-    $result = $fetch->get_result();
+    // Update the status to 'Cancelled' in bookings table
+    $update = $conn->prepare("UPDATE bookings SET status = 'Cancelled' WHERE id = ? AND user_id = ?");
+    $update->bind_param("ii", $booking_id, $user_id);
+    $update->execute();
+    $update->close();
 
-    if ($booking = $result->fetch_assoc()) {
-        $technician_name = 'N/A';
-        if ($booking['employee_id']) {
-            $tech_stmt = $conn->prepare("SELECT name FROM employees WHERE id = ?");
-            $tech_stmt->bind_param("i", $booking['employee_id']);
-            $tech_stmt->execute();
-            $tech_stmt->bind_result($technician_name);
-            $tech_stmt->fetch();
-            $tech_stmt->close();
-        }
-
-        $update = $conn->prepare("UPDATE bookings SET status = 'Cancelled' WHERE id = ?");
-        $update->bind_param("i", $booking_id);
-        $update->execute();
-        $update->close();
-
-        $insert = $conn->prepare("INSERT INTO booking_history_customer 
-            (user_id, service_type, booking_date, booking_time, phone, technician_name, status, moved_at)
-            VALUES (?, ?, ?, ?, ?, ?, 'Cancelled', NOW())");
-        $insert->bind_param("isssss",
-            $booking['user_id'],
-            $booking['service'],
-            $booking['appointment_date'],
-            $booking['appointment_time'],
-            $booking['phone'],
-            $technician_name
-        );
-        $insert->execute();
-        $insert->close();
-
-        $delete = $conn->prepare("DELETE FROM bookings WHERE id = ?");
-        $delete->bind_param("i", $booking_id);
-        $delete->execute();
-        $delete->close();
-    }
-    $fetch->close();
     header("Location: book-now.php");
     exit();
 }
@@ -481,7 +396,7 @@ $conn->close();
     <div class="nav-links">
         <a href="dashboard.php" class="<?= $current_page === 'dashboard.php' ? 'active' : '' ?>"><i class="fa-solid fa-house"></i> Dashboard</a>
         <a href="book-now.php" class="<?= $current_page === 'book-now.php' ? 'active' : '' ?>"><i class="fa-solid fa-calendar-plus"></i> Booking</a>
-        <a href="cancel_booking.php" class="<?= $current_page === 'cancel_booking.php' ? 'active' : '' ?>"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+        <a href="booking-history.php" class="<?= $current_page === 'booking-history.php' ? 'active' : '' ?>"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
         <a href="logout.php"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
     </div>
 </div>
@@ -797,6 +712,37 @@ document.addEventListener('DOMContentLoaded', function () {
 #confirmationModal .btn-secondary:hover {
     background-color: #5a6268;
     transform: translateY(-2px);
+}
+
+/* Update the modal backdrop styles */
+.modal-backdrop {
+    --bs-backdrop-opacity: 0.8;
+    --bs-backdrop-bg: #000;
+    background-color: var(--bs-backdrop-bg);
+    z-index: 1040;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.modal-backdrop.show {
+    opacity: var(--bs-backdrop-opacity) !important;
+}
+
+.modal-backdrop.fade {
+    opacity: 0;
+}
+
+.modal {
+    z-index: 1045;
+}
+
+/* Add transition to modal itself for smoother appearance */
+.modal.fade .modal-dialog {
+    transition: transform 0.2s ease-out;
+    transform: translateY(-20px);
+}
+
+.modal.show .modal-dialog {
+    transform: translateY(0);
 }
 </style>
 

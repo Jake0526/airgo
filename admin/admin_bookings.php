@@ -1281,7 +1281,7 @@ if (!$result) {
                     </button>
                 </div>
                 <div class="modal-body">
-                    <form id="editBookingForm" onsubmit="updateBooking(event)">
+                    <form id="editBookingForm" method="POST">
                         <input type="hidden" id="booking_id" name="booking_id">
                         <div class="form-group">
                             <label for="username">Customer Name</label>
@@ -1347,7 +1347,7 @@ if (!$result) {
                             <div id="image-preview" class="image-preview"></div>
                         </div>
                         <div class="form-actions">
-                            <button type="submit" class="save-btn">
+                            <button type="button" class="save-btn" onclick="handleSaveClick()">
                                 <i class="fas fa-save"></i> Save Changes
                             </button>
                             <button type="button" class="cancel-btn" onclick="closeEditModal()">
@@ -1395,6 +1395,24 @@ if (!$result) {
             background: rgba(0, 0, 0, 0.5);
             z-index: 1000;
             overflow-y: auto;
+        }
+
+        /* Update the modal backdrop styles */
+        .modal::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            z-index: -1;
+        }
+
+        .modal.active::before {
+            opacity: 0.8;
         }
 
         /* File Upload Styles */
@@ -1670,32 +1688,29 @@ if (!$result) {
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
             z-index: 2000;
-            opacity: 0;
-            transition: opacity 0.3s ease;
+            align-items: center;
+            justify-content: center;
         }
 
         .confirmation-modal.active {
-            opacity: 1;
+            display: flex !important;
         }
 
         .confirmation-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -60%);
             background: white;
             padding: 0;
             border-radius: 12px;
             width: 90%;
             max-width: 400px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            transform: scale(0.7);
             opacity: 0;
-            transform: translate(-50%, -60%) scale(0.95);
             transition: all 0.3s ease;
         }
 
         .confirmation-modal.active .confirmation-content {
-            transform: translate(-50%, -50%) scale(1);
+            transform: scale(1);
             opacity: 1;
         }
 
@@ -1769,16 +1784,7 @@ if (!$result) {
         @media (max-width: 576px) {
             .confirmation-content {
                 width: 95%;
-            }
-
-            .confirmation-actions {
-                flex-direction: column;
-            }
-
-            .confirm-btn,
-            .confirmation-actions .cancel-btn {
-                width: 100%;
-                justify-content: center;
+                margin: 1rem;
             }
         }
     </style>
@@ -1799,7 +1805,6 @@ if (!$result) {
             // Show existing payment proof if available
             const imagePreview = document.getElementById('image-preview');
             if (booking.payment_proof) {
-                // Add parent directory to make the path relative to admin folder
                 const imagePath = '../' + booking.payment_proof;
                 imagePreview.innerHTML = `<img src="${imagePath}" alt="Payment Proof">`;
                 imagePreview.style.display = 'block';
@@ -1811,6 +1816,76 @@ if (!$result) {
             const modal = document.getElementById('editBookingModal');
             modal.style.display = 'block';
             setTimeout(() => modal.classList.add('active'), 10);
+
+            // Add submit event listener to the form
+            // const form = document.getElementById('editBookingForm');
+            // form.onsubmit = handleFormSubmit; // This line is removed as per the new_code
+        }
+
+        function handleSaveClick() {
+            console.log('Save button clicked'); // Debug log
+            const confirmModal = document.getElementById('confirmationModal');
+            const confirmMessage = document.getElementById('confirmationMessage');
+            
+            if (!confirmModal || !confirmMessage) {
+                console.error('Modal elements not found:', {
+                    modal: confirmModal,
+                    message: confirmMessage
+                });
+                return;
+            }
+
+            // Set the message
+            confirmMessage.textContent = 'Are you sure you want to update this booking?';
+            
+            // Show the modal
+            confirmModal.style.display = 'flex'; // Changed from 'block' to 'flex'
+            // Force a reflow
+            confirmModal.offsetHeight;
+            confirmModal.classList.add('active');
+
+            // Set up confirm button handler
+            const confirmBtn = document.getElementById('confirmActionBtn');
+            if (confirmBtn) {
+                confirmBtn.onclick = submitBookingForm;
+            } else {
+                console.error('Confirm button not found');
+            }
+        }
+
+        async function submitBookingForm() {
+            closeConfirmationModal();
+            
+            const form = document.getElementById('editBookingForm');
+            const formData = new FormData(form);
+
+            console.log('Submitting form data:');
+            for (let pair of formData.entries()) {
+                console.log(pair[0] + ': ' + pair[1]);
+            }
+
+            try {
+                const response = await fetch('update_booking.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                console.log('Server response:', result);
+
+                if (result.success) {
+                    closeEditModal();
+                    showSuccessMessage('Booking updated successfully!');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    showErrorMessage(result.message || 'Error updating booking');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showErrorMessage('An error occurred. Please check the console for details.');
+            }
         }
 
         function closeEditModal() {
@@ -1840,8 +1915,12 @@ if (!$result) {
 
         function closeConfirmationModal() {
             const modal = document.getElementById('confirmationModal');
-            modal.classList.remove('active');
-            setTimeout(() => modal.style.display = 'none', 300);
+            if (modal) {
+                modal.classList.remove('active');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 300);
+            }
         }
 
         function showSuccessMessage(message) {
@@ -1854,33 +1933,6 @@ if (!$result) {
 
         function showErrorMessage(message) {
             showConfirmationModal('Error: ' + message);
-        }
-
-        async function updateBooking(event) {
-            event.preventDefault();
-            
-            showConfirmationModal('Are you sure you want to update this booking?', async () => {
-                const form = event.target;
-                const formData = new FormData(form);
-
-                try {
-                    const response = await fetch('update_booking.php', {
-                        method: 'POST',
-                        body: formData
-                    });
-
-                    const result = await response.json();
-                    if (result.success) {
-                        closeEditModal();
-                        showSuccessMessage('Booking updated successfully!');
-                    } else {
-                        showErrorMessage(result.message || 'Error updating booking');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    showErrorMessage('An error occurred while updating the booking');
-                }
-            });
         }
 
         // Handle file input change

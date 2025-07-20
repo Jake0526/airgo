@@ -142,6 +142,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     unlink($old_file);
                 }
             }
+
+            // Send email to employee if assigned
+            if ($employee_id) {
+                // Get employee details
+                $emp_sql = "SELECT name, email FROM employees WHERE id = ?";
+                $emp_stmt = $conn->prepare($emp_sql);
+                $emp_stmt->bind_param("i", $employee_id);
+                $emp_stmt->execute();
+                $emp_result = $emp_stmt->get_result();
+                $employee = $emp_result->fetch_assoc();
+                $emp_stmt->close();
+
+                // Get booking details
+                $booking_sql = "SELECT b.*, CONCAT(u.fname, ' ', u.lname) as customer_name 
+                              FROM bookings b 
+                              LEFT JOIN user u ON b.user_id = u.id 
+                              WHERE b.id = ?";
+                $booking_stmt = $conn->prepare($booking_sql);
+                $booking_stmt->bind_param("i", $booking_id);
+                $booking_stmt->execute();
+                $booking_result = $booking_stmt->get_result();
+                $booking = $booking_result->fetch_assoc();
+                $booking_stmt->close();
+
+                if ($employee && $booking) {
+                    require_once dirname(dirname(__FILE__)) . '/config/mailer.php';
+                    try {
+                        $mailer = Mailer::getInstance();
+                        
+                        // Create email body
+                        $emailBody = "
+                        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
+                            <div style='background-color: #07353f; padding: 20px; text-align: center;'>
+                                <h1 style='color: #ffffff; margin: 0;'>AirGo Service Assignment</h1>
+                            </div>
+                            <div style='padding: 20px; background-color: #ffffff; border: 1px solid #e0e0e0;'>
+                                <h2 style='color: #07353f;'>New Service Assignment</h2>
+                                <p>Dear {$employee['name']},</p>
+                                <p>You have been assigned to a new service booking. Here are the details:</p>
+                                <div style='background-color: #f5f5f5; padding: 15px; margin: 20px 0;'>
+                                    <p><strong>Customer:</strong> {$booking['customer_name']}</p>
+                                    <p><strong>Service:</strong> {$booking['service']}</p>
+                                    <p><strong>Location:</strong> {$booking['location']}</p>
+                                    <p><strong>Date:</strong> {$booking['appointment_date']}</p>
+                                    <p><strong>Time:</strong> " . date('g:i A', strtotime($booking['appointment_time'])) . "</p>
+                                    <p><strong>Contact:</strong> {$booking['phone']}</p>
+                                    " . ($booking['note'] ? "<p><strong>Note:</strong> {$booking['note']}</p>" : "") . "
+                                </div>
+                                <p>Please ensure you arrive on time and provide excellent service to our customer.</p>
+                                <p>Best regards,<br>The AirGo Team</p>
+                            </div>
+                            <div style='text-align: center; padding: 20px; color: #666666; font-size: 12px;'>
+                                <p>This is an automated message from AirGo Aircon Services.</p>
+                            </div>
+                        </div>";
+
+                        if (!$mailer->sendEmail($employee['email'], 'New Service Assignment - AirGo', $emailBody)) {
+                            error_log("Failed to send email to employee {$employee['name']} ({$employee['email']})");
+                        }
+                    } catch (Exception $e) {
+                        error_log("Error sending email: " . $e->getMessage());
+                    }
+                }
+            }
             
             $response['success'] = true;
             $response['message'] = 'Booking updated successfully';

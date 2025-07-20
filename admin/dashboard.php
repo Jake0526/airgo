@@ -440,6 +440,36 @@ if (!$recent) {
                 padding: 1rem;
             }
         }
+
+        .modal-backdrop {
+            --bs-backdrop-opacity: 0.8;
+            --bs-backdrop-bg: #000;
+            background-color: var(--bs-backdrop-bg);
+            z-index: 1040;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        .modal-backdrop.show {
+            opacity: var(--bs-backdrop-opacity) !important;
+        }
+
+        .modal-backdrop.fade {
+            opacity: 0;
+        }
+
+        .modal {
+            z-index: 1045;
+        }
+
+        /* Add transition to modal itself for smoother appearance */
+        .modal.fade .modal-dialog {
+            transition: transform 0.2s ease-out;
+            transform: translateY(-20px);
+        }
+
+        .modal.show .modal-dialog {
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body>

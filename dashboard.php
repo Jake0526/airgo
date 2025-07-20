@@ -379,7 +379,7 @@ $conn->close();
     <div class="nav-links">
         <a href="dashboard.php" class="<?= $current_page === 'dashboard.php' ? 'active' : '' ?>"><i class="fas fa-home"></i> Dashboard</a>
         <a href="book-now.php" class="<?= $current_page === 'book-now.php' ? 'active' : '' ?>"><i class="fas fa-calendar-alt"></i> Booking</a>
-        <a href="cancel_booking.php" class="<?= $current_page === 'cancel_booking.php' ? 'active' : '' ?>"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+        <a href="booking-history.php" class="<?= $current_page === 'booking-history.php' ? 'active' : '' ?>"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
     <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 </div>
@@ -1445,6 +1445,37 @@ window.toggleEdit = function(fieldId) {
 #notificationModal #notificationMessage {
     color: #495057;
     line-height: 1.6;
+}
+
+/* Update the modal backdrop styles */
+.modal-backdrop {
+    --bs-backdrop-opacity: 0.8;
+    --bs-backdrop-bg: #000;
+    background-color: var(--bs-backdrop-bg);
+    z-index: 1040;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.modal-backdrop.show {
+    opacity: var(--bs-backdrop-opacity) !important;
+}
+
+.modal-backdrop.fade {
+    opacity: 0;
+}
+
+.modal {
+    z-index: 1045;
+}
+
+/* Add transition to modal itself for smoother appearance */
+.modal.fade .modal-dialog {
+    transition: transform 0.2s ease-out;
+    transform: translateY(-20px);
+}
+
+.modal.show .modal-dialog {
+    transform: translateY(0);
 }
 </style>
 </body>

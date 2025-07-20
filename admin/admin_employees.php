@@ -577,14 +577,24 @@ while ($row = $result_employees->fetch_assoc()) {
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
             z-index: 2000;
-            opacity: 0;
-            transition: opacity 0.3s ease;
         }
 
-        .confirmation-modal.active {
-            opacity: 1;
+        .confirmation-modal::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            z-index: -1;
+        }
+
+        .confirmation-modal.active::before {
+            opacity: 0.8;
         }
 
         .confirmation-content {
@@ -600,7 +610,7 @@ while ($row = $result_employees->fetch_assoc()) {
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
             opacity: 0;
             transform: translate(-50%, -60%) scale(0.95);
-            transition: all 0.3s ease;
+            transition: transform 0.2s ease-out, opacity 0.2s ease-out;
         }
 
         .confirmation-modal.active .confirmation-content {
@@ -683,9 +693,25 @@ while ($row = $result_employees->fetch_assoc()) {
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
+            z-index: 1045;
             overflow-y: auto;
+        }
+
+        .modal::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            z-index: -1;
+        }
+
+        .modal.active::before {
+            opacity: 0.8;
         }
 
         .modal-content {
@@ -698,7 +724,7 @@ while ($row = $result_employees->fetch_assoc()) {
             position: relative;
             transform: translateY(-20px);
             opacity: 0;
-            transition: all 0.3s ease;
+            transition: transform 0.2s ease-out, opacity 0.2s ease-out;
         }
 
         .modal.active .modal-content {
@@ -1690,6 +1716,7 @@ while ($row = $result_employees->fetch_assoc()) {
                                 <th>Date</th>
                                 <th>Time</th>
                                 <th>Status</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="bookingsTableBody">
@@ -1751,6 +1778,13 @@ while ($row = $result_employees->fetch_assoc()) {
                             <td data-label="Time">${escapeHtml(booking.appointment_time || '')}</td>
                             <td data-label="Status" data-status="${escapeHtml(booking.status?.toLowerCase() || '')}">
                                 <span class="status-badge">${escapeHtml(booking.status || '')}</span>
+                            </td>
+                            <td data-label="Actions">
+                                ${booking.status === 'Completed' ? `
+                                    <button class="action-button view-photos-btn" onclick="openPhotoModal('${escapeHtml(booking.service_photo)}', '${escapeHtml(booking.payment_proof)}')">
+                                        <i class="fas fa-images"></i> Proof of Payment
+                                    </button>
+                                ` : ''}
                             </td>
                         `;
                         tbody.appendChild(tr);
@@ -1850,6 +1884,27 @@ while ($row = $result_employees->fetch_assoc()) {
             color: #721c24;
         }
 
+        .view-photos-btn {
+            background: #fff !important;
+            color: var(--primary-color) !important;
+            border: 1px solid #e2e8f0 !important;
+            padding: 0.5rem 1rem !important;
+            border-radius: 4px !important;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            text-decoration: none !important;
+        }
+
+        .view-photos-btn:hover {
+            background: #f8f9fa !important;
+            transform: translateY(-2px);
+        }
+
         @media (max-width: 991px) {
             #employeeBookingsModal .modal-content {
                 width: 95%;
@@ -1866,6 +1921,195 @@ while ($row = $result_employees->fetch_assoc()) {
         }
     </style>
 
+    <!-- Photo View Modal -->
+    <div class="modal" id="photoViewModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="header-content">
+                    <i class="fas fa-user"></i>
+                    <span class="customer-name"></span>
+                    <i class="fas fa-images"></i>
+                    <span>Proof of Payment</span>
+                </div>
+                <button type="button" class="close-btn" onclick="closePhotoModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body photos-modal-body">
+                <div class="photo-section">
+                    <h3>Payment Proof</h3>
+                    <div id="paymentPhotoContainer" class="photo-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        #photoViewModal .modal-content {
+            max-width: 500px;
+            margin: 2rem auto;
+        }
+
+        .photos-modal-body {
+            padding: 1rem;
+        }
+
+        .photo-section {
+            margin-bottom: 1rem;
+        }
+
+        .photo-section h3 {
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .photo-container {
+            background: #f8f9fa;
+            border-radius: 4px;
+            overflow: hidden;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .photo-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .no-photo-message {
+            padding: 2rem;
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .no-photo-message i {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: #adb5bd;
+        }
+    </style>
+
+    <script>
+        function openPhotoModal(servicePhoto, paymentProof) {
+            const modal = document.getElementById('photoViewModal');
+            const paymentContainer = document.getElementById('paymentPhotoContainer');
+            
+            // Handle payment proof
+            if (paymentProof) {
+                paymentContainer.innerHTML = `<img src="../${paymentProof}" alt="Payment Proof">`;
+            } else {
+                paymentContainer.innerHTML = `
+                    <div class="no-photo-message">
+                        <i class="fas fa-image"></i>
+                        <p>No payment proof available.</p>
+                    </div>
+                `;
+            }
+            
+            modal.style.display = 'block';
+            setTimeout(() => modal.classList.add('active'), 10);
+        }
+
+        function closePhotoModal() {
+            const modal = document.getElementById('photoViewModal');
+            modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+
+        // Update window.onclick to include photoViewModal
+        window.onclick = function(event) {
+            const editModal = document.getElementById('editEmployeeModal');
+            const confirmationModal = document.getElementById('confirmationModal');
+            const photoModal = document.getElementById('photoViewModal');
+            if (event.target === editModal) {
+                closeEditModal();
+            }
+            if (event.target === confirmationModal) {
+                closeConfirmationModal();
+            }
+            if (event.target === photoModal) {
+                closePhotoModal();
+            }
+        }
+    </script>
+
+    <style>
+        /* Add this at the end of your existing styles */
+        .modal-backdrop {
+            --bs-backdrop-opacity: 0.8;
+            --bs-backdrop-bg: #000;
+            background-color: var(--bs-backdrop-bg);
+            z-index: 1040;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        .modal-backdrop.show {
+            opacity: var(--bs-backdrop-opacity) !important;
+        }
+
+        .modal-backdrop.fade {
+            opacity: 0;
+        }
+
+        .modal {
+            z-index: 1045;
+        }
+
+        /* Add transition to modal itself for smoother appearance */
+        .modal.fade .modal-dialog {
+            transition: transform 0.2s ease-out;
+            transform: translateY(-20px);
+        }
+
+        .modal.show .modal-dialog {
+            transform: translateY(0);
+        }
+
+        /* For custom modals */
+        .custom-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1045;
+        }
+
+        .custom-modal::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            z-index: -1;
+        }
+
+        .custom-modal.active::before {
+            opacity: 0.8;
+        }
+
+        .custom-modal-content {
+            transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+            transform: translateY(-20px);
+            opacity: 0;
+        }
+
+        .custom-modal.active .custom-modal-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
 </body>
 </html>
 
