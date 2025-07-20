@@ -512,6 +512,41 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         backdrop-filter: blur(5px);
     }
 
+    /* Add error modal styles */
+    .error-modal .modal-content {
+        border-left: 4px solid #e44;
+    }
+
+    .error-modal h3 {
+        color: #e44;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .error-modal h3::before {
+        content: '⚠️';
+    }
+
+    .error-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .error-list li {
+        padding: 0.5rem 0;
+        color: #e44;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .error-list li::before {
+        content: '•';
+        color: #e44;
+    }
+
     .modal-content {
         position: relative;
         background: var(--card-bg);
@@ -998,6 +1033,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </div>
 </div>
 
+<!-- Add the error modal HTML before the closing body tag -->
+<div id="errorModal" class="modal error-modal">
+    <div class="modal-content">
+        <h3>Registration Error</h3>
+        <p>Please fix the following errors:</p>
+        <ul class="error-list" id="errorList">
+        </ul>
+        <div class="modal-actions">
+            <button type="button" class="btn-primary" onclick="closeErrorModal()">Fix Errors</button>
+        </div>
+    </div>
+</div>
+
 <script>
     // District and Barangay dropdown functionality
     document.addEventListener('DOMContentLoaded', function() {
@@ -1199,17 +1247,95 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         document.querySelector('.btn-secondary').disabled = true;
     }
 
-    // Close modal when clicking outside
+    function showErrorModal(errors) {
+        const errorList = document.getElementById('errorList');
+        errorList.innerHTML = '';
+        
+        errors.forEach(error => {
+            const li = document.createElement('li');
+            li.textContent = error;
+            errorList.appendChild(li);
+        });
+
+        document.getElementById('errorModal').style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeErrorModal() {
+        document.getElementById('errorModal').style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    function validateForm() {
+        const errors = [];
+        
+        // Validate password
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('confirm_password');
+        const passwordValidation = document.getElementById('passwordValidation');
+        const confirmPasswordValidation = document.getElementById('confirmPasswordValidation');
+        
+        if (passwordValidation.classList.contains('error') || !password.value) {
+            errors.push('Password does not meet requirements');
+        }
+        if (confirmPasswordValidation.classList.contains('error') || !confirmPassword.value) {
+            errors.push('Passwords do not match');
+        }
+
+        // Validate contact number
+        const contact = document.getElementById('contact');
+        const contactValidation = document.getElementById('contactValidation');
+        if (contactValidation.classList.contains('error') || !contact.value || contact.value.length !== 9) {
+            errors.push('Invalid contact number format');
+        }
+
+        // Validate required fields
+        ['fname', 'lname', 'username', 'email', 'district', 'barangay'].forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (!field.value.trim()) {
+                errors.push(`${field.previousElementSibling.textContent.replace('*', '')} is required`);
+            }
+        });
+
+        // Validate email format
+        const email = document.getElementById('email');
+        if (email.value && !email.value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+            errors.push('Invalid email format');
+        }
+
+        // If there are errors, show error modal and prevent form submission
+        if (errors.length > 0) {
+            showErrorModal(errors);
+            return false;
+        }
+
+        // If no errors, show confirmation modal
+        showConfirmation();
+        return false;
+    }
+
+    // Update form submission
+    document.querySelector('form').onsubmit = function(e) {
+        e.preventDefault();
+        return validateForm();
+    };
+
+    // Close error modal when clicking outside
     window.onclick = function(event) {
-        const modal = document.getElementById('confirmationModal');
-        if (event.target == modal) {
+        const errorModal = document.getElementById('errorModal');
+        const confirmationModal = document.getElementById('confirmationModal');
+        if (event.target == errorModal) {
+            closeErrorModal();
+        }
+        if (event.target == confirmationModal) {
             closeModal();
         }
     }
 
-    // Close modal on escape key
+    // Close modals on escape key
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
+            closeErrorModal();
             closeModal();
         }
     });
