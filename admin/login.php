@@ -198,6 +198,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             box-shadow: 0 10px 20px var(--card-shadow);
         }
 
+        /* Password visibility toggle styles */
+        .password-field {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            padding: 0;
+            margin: 0;
+            cursor: pointer;
+            color: var(--text-color);
+            opacity: 0.6;
+            transition: opacity 0.3s ease;
+            width: auto;
+            font-size: 0.9rem;
+        }
+
+        .password-toggle:hover {
+            opacity: 1;
+            background: none;
+            transform: translateY(-50%);
+            box-shadow: none;
+        }
+
         .error {
             background: #fee;
             color: #e44;
@@ -237,7 +266,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required>
+                    <div class="password-field">
+                        <input type="password" id="password" name="password" required>
+                        <button type="button" class="password-toggle" onclick="togglePassword('password')">Show</button>
+                    </div>
                 </div>
 
                 <button type="submit">Login</button>
@@ -245,4 +277,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     </section>
 </body>
+<script>
+    function togglePassword(inputId) {
+        const input = document.getElementById(inputId);
+        const button = input.nextElementSibling;
+        
+        if (input.type === 'password') {
+            input.type = 'text';
+            button.textContent = 'Hide';
+        } else {
+            input.type = 'password';
+            button.textContent = 'Show';
+        }
+    }
+</script>
 </html>
