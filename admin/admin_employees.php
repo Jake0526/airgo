@@ -65,14 +65,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_employee'])) {
         $hashed_password = password_hash($password_input, PASSWORD_DEFAULT);
 
         // Use prepared statement for insert
-        $note = mysqli_real_escape_string($conn, trim($_POST['note'] ?? ''));
-        
-        $stmt = $conn->prepare("INSERT INTO employees (name, email, position, hire_date, status, password, note) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO employees (name, email, position, hire_date, status, password) VALUES (?, ?, ?, ?, ?, ?)");
         if (!$stmt) {
             throw new Exception("Failed to prepare insert statement: " . $conn->error);
         }
 
-        $stmt->bind_param("sssssss", $name, $email, $position, $hire_date, $status, $hashed_password, $note);
+        $stmt->bind_param("ssssss", $name, $email, $position, $hire_date, $status, $hashed_password);
         
         if (!$stmt->execute()) {
             throw new Exception("Failed to add employee: " . $stmt->error);
@@ -1299,10 +1297,10 @@ while ($row = $result_employees->fetch_assoc()) {
         <table>
             <thead>
                 <tr>
+                    <th>ID</th>
                     <th>Name</th>
                     <th>Email</th>
                     <th>Position</th>
-                    <th>Hire Date</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -1311,10 +1309,10 @@ while ($row = $result_employees->fetch_assoc()) {
                 <?php if (count($employees) > 0): ?>
                     <?php foreach ($employees as $employee): ?>
                         <tr>
+                            <td data-label="ID"><?= htmlspecialchars($employee['id'] ?? '') ?></td>
                             <td data-label="Name"><?= htmlspecialchars($employee['name'] ?? '') ?></td>
                             <td data-label="Email"><?= htmlspecialchars($employee['email'] ?? '') ?></td>
                             <td data-label="Position"><?= htmlspecialchars($employee['position'] ?? '') ?></td>
-                            <td data-label="Hire Date"><?= htmlspecialchars($employee['hire_date'] ?? '') ?></td>
                             <td data-label="Status" data-status="<?= htmlspecialchars($employee['status'] ?? '') ?>">
                                 <span><?= htmlspecialchars($employee['status'] ?? '') ?></span>
                             </td>

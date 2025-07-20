@@ -31,7 +31,7 @@ $sql = "SELECT
         FROM bookings b
         LEFT JOIN user u ON b.user_id = u.id
         LEFT JOIN employees e ON b.employee_id = e.id
-        WHERE b.status != 'pending'
+        WHERE b.status IN ('completed', 'cancelled')
           AND b.employee_id = ?
         ORDER BY b.appointment_date DESC, b.created_at DESC";
      
@@ -457,9 +457,6 @@ while ($row = $result->fetch_assoc()) {
 
     <div class="main-content">
         <h1><i class="fas fa-clock-rotate-left"></i> Booking History</h1>
-        <a href="export_booking_history_employees.php" class="export-btn">
-            <i class="fas fa-file-export"></i> Export to CSV
-        </a>
      
         <?php
         if (empty($bookings)) {
@@ -514,12 +511,6 @@ while ($row = $result->fetch_assoc()) {
                     </span>
                 </td>
                 <td>
-                    <form method="POST" action="delete_booking.php" onsubmit="return confirm('Are you sure you want to delete this booking? This cannot be undone.');">
-                        <input type="hidden" name="booking_id" value="<?= $row['id'] ?>">
-                        <button type="submit" class="delete-btn">
-                            <i class="fas fa-trash-alt"></i> Delete
-                        </button>
-                    </form>
                     <?php if (!empty($row['payment_proof'])): ?>
                         <button class="view-btn" onclick="viewPaymentProof('../<?= htmlspecialchars($row['payment_proof']) ?>')">
                             <i class="fas fa-eye"></i> View

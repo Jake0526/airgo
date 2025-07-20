@@ -29,13 +29,13 @@ switch ($tab) {
         $where = "WHERE LOWER(b.status) = 'pending'";
         break;
     case 'reschedule':
-        $where = "WHERE LOWER(b.status) = 'reschedule requested'";
+        $where = "WHERE LOWER(b.status) = 'rescheduled'";
         break;
     case 'approved':
         $where = "WHERE LOWER(b.status) = 'approved'";
         break;
     case 'completed':
-        $where = "WHERE LOWER(b.status) = 'completed'";
+        $where = "WHERE b.status = 'Completed'";
         break;
     case 'cancelled':
         $where = "WHERE LOWER(b.status) = 'cancelled'";
@@ -83,7 +83,7 @@ $total_records = $count_result->fetch_assoc()['total'];
 $total_pages = ceil($total_records / $records_per_page);
 
 // Fetch bookings with pagination
-$sql = "SELECT b.id, CONCAT(u.fname, ' ', u.lname) as customer_name, b.service, b.status, b.created_at, b.location, b.phone, 
+$sql = "SELECT b.id, b.user_id, CONCAT(u.fname, ' ', u.lname) as customer_name, b.service, b.status, b.created_at, b.location, b.phone, 
                b.appointment_date, b.appointment_time, b.employee_id, e.name AS employee_name,
                b.note, b.payment_proof
         FROM bookings b
@@ -368,15 +368,16 @@ if (!$result) {
 
         /* Column widths */
         th:nth-child(1), td:nth-child(1) { width: 10%; } /* Name */
-        th:nth-child(2), td:nth-child(2) { width: 12%; } /* Service */
-        th:nth-child(3), td:nth-child(3) { width: 15%; } /* Location */
-        th:nth-child(4), td:nth-child(4) { width: 8%; }  /* Contact */
-        th:nth-child(5), td:nth-child(5) { width: 8%; }  /* Date */
-        th:nth-child(6), td:nth-child(6) { width: 8%; }  /* Time */
-        th:nth-child(7), td:nth-child(7) { width: 15%; } /* Note */
-        th:nth-child(8), td:nth-child(8) { width: 8%; }  /* Status */
-        th:nth-child(9), td:nth-child(9) { width: 8%; }  /* Technician */
-        th:nth-child(10), td:nth-child(10) { width: 8%; } /* Actions */
+        th:nth-child(2), td:nth-child(2) { width: 5%; }  /* User ID */
+        th:nth-child(3), td:nth-child(3) { width: 12%; } /* Service */
+        th:nth-child(4), td:nth-child(4) { width: 15%; } /* Location */
+        th:nth-child(5), td:nth-child(5) { width: 8%; }  /* Contact */
+        th:nth-child(6), td:nth-child(6) { width: 8%; }  /* Date */
+        th:nth-child(7), td:nth-child(7) { width: 8%; }  /* Time */
+        th:nth-child(8), td:nth-child(8) { width: 12%; } /* Note */
+        th:nth-child(9), td:nth-child(9) { width: 8%; }  /* Status */
+        th:nth-child(10), td:nth-child(10) { width: 8%; } /* Technician */
+        th:nth-child(11), td:nth-child(11) { width: 6%; } /* Actions */
 
         td {
             line-height: 1.2;
@@ -1013,7 +1014,7 @@ if (!$result) {
                 <i class="fas fa-clock"></i> Pending
             </a>
             <a href="?tab=reschedule" class="tab-link <?= ($tab == 'reschedule') ? 'active' : '' ?>">
-                <i class="fas fa-sync"></i> Reschedule Requests
+                <i class="fas fa-sync"></i> Rescheduled
             </a>
             <a href="?tab=approved" class="tab-link <?= ($tab == 'approved') ? 'active' : '' ?>">
                 <i class="fas fa-check-circle"></i> Approved
@@ -1186,6 +1187,7 @@ if (!$result) {
                 <thead>
                     <tr>
                         <th>Name</th>
+                        <th>User ID</th>
                         <th>Service</th>
                         <th>Location</th>
                         <th>Contact</th>
@@ -1202,6 +1204,7 @@ if (!$result) {
                         <?php while ($row = $result->fetch_assoc()): ?>
                         <tr>
                             <td data-label="Name"><?= htmlspecialchars($row['customer_name'] ?? '') ?></td>
+                            <td data-label="User ID"><?= htmlspecialchars($row['user_id'] ?? '') ?></td>
                             <td data-label="Service"><?= htmlspecialchars($row['service'] ?? '') ?></td>
                             <td data-label="Location"><?= htmlspecialchars($row['location'] ?? '') ?></td>
                             <td data-label="Contact"><?= htmlspecialchars($row['phone'] ?? '') ?></td>
@@ -1317,9 +1320,8 @@ if (!$result) {
                             <select id="status" name="status" required>
                                 <option value="Pending">Pending</option>
                                 <option value="Approved">Approved</option>
-                                <option value="Rejected">Rejected</option>
-                                <option value="Cancelled">Cancelled</option>
                                 <option value="Completed">Completed</option>
+                                <option value="Cancelled">Cancelled</option>
                             </select>
                         </div>
                         <div class="form-group">

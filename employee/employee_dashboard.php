@@ -26,7 +26,7 @@ $stmt_name->close();
 // Mark service as done
 if (isset($_GET['done_id'])) {
     $done_id = (int)$_GET['done_id'];
-    $stmt = $conn->prepare("UPDATE bookings SET status = 'completed' WHERE id = ? AND employee_id = ?");
+    $stmt = $conn->prepare("UPDATE bookings SET status = 'Completed' WHERE id = ? AND employee_id = ?");
     if (!$stmt) {
         die("Prepare failed: (" . $conn->errno . ") " . $conn->error);
     }
@@ -46,7 +46,7 @@ $offset = ($page - 1) * $records_per_page;
 // Get total count for pagination
 $count_sql = "SELECT COUNT(*) as total FROM bookings b
               LEFT JOIN user u ON b.user_id = u.id
-              WHERE b.employee_id = ? AND b.status = 'pending'";
+              WHERE b.employee_id = ? AND b.status = 'approved'";
 $stmt = $conn->prepare($count_sql);
 $stmt->bind_param("i", $employee_id);
 $stmt->execute();
@@ -61,7 +61,7 @@ $stmt = $conn->prepare("
            b.phone, b.appointment_date, b.appointment_time, b.status, b.price, b.note, b.payment_proof
     FROM bookings b
     LEFT JOIN user u ON b.user_id = u.id
-    WHERE b.employee_id = ? AND b.status = 'pending'
+    WHERE b.employee_id = ? AND b.status = 'approved'
     ORDER BY b.appointment_date, b.appointment_time
     LIMIT ? OFFSET ?
 ");
@@ -754,9 +754,9 @@ $result = $stmt->get_result();
                                 </td>
                                 <td data-label="Price">₱<?= number_format($row['price'], 2) ?></td>
                                 <td data-label="Actions" class="action-buttons">
-                                    <?php if (strtolower($row['status']) === 'pending'): ?>
+                                    <?php if (strtolower($row['status']) === 'approved'): ?>
                                         <a href="?done_id=<?= $row['id'] ?>" class="button" onclick="return confirm('Mark this booking as done?');">
-                                            <i class="fas fa-check"></i> Done
+                                            <i class="fas fa-check"></i> Complete
                                         </a>
                                     <?php endif; ?>
                                     <button class="button" onclick="openUploadModal(<?= htmlspecialchars(json_encode($row)) ?>)">

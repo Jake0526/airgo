@@ -114,10 +114,10 @@ for ($i = $range_start; $i <= $range_end; $i += 86400) {
         $title = "";
     } elseif ($remaining <= 0) {
         $color = "#ff6b6b";
-        $title = "Fully Booked";
+        $title = "";
     } else {
         $color = "#48c78e";
-        $title = "$remaining Slots Left";
+        $title = "";
     }
 
     $calendar_events[] = [
@@ -1321,6 +1321,73 @@ window.toggleEdit = function(fieldId) {
 </script>
 
 <style>
+    /* Update modal backdrop styles */
+    .modal-backdrop {
+        --bs-backdrop-opacity: 0.8;
+        --bs-backdrop-bg: #000;
+        background-color: var(--bs-backdrop-bg);
+        z-index: 1040;
+        transition: opacity 0.2s ease-in-out;
+    }
+
+    .modal-backdrop.show {
+        opacity: var(--bs-backdrop-opacity) !important;
+    }
+
+    .modal-backdrop.fade {
+        opacity: 0;
+    }
+
+    .modal {
+        z-index: 1045;
+    }
+
+    /* Add transition to modal itself for smoother appearance */
+    .modal.fade .modal-dialog {
+        transition: transform 0.2s ease-out;
+        transform: translateY(-20px);
+    }
+
+    .modal.show .modal-dialog {
+        transform: translateY(0);
+    }
+
+    /* Notification Modal Enhancements */
+    #notificationModal .modal-content {
+        transform: scale(0.95);
+        opacity: 0;
+        transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    }
+
+    #notificationModal.show .modal-content {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    /* Success Modal Enhancements */
+    #successModal .modal-content {
+        transform: scale(0.95);
+        opacity: 0;
+        transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    }
+
+    #successModal.show .modal-content {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    /* Confirmation Modal Enhancements */
+    #confirmationModal .modal-content {
+        transform: scale(0.95);
+        opacity: 0;
+        transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    }
+
+    #confirmationModal.show .modal-content {
+        transform: scale(1);
+        opacity: 1;
+    }
+
     /* Calendar container styles */
     .calendar-container {
         background: white;
