@@ -13,10 +13,11 @@ try {
     $otp = sprintf("%06d", mt_rand(0, 999999));
     $user_id = $_SESSION['user_id'];
     
-    // Update OTP in database
+    // Update OTP in database with expiration time
     $conn = Database::getConnection();
-    $stmt = $conn->prepare("UPDATE user SET otp_code = ? WHERE id = ?");
-    $stmt->bind_param("si", $otp, $user_id);
+    $otp_expiry = date('Y-m-d H:i:s', strtotime('+2 minutes'));
+    $stmt = $conn->prepare("UPDATE user SET otp_code = ?, otp_expiry = ? WHERE id = ?");
+    $stmt->bind_param("ssi", $otp, $otp_expiry, $user_id);
     
     if ($stmt->execute()) {
         // Send new verification email

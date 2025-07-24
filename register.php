@@ -50,11 +50,6 @@ if (isset($_SESSION['success_message'])) {
     unset($_SESSION['success_message']);
 }
 
-// Function to validate username/full name (only letters and spaces, min 3 chars)
-function isValidUsername($username) {
-    return preg_match('/^[A-Za-z ]{3,}$/', $username);
-}
-
 // PHP array holding the barangays grouped by district
 $districts = [
     "Poblacion" => [
@@ -125,25 +120,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Add the +639 prefix
     $contact = '+639' . $contact;
     
+    $houseno = trim($_POST['houseno']);
+    $street = trim($_POST['street']);
     $city = trim($_POST['city']);
     $district = trim($_POST['district']);
     $barangay = trim($_POST['barangay']);
     $zipcode = trim($_POST['zipcode']);
 
-    // Validate username as full name
-    if (!isValidUsername($username)) {
-        $_SESSION['error_message'] = "Error: Username must contain only letters and spaces.";
-        header("Location: register.php");
-        exit();
-    } 
     // Validate password strength
-    elseif (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{12,}$/', $password)) {
-        $_SESSION['error_message'] = "Error: Password must be minimum 12 characters and include uppercase letters, lowercase letters, numbers, and special characters.";
+    if (!preg_match('/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{10,}$/', $password)) {
+        $_SESSION['error_message'] = "Error: Password must be minimum 10 characters and include uppercase letters, lowercase letters, numbers, and special characters.";
         header("Location: register.php");
         exit();
     }
     // Check if passwords match
-    elseif ($password !== $confirm_password) {
+    if ($password !== $confirm_password) {
         $_SESSION['error_message'] = "Error: Passwords do not match.";
         header("Location: register.php");
         exit();
@@ -171,10 +162,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     // Hash the password
                     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-                    // Insert into user table with OTP and is_verified = 0
-                    $sql = "INSERT INTO user (fname, lname, username, password, email, contact, city, district, barangay, zipcode, otp_code, is_verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)";
+                    // Insert into user table with OTP, expiry time and is_verified = 0
+                    $sql = "INSERT INTO user (fname, lname, username, password, email, contact, houseno, street, city, district, barangay, zipcode, otp_code, otp_expiry, is_verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                     if ($insert_stmt = $conn->prepare($sql)) {
-                        $insert_stmt->bind_param("sssssssssss", $fname, $lname, $username, $hashed_password, $email, $contact, $city, $district, $barangay, $zipcode, $otp);
+                        // Calculate expiry time (2 minutes from now)
+                        $otp_expiry = date('Y-m-d H:i:s', strtotime('+2 minutes'));
+                        $is_verified = 0;
+                        $insert_stmt->bind_param("ssssssssssssssi", $fname, $lname, $username, $hashed_password, $email, $contact, $houseno, $street, $city, $district, $barangay, $zipcode, $otp, $otp_expiry, $is_verified);
 
                         if ($insert_stmt->execute()) {
                             // Get the newly inserted user's ID
@@ -256,7 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <!-- Favicon -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%2307353f'/%3E%3Cpath d='M30 50c0-11 9-20 20-20s20 9 20 20-9 20-20 20-20-9-20-20zm35 0c0-8.3-6.7-15-15-15s-15 6.7-15 15 6.7 15 15 15 15-6.7 15-15z' fill='%233cd5ed'/%3E%3Cpath d='M50 60c-5.5 0-10-4.5-10-10s4.5-10 10-10 10 4.5 10 10-4.5 10-10 10z' fill='white'/%3E%3C/svg%3E" />
 <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAABKhJREFUWEe9V21sU2UUfu7H3a7dmDAgKgwQPxAkKAYnJsyPGCGK0ZAQFfEHJGpigkT8gYrxB5pI/GD+QBNjNCr+ICYaEzWBRDBRIQQIiCIIKLIvGIPtbrfb7b3XnHPvbVc2trs3bU/S7H7c877Pec95z3veK+AeHOIe4MN/B0CWZVkQhHui3LquX5YkSboXk+u6PqwoCud3HEAkEuH8qqrS0NBQYWxsLDY2NhaNRqNRVVVjmqYpuq4rpHwwGHQHAgG3y+VyezweN/1yu91uQRDcBIr+CoIgCILAf222GfRqgKZpGsdHYDRNm6Xr+llZlr1/CcDQ0BCNjZumxXVdVxVFiWmaFlVVNaooSjQejxPQEUVRYpqmxXRd5+vpuu5yOBwet9vtczgcPofD4SWQBMjpdLodDofL6XS6nE4nARFFUeR7QRAIJIMxAVJVVWPQODNBkiSvLMsDkiTJt23BwMAAjVEURY3H4zFFUaKqqkYJiKqqUU3T6G9UVdW4pmkxAqfrOgMWRdHjdDq9BNDhcPgcDofX5XL5XS6Xz+12+10ul9fpdHoJqMvlcjudTjcBJVOYQOm6rsXjcS0Wi8UjkUiU/kYikWgsFovF4/F4LBaLxePxeDQaZUDWFPT39xMAVVXVWCwWVRQlqihKhEAqihIxmUxRXdf52WQyEQCPKIo+URR9BNDpdPqtVqvfYrH4rFar3263++12u89ms3ltNpvXZrN5rFYrAXWRDgioYU7DnMSUoihsXkVRFPJEJBKJRKPR8O0a6O3tNQNgJlRVNayqaphAEgOSJIUlSQobDLgoK0RR9JEGLBaL32q1+m02m5/AEli73e6z2+0+q9Xqc7lcXrvd7rFarW6r1eq2WCwExk2ZQCDJ75IkhXVdD+u6HtZ1PazrehiYEtZ1XTYykCRJYdu27du3j8YbIAJGbIQJpKqqYUmSwgTSYMFNLJAGHA6H32Kx+G02m5/AElgCabfbfTabzWu1Wj0ul8tjs9k8VqvVbbFY3E6n0+10Ot0EkjQgSVKY7qmqGqbxkiSFVVUNU8FTVTVEz7IsywkNbN682QyAM0BV1RCZkEBKkhTSNC0kSVKIGHA4HD6n0+mzWCw+AksmtNlsXpvN5rXb7R6Xy+UhoFar1W21Wl0EkoAaZg1rmhYi89F4TdNCmqaFVFUNkXkTNZHNZvts27aNxhuNCIEI0T2ZkN4bLLhEUfQaueAjDdhsNi+BJD0QUKfT6SYdEFDKAEmSQoqihOjeAJG4/gQ7W7duzQXwP9cBnNexpjhBAAAAAElFTkSuQmCC" />
-<link rel="icon" type="image/png" sizes="16x16" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAlpJREFUOE+Nk0tIVFEYx//n3jtz544z4zg6OuqoqKVp9LDUMAqKFtGiWtSiWkQkEUEtahERRBQVLYJoUW2iRdCiKKJFD4JqE0REDxQfw1hq5DiOztz5mHvPPeeMjlr2wVl8fN/v+z++c87HsB8f24d9+H8A0un0IcbYUdd1PSLyiIg8z3MJyPU8zyEix/M8h4hcz/McInI9z7WJyLJt27Isy7IsS7YsS7IsS7YsW2aMWbZtW5ZlWaZpEsdxEgghDCGEwRjbBpBKpQ4yxo66rusRkedRwQQgEpHreZ5DRK7neQ4RuZ7nOZ7n2a7rWo7jWLZtW47jyI7jSLZty47jSI7jSJZlSYwxadOvCSGMbQDJZPIQY+yI67qe53ke/QsgItf1XIeIHNd1Hdd1Hc/zbNu2Ldu2ZMexJMexJNu2JcaYtAXAGDM2AWKx2GHG2BEiIiLPIyLPdd0CQK7ruq7ruq5t25Zt25LjOLLjOJLjOJLjOJLjOBJjTNoUlzFmbAJEo9EjjLHDRERE5BERua7rFgByXdd1Xde1bdu2bNuWHceWHceWHMeSHMeSbNuWGGPSFgBjzNgEiEQihxljh4iIiMgjInJd1y0A5Lqu67qu69i2bdm2LTmOLTmOLTmOJTmOJdm2LTHGpC1xGWPGJkA4HD7CGDtIRJ7neUREnut6BYBc13Ud27Yt27Ylx7Elx7Ekx7Ekx7Ek27YlxpgkSRJjjBkbAMFg8BBj7IDruh4ReUREnut6BYBc13Ud27Yt27Ylx7Elx7Ekx7Ek27YlxpgkSRJjjBl/AQgEAgcZY/uJyPsJ8AOvgZzXMm3oPQAAAABJRU5ErkJggg==" />
+<link rel="icon" type="image/png" sizes="16x16" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAlpJREFUOE+Nk0tIVFEYx//n3jtz544z4zg6OuqoqKVp9LDUMAqKFtGiWtSiWkQkEUEtahERRBQVLYJoUW2iRdCiKKJFD4JqE0REDxQfw1hq5DiOztz5mHvPPeeMjlr2wVl8fN/v+z++c87HsB8f24d9+H8A0un0IcbYUdd1PSLyiIg8z3MJyPU8zyEix/M8h4hcz/McInI9z7WJyLJt27Isy7IsS7YsS7IsS7YsW2aMWbZtW5ZlWaZpEsdxEgghDCGEwRjbBpBKpQ4yxo66rusRkedRwQQgEpHreZ5DRK7neQ4RuZ7nOZ7n2a7rWo7jWLZtW47jyI7jSLZty47jSI7jSJZlSYwxadOvCSGMbQDJZPIQY+yI67qe53ke/QsgItf1XIeIHNd1Hdd1Hc/zbNu2Ldu2ZMexJMexJNu2JcaYtAXAGDM2AWKx2GHG2BEiIiLPIyLPdd0CQK7ruq7ruq5t25Zt25LjOLLjOJLjOJLjOBJjTNoUlzFmbAJEo9EjjLHDRERE5BERua7rFgByXdd1Xde1bdu2bNuWHceWHceWHMeSHMeSbNuWGGPSFgBjzNgEiEQihxljh4iIiMgjInJd1y0A5Lqu67qu69i2bdm2LTmOLTmOLTmOJTmOJdm2LTHGpC1xGWPGJkA4HD7CGDtIRJ7neUREnut6BYBc13Ud27Yt27Ylx7Elx7Ekx7Ekx7Ek27YlxpgkSRJjjBkbAMFg8BBj7IDruh4ReUREnut6BYBc13Ud27Yt27Ylx7Elx7Ekx7Ek27YlxpgkSRJjjBl/AQgEAgcZY/uJyPsJ8AOvgZzXMm3oPQAAAABJRU5ErkJggg==" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -665,38 +659,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         display: none;
         font-size: 0.85rem;
         margin-top: 0.5rem;
-        padding: 0.5rem 0.8rem;
-        border-radius: 6px;
-        animation: fadeIn 0.3s ease;
-    }
-
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(-5px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        background: #fff2f2;
+        color: #e44;
+        padding: 0.8rem;
+        border-radius: 8px;
+        width: 100%;
     }
 
     .validation-message.error {
         display: block;
         background: #fff2f2;
         color: #e44;
-        border: 1px solid #ffdbdb;
     }
 
     .validation-message.success {
         display: block;
         background: #f0fff0;
         color: #0a0;
-        border: 1px solid #d7f5d7;
     }
 
-    input.error, select.error {
+    .validation-message.checking {
+        display: block;
+        background: #f0f8ff;
+        color: #0066cc;
+    }
+
+    input.error {
         border-color: #e44;
+        margin-bottom: 0;  /* Remove bottom margin when there's an error */
     }
 
     input.error:focus, select.error:focus {
@@ -726,6 +716,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         position: relative;
         display: flex;
         align-items: center;
+        margin-bottom: 0.5rem;  /* Add space below input wrapper */
     }
 
     .toggle-password {
@@ -766,9 +757,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     .password-requirements {
-        margin-top: 0.5rem;
+        margin-top: 1rem;
         font-size: 0.85rem;
         color: #666;
+        width: 100%;
     }
 
     .requirement {
@@ -776,6 +768,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         align-items: center;
         gap: 0.5rem;
         margin-bottom: 0.3rem;
+        color: #666;
     }
 
     .requirement::before {
@@ -867,26 +860,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                title="Only letters and spaces" placeholder="Enter your last name">
                     </div>
 
-                    <div class="form-group">
-                        <label for="username">Username</label>
-                        <input type="text" id="username" name="username" required pattern="[A-Za-z ]{3,}"
-                               title="Only letters and spaces" placeholder="Choose a username">
-                    </div>
+                    <input type="hidden" id="username" name="username">
 
                     <div class="form-group">
                         <label for="email">Email</label>
                         <input type="email" id="email" name="email" required placeholder="Enter your email">
                     </div>
 
-                    <div class="form-group">
+                                        <div class="form-group">
                         <label for="password">Password</label>
                         <div class="password-input-wrapper">
-                        <input type="password" 
-                               id="password" 
-                               name="password" 
-                               required 
-                               oninput="validatePassword(this)"
-                               placeholder="Create a password">
+                            <input type="password" 
+                                   id="password" 
+                                   name="password" 
+                                   required 
+                                   oninput="validatePassword(this)"
+                                   placeholder="Create a password">
                             <button type="button" class="toggle-password" onclick="togglePassword('password')">
                                 <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -898,17 +887,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 </svg>
                             </button>
                         </div>
+                        <div class="error-message" id="passwordValidation" style="display: none; background: #fff2f2; color: #dc3545; padding: 0.8rem; border-radius: 8px; margin-top: 0.5rem; font-size: 0.9rem;">
+                            Password is required
+                        </div>
                         <div class="password-requirements">
-                            <div class="requirement" id="req-length">At least 12 characters</div>
-                            <div class="requirement" id="req-uppercase">Contains uppercase letter</div>
-                            <div class="requirement" id="req-lowercase">Contains lowercase letter</div>
-                            <div class="requirement" id="req-number">Contains numbers</div>
-                            <div class="requirement" id="req-special">Contains special character (!@#$%^&*(),.?":{}|<>)</div>
+                            <div class="requirement" id="req-length">Minimum 10 characters</div>
+                            <div class="requirement" id="req-uppercase">Must contain at least one uppercase letter</div>
+                            <div class="requirement" id="req-lowercase">Must contain at least one lowercase letter</div>
+                            <div class="requirement" id="req-number">Must contain at least one number</div>
+                            <div class="requirement" id="req-special">Must contain at least one special character (!@#$%^&(),.?":{}|<>)</div>
                         </div>
                         <div class="password-strength">
                             <div class="strength-meter" id="strength-meter"></div>
                         </div>
-                        <div class="validation-message" id="passwordValidation"></div>
                     </div>
 
                     <div class="form-group">
@@ -931,7 +922,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 </svg>
                             </button>
                         </div>
-                        <div class="validation-message" id="confirmPasswordValidation"></div>
+                        <div class="error-message" id="confirmPasswordValidation" style="display: none; background: #fff2f2; color: #dc3545; padding: 0.8rem; border-radius: 8px; margin-top: 0.5rem; font-size: 0.9rem;">
+                            Please confirm your password
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -948,7 +941,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                    title="Please enter 9 digits"
                                    oninput="validateContactNumber(this)">
                         </div>
-                        <div class="validation-message" id="contactValidation"></div>
+                        <div class="error-message" id="contactValidation" style="display: none; background: #fff2f2; color: #dc3545; padding: 0.8rem; border-radius: 8px; margin-top: 0.5rem; font-size: 0.9rem;">
+                            Contact number is required
+                        </div>
                         <small class="contact-hint">Format: +639 followed by 9 digits</small>
                     </div>
                 </div>
@@ -956,6 +951,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <div class="form-col">
                     <div class="address-section">
                         <h3>Address Information</h3>
+                        
+                        <div class="form-group">
+                            <label for="houseno">House Number</label>
+                            <input type="text" id="houseno" name="houseno" required placeholder="Enter house number">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="street">Street</label>
+                            <input type="text" id="street" name="street" required placeholder="Enter street name">
+                        </div>
                         
                         <div class="form-group">
                             <label for="city">City</label>
@@ -1010,10 +1015,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <span id="confirmName"></span>
             </div>
             <div class="detail-row">
-                <span class="label">Username:</span>
-                <span id="confirmUsername"></span>
-            </div>
-            <div class="detail-row">
                 <span class="label">Email:</span>
                 <span id="confirmEmail"></span>
             </div>
@@ -1033,7 +1034,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     </div>
 </div>
 
-<!-- Add the error modal HTML before the closing body tag -->
+<!-- Remove error modal HTML -->
 <div id="errorModal" class="modal error-modal">
     <div class="modal-content">
         <h3>Registration Error</h3>
@@ -1074,54 +1075,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         districtSelect.addEventListener('change', loadBarangays);
     });
 
-    function validateContactNumber(input) {
-        const wrapper = input.closest('.contact-input-wrapper');
-        const validationMessage = document.getElementById('contactValidation');
-        
-        // Remove any non-digit characters
-        let value = input.value.replace(/\D/g, '');
-        
-        // Ensure only 9 digits
-        if (value.length > 9) {
-            value = value.slice(0, 9);
-        }
-        
-        // Update input value
-        input.value = value;
 
-        // Validate and show appropriate message
-        if (value.length === 0) {
-            wrapper.classList.remove('error', 'success');
-            validationMessage.classList.remove('error', 'success');
-            validationMessage.style.display = 'none';
-        } else if (value.length < 9) {
-            wrapper.classList.add('error');
-            wrapper.classList.remove('success');
-            validationMessage.textContent = `Please enter ${9 - value.length} more digit${9 - value.length > 1 ? 's' : ''}`;
-            validationMessage.classList.add('error');
-            validationMessage.classList.remove('success');
-            validationMessage.style.display = 'block';
-        } else if (!/^\d{9}$/.test(value)) {
-            wrapper.classList.add('error');
-            wrapper.classList.remove('success');
-            validationMessage.textContent = 'Please enter numbers only';
-            validationMessage.classList.add('error');
-            validationMessage.classList.remove('success');
-            validationMessage.style.display = 'block';
-        } else {
-            wrapper.classList.add('success');
-            wrapper.classList.remove('error');
-            validationMessage.textContent = 'Valid contact number';
-            validationMessage.classList.add('success');
-            validationMessage.classList.remove('error');
-            validationMessage.style.display = 'block';
-        }
-    }
 
     function validatePassword(input) {
         const value = input.value;
         const requirements = {
-            length: value.length >= 12,
+            length: value.length >= 10,
             uppercase: /[A-Z]/.test(value),
             lowercase: /[a-z]/.test(value),
             number: /\d/.test(value),
@@ -1147,31 +1106,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (value.length === 0) {
             strengthMeter.className = 'strength-meter';
             strengthMeter.style.width = '0';
-        } else if (metRequirements === 1) {
+            input.classList.remove('error', 'success');
+            return false;
+        } else if (metRequirements <= 2) {
             strengthMeter.className = 'strength-meter weak';
-        } else if (metRequirements === 2) {
+        } else if (metRequirements <= 4) {
             strengthMeter.className = 'strength-meter medium';
-        } else if (metRequirements === 3) {
+        } else {
             strengthMeter.className = 'strength-meter strong';
         }
 
-        // Show validation message
-        const validationMessage = document.getElementById('passwordValidation');
-        if (value.length === 0) {
-            validationMessage.style.display = 'none';
-            input.classList.remove('error', 'success');
-        } else if (!Object.values(requirements).every(Boolean)) {
-            validationMessage.textContent = 'Please meet all password requirements';
-            validationMessage.className = 'validation-message error';
-            validationMessage.style.display = 'block';
-            input.classList.add('error');
-            input.classList.remove('success');
+        // Check if all requirements are met
+        const isValid = Object.values(requirements).every(Boolean);
+        
+        if (isValid) {
+            showFieldSuccess(input, 'Password meets all requirements');
         } else {
-            validationMessage.textContent = 'Password meets all requirements';
-            validationMessage.className = 'validation-message success';
-            validationMessage.style.display = 'block';
-            input.classList.add('success');
-            input.classList.remove('error');
+            showFieldError(input, 'Please meet all password requirements');
         }
 
         // Validate confirm password if it has a value
@@ -1179,34 +1130,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (confirmInput.value) {
             validateConfirmPassword(confirmInput);
         }
+
+        return isValid;
     }
 
     function validateConfirmPassword(input) {
         const password = document.getElementById('password').value;
-        const validationMessage = document.getElementById('confirmPasswordValidation');
 
         if (input.value.length === 0) {
-            validationMessage.style.display = 'none';
             input.classList.remove('error', 'success');
+            const validationMessage = document.getElementById('confirmPasswordValidation');
+            if (validationMessage) {
+                validationMessage.style.display = 'none';
+            }
+            return false;
         } else if (input.value !== password) {
-            validationMessage.textContent = 'Passwords do not match';
-            validationMessage.className = 'validation-message error';
-            validationMessage.style.display = 'block';
-            input.classList.add('error');
-            input.classList.remove('success');
+            showFieldError(input, 'Passwords do not match');
+            return false;
         } else {
-            validationMessage.textContent = 'Passwords match';
-            validationMessage.className = 'validation-message success';
-            validationMessage.style.display = 'block';
-            input.classList.add('success');
-            input.classList.remove('error');
+            showFieldSuccess(input, 'Passwords match');
+            return true;
         }
     }
 
-    // Update confirm password input section
-    document.getElementById('confirm_password').insertAdjacentHTML('afterend', 
-        '<div class="validation-message" id="confirmPasswordValidation"></div>');
-    document.getElementById('confirm_password').setAttribute('oninput', 'validateConfirmPassword(this)');
+
 
     function showConfirmation() {
         // Get form values
@@ -1215,15 +1162,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         const username = document.getElementById('username').value;
         const email = document.getElementById('email').value;
         const contact = document.getElementById('contact').value;
+        const houseno = document.getElementById('houseno').value;
+        const street = document.getElementById('street').value;
         const district = document.getElementById('district').value;
         const barangay = document.getElementById('barangay').value;
 
         // Update confirmation modal
         document.getElementById('confirmName').textContent = `${fname} ${lname}`;
-        document.getElementById('confirmUsername').textContent = username;
         document.getElementById('confirmEmail').textContent = email;
         document.getElementById('confirmContact').textContent = `+639${contact}`;
-        document.getElementById('confirmAddress').textContent = `${barangay}, ${district}, Davao City`;
+        document.getElementById('confirmAddress').textContent = `${houseno} ${street}, ${barangay}, ${district}, Davao City`;
 
         // Show modal
         document.getElementById('confirmationModal').style.display = 'block';
@@ -1247,6 +1195,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         document.querySelector('.btn-secondary').disabled = true;
     }
 
+    // Remove error modal related functions
     function showErrorModal(errors) {
         const errorList = document.getElementById('errorList');
         errorList.innerHTML = '';
@@ -1266,67 +1215,250 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         document.body.style.overflow = 'auto';
     }
 
-    function validateForm() {
-        const errors = [];
-        
-        // Validate password
-        const password = document.getElementById('password');
-        const confirmPassword = document.getElementById('confirm_password');
-        const passwordValidation = document.getElementById('passwordValidation');
-        const confirmPasswordValidation = document.getElementById('confirmPasswordValidation');
-        
-        if (passwordValidation.classList.contains('error') || !password.value) {
-            errors.push('Password does not meet requirements');
+    async function checkFieldAvailability(field, value) {
+        try {
+            const response = await fetch('check_user.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `field=${field}&value=${encodeURIComponent(value)}`
+            });
+            const data = await response.json();
+            return !data.exists; // Return true if available (not exists)
+        } catch (error) {
+            console.error(`Error checking ${field} availability:`, error);
+            return false;
         }
-        if (confirmPasswordValidation.classList.contains('error') || !confirmPassword.value) {
-            errors.push('Passwords do not match');
-        }
+    }
 
-        // Validate contact number
-        const contact = document.getElementById('contact');
-        const contactValidation = document.getElementById('contactValidation');
-        if (contactValidation.classList.contains('error') || !contact.value || contact.value.length !== 9) {
-            errors.push('Invalid contact number format');
+    function showFieldError(field, message) {
+        field.classList.add('error');
+        field.classList.remove('success');
+        
+        // For password field, use the specific password validation element
+        if (field.id === 'password') {
+            const validationMessage = document.getElementById('passwordValidation');
+            if (validationMessage) {
+                validationMessage.textContent = message;
+                validationMessage.style.display = 'block';
+            }
+            return;
         }
+        
+        // For confirm password field, use the specific confirm password validation element
+        if (field.id === 'confirm_password') {
+            const validationMessage = document.getElementById('confirmPasswordValidation');
+            if (validationMessage) {
+                validationMessage.textContent = message;
+                validationMessage.style.display = 'block';
+            }
+            return;
+        }
+        
+        // For contact field, use the specific contact validation element
+        if (field.id === 'contact') {
+            const validationMessage = document.getElementById('contactValidation');
+            if (validationMessage) {
+                validationMessage.textContent = message;
+                validationMessage.style.display = 'block';
+            }
+            return;
+        }
+        
+        // For other fields, get or create validation message element
+        let validationMessage = field.parentElement.querySelector('.validation-message');
+        if (!validationMessage) {
+            validationMessage = document.createElement('div');
+            validationMessage.className = 'validation-message';
+            validationMessage.style.background = '#fff2f2';
+            validationMessage.style.color = '#dc3545';
+            validationMessage.style.padding = '0.8rem';
+            validationMessage.style.borderRadius = '8px';
+            validationMessage.style.marginTop = '0.5rem';
+            validationMessage.style.fontSize = '0.9rem';
+            field.parentElement.appendChild(validationMessage);
+        }
+        
+        validationMessage.textContent = message;
+        validationMessage.style.display = 'block';
+    }
 
-        // Validate required fields
-        ['fname', 'lname', 'username', 'email', 'district', 'barangay'].forEach(fieldId => {
-            const field = document.getElementById(fieldId);
-            if (!field.value.trim()) {
-                errors.push(`${field.previousElementSibling.textContent.replace('*', '')} is required`);
+    function showFieldSuccess(field, message) {
+        field.classList.add('success');
+        field.classList.remove('error');
+        
+        // For password field, hide the specific password validation element
+        if (field.id === 'password') {
+            const validationMessage = document.getElementById('passwordValidation');
+            if (validationMessage) {
+                validationMessage.style.display = 'none';
+            }
+            return;
+        }
+        
+        // For confirm password field, hide the specific confirm password validation element
+        if (field.id === 'confirm_password') {
+            const validationMessage = document.getElementById('confirmPasswordValidation');
+            if (validationMessage) {
+                validationMessage.style.display = 'none';
+            }
+            return;
+        }
+        
+        // For contact field, hide the specific contact validation element
+        if (field.id === 'contact') {
+            const validationMessage = document.getElementById('contactValidation');
+            if (validationMessage) {
+                validationMessage.style.display = 'none';
+            }
+            return;
+        }
+        
+        // For other fields, hide validation message
+        let validationMessage = field.parentElement.querySelector('.validation-message');
+        if (validationMessage) {
+            validationMessage.style.display = 'none';
+        }
+    }
+
+    // Update validateForm function to handle password differently
+    async function validateForm() {
+        let hasErrors = false;
+        
+        // Reset all validation messages except for password and email checking states
+        document.querySelectorAll('.validation-message').forEach(msg => {
+            if (!msg.classList.contains('checking') && 
+                !msg.parentElement.querySelector('input[type="password"]')) {
+                msg.style.display = 'none';
+                msg.classList.remove('error', 'success');
+            }
+        });
+        
+        // Reset all input states except for password and email checking states
+        document.querySelectorAll('input, select').forEach(input => {
+            if (!input.parentElement.querySelector('.validation-message.checking') && 
+                input.type !== 'password') {
+                input.classList.remove('error', 'success');
             }
         });
 
-        // Validate email format
-        const email = document.getElementById('email');
-        if (email.value && !email.value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-            errors.push('Invalid email format');
+        // Validate First Name
+        const fname = document.getElementById('fname');
+        if (!fname.value.trim()) {
+            showFieldError(fname, 'First Name is required');
+            hasErrors = true;
+        } else if (!/^[A-Za-z ]{3,}$/.test(fname.value.trim())) {
+            showFieldError(fname, 'First Name must contain only letters and be at least 3 characters long');
+            hasErrors = true;
         }
 
-        // If there are errors, show error modal and prevent form submission
-        if (errors.length > 0) {
-            showErrorModal(errors);
-            return false;
+        // Validate Last Name
+        const lname = document.getElementById('lname');
+        if (!lname.value.trim()) {
+            showFieldError(lname, 'Last Name is required');
+            hasErrors = true;
+        } else if (!/^[A-Za-z ]{3,}$/.test(lname.value.trim())) {
+            showFieldError(lname, 'Last Name must contain only letters and be at least 3 characters long');
+            hasErrors = true;
+        }
+
+        // Validate Email - only check if empty, let checkExistence handle the rest
+        const email = document.getElementById('email');
+        if (!email.value.trim()) {
+            showFieldError(email, 'Email is required');
+            hasErrors = true;
+        } else {
+            // Check if there's an existing error
+            const emailValidation = email.parentElement.querySelector('.validation-message');
+            if (emailValidation && emailValidation.classList.contains('error')) {
+                hasErrors = true;
+            }
+        }
+
+        // Validate Password - only check if empty, let validatePassword handle the rest
+        const password = document.getElementById('password');
+        if (!password.value) {
+            showFieldError(password, 'Password is required');
+            hasErrors = true;
+        } else {
+            // Check if password is valid
+            if (!validatePassword(password)) {
+                hasErrors = true;
+            }
+        }
+
+        // Validate Confirm Password - only check if empty, let validateConfirmPassword handle the rest
+        const confirmPassword = document.getElementById('confirm_password');
+        if (!confirmPassword.value) {
+            showFieldError(confirmPassword, 'Please confirm your password');
+            hasErrors = true;
+        } else {
+            // Check if passwords match
+            if (!validateConfirmPassword(confirmPassword)) {
+                hasErrors = true;
+            }
+        }
+
+        // Validate Contact Number
+        const contact = document.getElementById('contact');
+        if (!contact.value) {
+            showFieldError(contact, 'Contact number is required');
+            hasErrors = true;
+        } else if (contact.value.length !== 9 || !/^\d{9}$/.test(contact.value)) {
+            showFieldError(contact, 'Invalid contact number format');
+            hasErrors = true;
+        }
+
+        // Validate House Number
+        const houseno = document.getElementById('houseno');
+        if (!houseno.value.trim()) {
+            showFieldError(houseno, 'House number is required');
+            hasErrors = true;
+        }
+
+        // Validate Street
+        const street = document.getElementById('street');
+        if (!street.value.trim()) {
+            showFieldError(street, 'Street is required');
+            hasErrors = true;
+        }
+
+        // Validate District
+        const district = document.getElementById('district');
+        if (!district.value) {
+            showFieldError(district, 'Please select a district');
+            hasErrors = true;
+        }
+
+        // Validate Barangay
+        const barangay = document.getElementById('barangay');
+        if (!barangay.value) {
+            showFieldError(barangay, 'Please select a barangay');
+            hasErrors = true;
         }
 
         // If no errors, show confirmation modal
+        if (!hasErrors) {
         showConfirmation();
-        return false;
+        }
+        
+        return !hasErrors;
     }
 
     // Update form submission
-    document.querySelector('form').onsubmit = function(e) {
+    document.querySelector('form').onsubmit = async function(e) {
         e.preventDefault();
-        return validateForm();
+        if (await validateForm()) {
+            // Form is valid, confirmation modal will be shown
+            return false;
+        }
+        return false;
     };
 
     // Close error modal when clicking outside
     window.onclick = function(event) {
-        const errorModal = document.getElementById('errorModal');
         const confirmationModal = document.getElementById('confirmationModal');
-        if (event.target == errorModal) {
-            closeErrorModal();
-        }
         if (event.target == confirmationModal) {
             closeModal();
         }
@@ -1335,7 +1467,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Close modals on escape key
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
-            closeErrorModal();
             closeModal();
         }
     });
@@ -1353,6 +1484,250 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             button.classList.remove('showing');
         }
     }
+
+    // Debounce function to limit API calls
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    // Function to check if username/email exists
+    function checkExistence(field, value) {
+        const input = document.getElementById(field);
+        const validationMessage = document.getElementById(field + 'Validation');
+
+        // Don't check if the field is empty
+        if (!value.trim()) {
+            input.classList.remove('error', 'success');
+            if (validationMessage) {
+            validationMessage.style.display = 'none';
+            }
+            return;
+        }
+
+        // For email, validate format first
+        if (field === 'email' && !value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+            showFieldError(input, 'Invalid email format');
+            return;
+        }
+
+        // Show loading state
+        showFieldError(input, 'Checking...');
+
+        fetch('check_user.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `field=${field}&value=${encodeURIComponent(value)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                showFieldError(input, 'Error checking availability');
+            } else {
+                if (data.exists) {
+                    showFieldError(input, data.message);
+                } else {
+                    showFieldSuccess(input, data.message);
+                }
+            }
+        })
+        .catch(error => {
+            showFieldError(input, 'Error checking availability');
+        });
+    }
+
+    // Create debounced version of the check function for email
+    const debouncedCheckEmail = debounce((value) => checkExistence('email', value), 500);
+
+    // Add event listener for email field
+    document.getElementById('email').addEventListener('blur', function() {
+        debouncedCheckEmail(this.value);
+    });
+
+    // Set username value from email before form submission
+    document.querySelector('form').addEventListener('submit', function() {
+        const email = document.getElementById('email').value;
+        const username = email.split('@')[0]; // Use part before @ as username
+        document.getElementById('username').value = username;
+    });
+
+    // Add event listeners for real-time validation
+    document.addEventListener('DOMContentLoaded', function() {
+        // Real-time validation for first name
+        const fnameInput = document.getElementById('fname');
+        fnameInput.addEventListener('input', function() {
+            validateName(this, 'First Name');
+        });
+
+        // Real-time validation for last name
+        const lnameInput = document.getElementById('lname');
+        lnameInput.addEventListener('input', function() {
+            validateName(this, 'Last Name');
+        });
+
+        // Real-time validation for email
+        const emailInput = document.getElementById('email');
+        emailInput.addEventListener('input', debounce(function() {
+            if (this.value.trim()) {
+                checkExistence('email', this.value);
+            } else {
+                showFieldError(this, 'Email is required');
+            }
+        }, 500));
+
+        // Real-time validation for password
+        const passwordInput = document.getElementById('password');
+        passwordInput.addEventListener('input', function() {
+            validatePassword(this);
+        });
+
+        // Real-time validation for confirm password
+        const confirmPasswordInput = document.getElementById('confirm_password');
+        confirmPasswordInput.addEventListener('input', function() {
+            validateConfirmPassword(this);
+        });
+
+        // Real-time validation for contact number
+        const contactInput = document.getElementById('contact');
+        contactInput.addEventListener('input', function() {
+            validateContactNumber(this);
+        });
+
+        // Real-time validation for house number
+        const housenoInput = document.getElementById('houseno');
+        housenoInput.addEventListener('input', function() {
+            validateText(this, 'House number');
+        });
+
+        // Real-time validation for street
+        const streetInput = document.getElementById('street');
+        streetInput.addEventListener('input', function() {
+            validateText(this, 'Street');
+        });
+
+        // Real-time validation for district
+        const districtSelect = document.getElementById('district');
+        districtSelect.addEventListener('change', function() {
+            validateSelect(this, 'District');
+        });
+
+        // Real-time validation for barangay
+        const barangaySelect = document.getElementById('barangay');
+        barangaySelect.addEventListener('change', function() {
+            validateSelect(this, 'Barangay');
+        });
+    });
+
+    function validateName(input, fieldName) {
+        if (!input.value.trim()) {
+            showFieldError(input, `${fieldName} is required`);
+            return false;
+        } else if (!/^[A-Za-z ]{3,}$/.test(input.value.trim())) {
+            showFieldError(input, `${fieldName} must contain only letters and be at least 3 characters long`);
+            return false;
+        } else {
+            showFieldSuccess(input, `${fieldName} is valid`);
+            return true;
+        }
+    }
+
+    function validateSelect(select, fieldName) {
+        if (!select.value) {
+            showFieldError(select, `Please select a ${fieldName}`);
+            return false;
+        } else {
+            showFieldSuccess(select, `${fieldName} selected`);
+            return true;
+        }
+    }
+
+    function validateText(input, fieldName) {
+        if (!input.value.trim()) {
+            showFieldError(input, `${fieldName} is required`);
+            return false;
+        } else {
+            showFieldSuccess(input, `${fieldName} is valid`);
+            return true;
+        }
+    }
+
+    // Update the district change handler to include validation
+    document.getElementById('district').addEventListener('change', function() {
+        loadBarangays();
+        validateSelect(this, 'District');
+        // Reset and validate barangay when district changes
+        const barangaySelect = document.getElementById('barangay');
+        barangaySelect.value = '';
+        validateSelect(barangaySelect, 'Barangay');
+    });
+
+    // Update validateContactNumber function to return boolean
+    function validateContactNumber(input) {
+        const wrapper = input.closest('.contact-input-wrapper');
+        let value = input.value.replace(/\D/g, '');
+        
+        if (value.length > 9) {
+            value = value.slice(0, 9);
+        }
+        
+        input.value = value;
+
+        if (value.length === 0) {
+            showFieldError(input, 'Contact number is required');
+            wrapper.classList.add('error');
+            wrapper.classList.remove('success');
+            return false;
+        } else if (value.length < 9) {
+            showFieldError(input, `Please enter ${9 - value.length} more digit${9 - value.length > 1 ? 's' : ''}`);
+            wrapper.classList.add('error');
+            wrapper.classList.remove('success');
+            return false;
+        } else if (!/^\d{9}$/.test(value)) {
+            showFieldError(input, 'Please enter numbers only');
+            wrapper.classList.add('error');
+            wrapper.classList.remove('success');
+            return false;
+        } else {
+            showFieldSuccess(input, 'Valid contact number');
+            wrapper.classList.add('success');
+            wrapper.classList.remove('error');
+            return true;
+        }
+    }
+
+    // Add blur event listeners for all fields to trigger validation when focus is lost
+    document.addEventListener('DOMContentLoaded', function() {
+        const fields = [
+            { id: 'fname', validate: (input) => validateName(input, 'First Name') },
+            { id: 'lname', validate: (input) => validateName(input, 'Last Name') },
+            { id: 'email', validate: (input) => input.value.trim() && checkExistence('email', input.value) },
+            { id: 'password', validate: validatePassword },
+            { id: 'confirm_password', validate: validateConfirmPassword },
+            { id: 'contact', validate: validateContactNumber },
+            { id: 'houseno', validate: (input) => validateText(input, 'House number') },
+            { id: 'street', validate: (input) => validateText(input, 'Street') },
+            { id: 'district', validate: (input) => validateSelect(input, 'District') },
+            { id: 'barangay', validate: (input) => validateSelect(input, 'Barangay') }
+        ];
+
+        fields.forEach(field => {
+            const element = document.getElementById(field.id);
+            if (element) {
+                element.addEventListener('blur', function() {
+                    field.validate(this);
+                });
+            }
+        });
+    });
 </script>
 
 </body>

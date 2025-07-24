@@ -344,11 +344,13 @@ $conn->close();
 
         /* Add this at the end of your existing styles */
         .modal-backdrop {
-            --bs-backdrop-opacity: 0.8;
-            --bs-backdrop-bg: #000;
+            --bs-backdrop-opacity: 0.5;
+            --bs-backdrop-bg: rgba(0, 0, 0, 0.5);
             background-color: var(--bs-backdrop-bg);
             z-index: 1040;
-            transition: opacity 0.2s ease-in-out;
+            transition: all 0.2s ease-in-out;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
 
         .modal-backdrop.show {
@@ -357,6 +359,14 @@ $conn->close();
 
         .modal-backdrop.fade {
             opacity: 0;
+            backdrop-filter: blur(0px);
+            -webkit-backdrop-filter: blur(0px);
+        }
+
+        /* Ensure content behind modal is blurred */
+        body.modal-open .main-container {
+            filter: blur(4px);
+            transition: filter 0.2s ease-in-out;
         }
 
         .modal {
@@ -372,6 +382,12 @@ $conn->close();
         .modal.show .modal-dialog {
             transform: translateY(0);
         }
+
+        /* Ensure content behind modal is blurred */
+        body.modal-open .main-container {
+            filter: blur(4px);
+            transition: filter 0.2s ease-in-out;
+        }
     </style>
 </head>
 <body>
@@ -381,7 +397,7 @@ $conn->close();
     <h2>Air<span>go</span></h2>
     <div class="nav-links">
         <a href="dashboard.php" class="<?= $current_page === 'dashboard.php' ? 'active' : '' ?>"><i class="fa-solid fa-house"></i> Dashboard</a>
-        <a href="book-now.php" class="<?= $current_page === 'book-now.php' ? 'active' : '' ?>"><i class="fa-solid fa-calendar-plus"></i> Booking</a>
+        <a href="bookings.php" class="<?= $current_page === 'bookings.php' ? 'active' : '' ?>"><i class="fa-solid fa-calendar-plus"></i> Booking</a>
         <a href="booking-history.php" class="<?= $current_page === 'booking-history.php' ? 'active' : '' ?>"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
     <a href="logout.php"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
     </div>

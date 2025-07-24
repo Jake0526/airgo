@@ -24,29 +24,62 @@ $user_id = $_SESSION['user_id'];
 try {
     $conn = Database::getConnection();
 
-    // Verify the booking belongs to the user
-    $check_stmt = $conn->prepare("SELECT id FROM bookings WHERE id = ? AND user_id = ?");
+    // Verify the booking belongs to the user and check reschedule attempts
+    $check_stmt = $conn->prepare("SELECT id, reschedule_attempt FROM bookings WHERE id = ? AND user_id = ?");
     $check_stmt->bind_param("ii", $booking_id, $user_id);
     $check_stmt->execute();
     $result = $check_stmt->get_result();
+    $booking = $result->fetch_assoc();
 
-    if ($result->num_rows === 0) {
+    if (!$booking) {
         throw new Exception('Booking not found or unauthorized');
     }
 
-    // Update the booking with new date, time and status
+    // Debug the current reschedule_attempt value
+    error_log("Current reschedule_attempt value: " . var_export($booking['reschedule_attempt'], true));
+
+    // Check if user has already used their reschedule attempt (treat NULL as 0)
+    $current_attempts = intval($booking['reschedule_attempt'] ?? 0);
+    if ($current_attempts > 0) {
+        throw new Exception('You have already used your reschedule attempt for this booking');
+    }
+
+    // First, let's check if the reschedule_attempt column exists
+    $check_column = $conn->query("SHOW COLUMNS FROM bookings LIKE 'reschedule_attempt'");
+    if ($check_column->num_rows === 0) {
+        // Add the column if it doesn't exist
+        $conn->query("ALTER TABLE bookings ADD COLUMN reschedule_attempt INT DEFAULT 0 NOT NULL");
+        error_log("Added reschedule_attempt column to bookings table");
+    }
+    
+    // Update any NULL values to 0 for consistency
+    $conn->query("UPDATE bookings SET reschedule_attempt = 0 WHERE reschedule_attempt IS NULL");
+    error_log("Updated NULL reschedule_attempt values to 0");
+
+    // Update the booking with new date, time, status and increment reschedule attempt
     $update_stmt = $conn->prepare("
         UPDATE bookings 
         SET status = 'Rescheduled',
             appointment_date = ?,
-            appointment_time = ?
+            appointment_time = ?,
+            reschedule_attempt = COALESCE(reschedule_attempt, 0) + 1
         WHERE id = ? AND user_id = ?
     ");
     $update_stmt->bind_param("ssii", $new_date, $new_time, $booking_id, $user_id);
     
     if (!$update_stmt->execute()) {
-        throw new Exception('Failed to update booking');
+        error_log("Reschedule update failed: " . $update_stmt->error);
+        throw new Exception('Failed to update booking: ' . $update_stmt->error);
     }
+
+    // Verify the update worked
+    $verify_stmt = $conn->prepare("SELECT reschedule_attempt FROM bookings WHERE id = ?");
+    $verify_stmt->bind_param("i", $booking_id);
+    $verify_stmt->execute();
+    $verify_result = $verify_stmt->get_result();
+    $updated_booking = $verify_result->fetch_assoc();
+    
+    error_log("Reschedule attempt after update: " . $updated_booking['reschedule_attempt']);
 
     echo json_encode(['success' => true, 'message' => 'Booking rescheduled successfully']);
 

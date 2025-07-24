@@ -75,7 +75,7 @@ class Mailer {
                     <div style='background-color: #f5f5f5; padding: 15px; text-align: center; margin: 20px 0;'>
                         <h2 style='color: #07353f; letter-spacing: 5px; margin: 0;'>$otp</h2>
                     </div>
-                    <p>This code will expire in 15 minutes.</p>
+                    <p>This code will expire in 2 minutes.</p>
                     <p>If you didn't create an account with AirGo, please ignore this email.</p>
                     <p>Best regards,<br>The AirGo Team</p>
                 </div>
@@ -90,6 +90,48 @@ class Mailer {
             return $this->mailer->send();
         } catch (Exception $e) {
             error_log("Failed to send verification email: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function sendPasswordResetEmail($email, $name, $otp) {
+        try {
+            // Clear all addresses and attachments
+            $this->mailer->clearAllRecipients();
+            $this->mailer->clearAttachments();
+            
+            // Add recipient
+            $this->mailer->addAddress($email, $name);
+            $this->mailer->Subject = 'Reset Your AirGo Password';
+            
+            // Email body
+            $body = "
+            <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
+                <div style='background-color: #07353f; padding: 20px; text-align: center;'>
+                    <h1 style='color: #ffffff; margin: 0;'>AirGo</h1>
+                </div>
+                <div style='padding: 20px; background-color: #ffffff; border: 1px solid #e0e0e0;'>
+                    <h2 style='color: #07353f;'>Password Reset Request</h2>
+                    <p>Dear $name,</p>
+                    <p>We received a request to reset your password. Please use the following code to reset your password:</p>
+                    <div style='background-color: #f5f5f5; padding: 15px; text-align: center; margin: 20px 0;'>
+                        <h2 style='color: #07353f; letter-spacing: 5px; margin: 0;'>$otp</h2>
+                    </div>
+                    <p>This code will expire in 2 minutes.</p>
+                    <p>If you didn't request a password reset, please ignore this email or contact support if you have concerns.</p>
+                    <p>Best regards,<br>The AirGo Team</p>
+                </div>
+                <div style='text-align: center; padding: 20px; color: #666666; font-size: 12px;'>
+                    <p>This is an automated message, please do not reply to this email.</p>
+                </div>
+            </div>";
+            
+            $this->mailer->Body = $body;
+            $this->mailer->AltBody = "Your password reset code is: $otp";
+            
+            return $this->mailer->send();
+        } catch (Exception $e) {
+            error_log("Failed to send password reset email: " . $e->getMessage());
             return false;
         }
     }

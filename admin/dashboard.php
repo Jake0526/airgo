@@ -17,7 +17,7 @@ $pending_approvals = $conn->query("SELECT COUNT(*) AS count FROM bookings WHERE 
 $total_employees = $conn->query("SELECT COUNT(*) AS count FROM employees")->fetch_assoc()['count'];
 
 $recent = $conn->query("
-    SELECT b.*, e.name AS employee_name, u.username AS user_name
+    SELECT b.*, e.name AS employee_name, CONCAT(u.fname, ' ', u.lname) AS customer_name
     FROM bookings b
     LEFT JOIN employees e ON b.employee_id = e.id
     LEFT JOIN `user` u ON b.user_id = u.id
@@ -529,7 +529,7 @@ if (!$recent) {
             <tbody>
                 <?php while ($row = $recent->fetch_assoc()): ?>
                     <tr>
-                        <td data-label="Customer"><?php echo htmlspecialchars($row['user_name'] ?? 'N/A'); ?></td>
+                        <td data-label="Customer"><?php echo htmlspecialchars($row['customer_name'] ?? 'N/A'); ?></td>
                         <td data-label="Service"><?php echo htmlspecialchars($row['service']); ?></td>
                         <td data-label="Assigned Employee"><?php echo $row['employee_name'] ?: 'Unassigned'; ?></td>
                         <td data-label="Status" data-status="<?php echo htmlspecialchars($row['status']); ?>"><?php echo htmlspecialchars($row['status']); ?></td>

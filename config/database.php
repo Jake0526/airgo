@@ -1,4 +1,7 @@
 <?php
+// Set timezone for consistent datetime handling
+date_default_timezone_set('Asia/Manila');
+
 // Database configuration constants
 define('DB_HOST', 'db');
 define('DB_USERNAME', 'root');
@@ -22,6 +25,9 @@ class Database {
             
             // Set charset to utf8mb4
             self::$conn->set_charset("utf8mb4");
+            
+            // Set MySQL timezone to match PHP timezone
+            self::$conn->query("SET time_zone = '+08:00'");
         }
         
         return self::$conn;

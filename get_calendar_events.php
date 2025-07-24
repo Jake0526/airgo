@@ -16,6 +16,9 @@ $date_counts = [];
 try {
     $conn = Database::getConnection();
     
+    // Set timezone to Asia/Manila
+    date_default_timezone_set('Asia/Manila');
+    
     // Get all bookings for slot availability
     $all_result = $conn->query("SELECT appointment_date FROM bookings WHERE status != 'Cancelled'");
     while ($row = $all_result->fetch_assoc()) {
@@ -38,12 +41,12 @@ try {
 
     // Add user's bookings first
     while ($row = $user_result->fetch_assoc()) {
-        // Create a DateTime object for the appointment date
-        $appointmentDate = new DateTime($row['appointment_date']);
+        // Create a DateTime object for the appointment date with Asia/Manila timezone
+        $appointmentDate = new DateTime($row['appointment_date'], new DateTimeZone('Asia/Manila'));
         $appointmentDate->setTime(0, 0, 0); // Set time to midnight
 
         $calendar_events[] = [
-            "title" => $row['service'] . ' (' . $row['status'] . ')',
+            "title" => $row['status'] . ' - ' . $row['service'],
             "start" => $appointmentDate->format('Y-m-d'), // Use only the date part
             "display" => "block",
             "backgroundColor" => "#0ea5e9",
@@ -60,6 +63,8 @@ try {
 
     // Then add availability background events
     $max_slots_per_day = 46;
+    $today = new DateTime('now', new DateTimeZone('Asia/Manila'));
+    $today->setTime(0, 0, 0);
     $range_start = strtotime('-1 month');
     $range_end = strtotime('+3 months');
 
@@ -68,8 +73,8 @@ try {
         $booked = $date_counts[$date] ?? 0;
         $remaining = $max_slots_per_day - $booked;
 
-        if ($date < date('Y-m-d')) {
-            $color = "#ffffff";
+        if ($date <= $today->format('Y-m-d')) {
+            $color = "#e5e7eb"; // Gray color for past dates and today
             $title = "";
         } elseif ($remaining <= 0) {
             $color = "#ff6b6b";

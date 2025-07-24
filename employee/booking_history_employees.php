@@ -14,6 +14,19 @@ $employee_id = $_SESSION['employee_id'];
 require_once '../config/database.php';
 $conn = Database::getConnection();
 
+// Pagination setup
+$records_per_page = 10;
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$page = max(1, $page); // Ensure page is at least 1
+$offset = ($page - 1) * $records_per_page;
+
+// Get filter values
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
+$status_filter = isset($_GET['status']) ? $_GET['status'] : '';
+$date_from = isset($_GET['date_from']) ? $_GET['date_from'] : '';
+$date_to = isset($_GET['date_to']) ? $_GET['date_to'] : '';
+
+// Base SQL query
 $sql = "SELECT 
             b.id,
             u.username AS customer_name,
@@ -32,14 +45,76 @@ $sql = "SELECT
         LEFT JOIN user u ON b.user_id = u.id
         LEFT JOIN employees e ON b.employee_id = e.id
         WHERE b.status IN ('completed', 'cancelled')
-          AND b.employee_id = ?
-        ORDER BY b.appointment_date DESC, b.created_at DESC";
-     
+          AND b.employee_id = ?";
+
+$params = [$employee_id];
+$types = "i";
+
+// Add search condition
+if (!empty($search)) {
+    $sql .= " AND (u.username LIKE ? OR b.service LIKE ? OR b.location LIKE ? OR b.phone LIKE ?)";
+    $search_param = "%$search%";
+    $params = array_merge($params, [$search_param, $search_param, $search_param, $search_param]);
+    $types .= "ssss";
+}
+
+// Add status filter
+if (!empty($status_filter)) {
+    $sql .= " AND b.status = ?";
+    $params[] = $status_filter;
+    $types .= "s";
+}
+
+// Add date range filter
+if (!empty($date_from)) {
+    $sql .= " AND b.appointment_date >= ?";
+    $params[] = $date_from;
+    $types .= "s";
+}
+if (!empty($date_to)) {
+    $sql .= " AND b.appointment_date <= ?";
+    $params[] = $date_to;
+    $types .= "s";
+}
+
+// Get total count for pagination
+$count_sql = str_replace("SELECT b.id, u.username AS customer_name, b.service, b.created_at, b.location, b.phone, b.appointment_date, b.appointment_time, e.name AS employee_name, b.status, b.employee_id, b.price, b.payment_proof", "SELECT COUNT(*) as total", $sql);
+$stmt = $conn->prepare($count_sql);
+$total_records = 0;
+$total_pages = 1;
+
+if ($stmt) {
+    try {
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $count_result = $stmt->get_result();
+        if ($count_result) {
+            $result_row = $count_result->fetch_assoc();
+            if ($result_row && isset($result_row['total'])) {
+                $total_records = (int)$result_row['total'];
+                $total_pages = max(1, ceil($total_records / $records_per_page));
+            }
+        }
+    } catch (Exception $e) {
+        // Handle any potential errors silently
+        error_log("Error in count query: " . $e->getMessage());
+    } finally {
+        $stmt->close();
+    }
+}
+
+// Add sorting and pagination to main query
+$sql .= " ORDER BY b.appointment_date DESC, b.created_at DESC LIMIT ? OFFSET ?";
+$params[] = $records_per_page;
+$params[] = $offset;
+$types .= "ii";
+
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     die("Prepare failed: " . $conn->error);
 }
-$stmt->bind_param("i", $employee_id);
+
+$stmt->bind_param($types, ...$params);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -245,23 +320,34 @@ while ($row = $result->fetch_assoc()) {
             box-shadow: 0 10px 30px var(--card-shadow);
             overflow: hidden;
             margin-bottom: 2rem;
+            border-collapse: collapse;
         }
 
         th {
             background: var(--primary-color);
             color: white;
-            padding: 1rem;
+            padding: 0.75rem;
             text-align: left;
             font-weight: 500;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         td {
-            padding: 1rem;
+            padding: 0.75rem;
             border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            word-break: break-word;
         }
 
         tr:hover td {
             background: rgba(60, 213, 237, 0.05);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
         }
 
         .delete-btn {
@@ -287,11 +373,12 @@ while ($row = $result->fetch_assoc()) {
         }
 
         .status-badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 50px;
-            font-size: 0.85rem;
+            padding: 0.3rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
             font-weight: 500;
+            text-transform: uppercase;
+            display: inline-block;
         }
 
         .status-done {
@@ -333,6 +420,50 @@ while ($row = $result->fetch_assoc()) {
             font-size: 1.1rem;
         }
 
+        [data-tooltip] {
+            position: relative;
+            cursor: pointer;
+        }
+
+        [data-tooltip]:before,
+        [data-tooltip]:after {
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.15s ease;
+            position: absolute;
+            z-index: 1;
+        }
+
+        [data-tooltip]:before {
+            content: attr(data-tooltip);
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            background: var(--primary-color);
+            color: white;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-tooltip]:after {
+            content: '';
+            border: 6px solid transparent;
+            border-top-color: var(--primary-color);
+            bottom: 110%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        [data-tooltip]:hover:before,
+        [data-tooltip]:hover:after {
+            visibility: visible;
+            opacity: 1;
+        }
+
         @media (max-width: 991px) {
             body {
                 background: #f5f9fc;
@@ -359,6 +490,7 @@ while ($row = $result->fetch_assoc()) {
                 grid-template-columns: repeat(2, 1fr);
                 gap: 0.75rem;
                 padding: 0;
+                margin-top: 0;
             }
 
             .nav-links a {
@@ -437,6 +569,98 @@ while ($row = $result->fetch_assoc()) {
                 margin-bottom: 1rem;
             }
         }
+
+        @media (max-width: 1100px) {
+            .table-container {
+                margin: 0 -1rem;
+                width: calc(100% + 2rem);
+                border-radius: 0;
+                background: transparent;
+                box-shadow: none;
+            }
+
+            table, thead, tbody, th, td, tr {
+                display: block;
+                width: 100%;
+            }
+
+            thead tr {
+                display: none;
+            }
+
+            tr {
+                margin: 0.75rem;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+                position: relative;
+                padding: 0.75rem;
+            }
+
+            td {
+                display: flex !important;
+                width: 100% !important;
+                padding: 0.75rem !important;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+                align-items: center;
+                font-size: 0.85rem;
+                line-height: 1.4;
+                min-height: auto !important;
+            }
+
+            td:before {
+                content: attr(data-label);
+                width: 120px;
+                min-width: 120px;
+                font-weight: 600;
+                color: var(--primary-color);
+                font-size: 0.85rem;
+            }
+
+            td:last-child {
+                border-bottom: none;
+            }
+
+            .view-btn {
+                width: 34px;
+                height: 34px;
+                padding: 0.4rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .table-container {
+                margin: 0 -0.5rem;
+                width: calc(100% + 1rem);
+            }
+
+            tr {
+                margin: 0.5rem;
+                padding: 0.5rem;
+            }
+
+            td {
+                padding: 0.6rem !important;
+                font-size: 0.8rem;
+            }
+
+            td:before {
+                width: 100px;
+                min-width: 100px;
+                font-size: 0.8rem;
+            }
+
+            .view-btn {
+                width: 32px;
+                height: 32px;
+                padding: 0.35rem;
+            }
+
+            .status-badge {
+                font-size: 0.7rem;
+                padding: 0.25rem 0.5rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -457,72 +681,131 @@ while ($row = $result->fetch_assoc()) {
 
     <div class="main-content">
         <h1><i class="fas fa-clock-rotate-left"></i> Booking History</h1>
-     
-        <?php
-        if (empty($bookings)) {
-            echo '<div class="empty-state">
-                    <i class="fas fa-history"></i>
-                    <p>No booking history available.</p>
-                  </div>';
-        } else {
-            $current_date = null;
-            foreach ($bookings as $row):
-                if ($current_date !== $row['appointment_date']):
-                    if ($current_date !== null) echo "</tbody></table>";
-                    $current_date = $row['appointment_date'];
-        ?>
-        <h2 class="date-heading">
-            <i class="fas fa-calendar-day"></i>
-            <?= htmlspecialchars(date("F j, Y", strtotime($current_date))) ?>
-        </h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Customer</th>
-                    <th>Service</th>
-                    <th>Location</th>
-                    <th>Phone</th>
-                    <th>Time</th>
-                    <th>Price</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-        <?php
-                endif;
-                $status_class = 'status-' . strtolower($row['status']);
-        ?>
-            <tr>
-                <td><?= htmlspecialchars($row['customer_name']) ?></td>
-                <td><?= htmlspecialchars($row['service']) ?></td>
-                <td><?= htmlspecialchars($row['location']) ?></td>
-                <td><?= htmlspecialchars($row['phone']) ?></td>
-                <td>
-                    <?php
-                    $time = htmlspecialchars($row['appointment_time']);
-                    echo $time ? date("g:i A", strtotime($time)) : "-";
-                    ?>
-                </td>
-                <td>₱<?= number_format($row['price'], 2) ?></td>
-                <td>
-                    <span class="status-badge <?= $status_class ?>">
-                        <?= ucfirst(htmlspecialchars($row['status'])) ?>
-                    </span>
-                </td>
-                <td>
-                    <?php if (!empty($row['payment_proof'])): ?>
-                        <button class="view-btn" onclick="viewPaymentProof('../<?= htmlspecialchars($row['payment_proof']) ?>')">
-                            <i class="fas fa-eye"></i> View
-                        </button>
-                    <?php endif; ?>
-                </td>
-            </tr>
-        <?php
-            endforeach;
-            echo "</tbody></table>";
-        }
-        ?>
+
+        <!-- Filter Form -->
+        <div class="filter-section">
+            <form action="" method="GET" class="filter-form">
+                <div class="form-group">
+                    <input type="text" name="search" placeholder="Search..." value="<?= htmlspecialchars($search) ?>" class="filter-input">
+                </div>
+                <div class="form-group">
+                    <select name="status" class="filter-input">
+                        <option value="">All Status</option>
+                        <option value="completed" <?= $status_filter === 'completed' ? 'selected' : '' ?>>Completed</option>
+                        <option value="cancelled" <?= $status_filter === 'cancelled' ? 'selected' : '' ?>>Cancelled</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <input type="date" name="date_from" value="<?= htmlspecialchars($date_from) ?>" class="filter-input" placeholder="From Date">
+                </div>
+                <div class="form-group">
+                    <input type="date" name="date_to" value="<?= htmlspecialchars($date_to) ?>" class="filter-input" placeholder="To Date">
+                </div>
+                <button type="submit" class="filter-btn">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+                <a href="<?= $_SERVER['PHP_SELF'] ?>" class="reset-btn">
+                    <i class="fas fa-undo"></i> Reset
+                </a>
+            </form>
+        </div>
+
+        <?php if (empty($bookings)): ?>
+            <div class="empty-state">
+                <i class="fas fa-history"></i>
+                <p>No booking history available.</p>
+            </div>
+        <?php else: ?>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th>Service</th>
+                            <th>Location</th>
+                            <th>Phone</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($bookings as $row): ?>
+                            <tr>
+                                <td data-label="Customer"><?= htmlspecialchars($row['customer_name']) ?></td>
+                                <td data-label="Service"><?= htmlspecialchars($row['service']) ?></td>
+                                <td data-label="Location"><?= htmlspecialchars($row['location']) ?></td>
+                                <td data-label="Phone"><?= htmlspecialchars($row['phone']) ?></td>
+                                <td data-label="Date"><?= htmlspecialchars(date("F j, Y", strtotime($row['appointment_date']))) ?></td>
+                                <td data-label="Time">
+                                    <?php
+                                    $time = htmlspecialchars($row['appointment_time']);
+                                    echo $time ? date("g:i A", strtotime($time)) : "-";
+                                    ?>
+                                </td>
+                                <td data-label="Price">₱<?= number_format($row['price'], 2) ?></td>
+                                <td data-label="Status">
+                                    <span class="status-badge status-<?= strtolower($row['status']) ?>">
+                                        <?= ucfirst(htmlspecialchars($row['status'])) ?>
+                                    </span>
+                                </td>
+                                <td data-label="Actions">
+                                    <?php if (!empty($row['payment_proof'])): ?>
+                                        <button 
+                                            class="view-btn" 
+                                            onclick="viewPaymentProof('../<?= htmlspecialchars($row['payment_proof']) ?>')"
+                                            data-tooltip="View Payment Proof">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <?php if ($total_pages > 1): ?>
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        Showing <?= $offset + 1 ?> to <?= min($offset + $records_per_page, $total_records) ?> of <?= $total_records ?> entries
+                    </div>
+                    <div class="pagination">
+                        <?php if ($page > 1): ?>
+                            <a href="?page=1<?= !empty($search) ? '&search='.urlencode($search) : '' ?><?= !empty($status_filter) ? '&status='.urlencode($status_filter) : '' ?><?= !empty($date_from) ? '&date_from='.urlencode($date_from) : '' ?><?= !empty($date_to) ? '&date_to='.urlencode($date_to) : '' ?>" class="pagination-btn">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                            <a href="?page=<?= $page - 1 ?><?= !empty($search) ? '&search='.urlencode($search) : '' ?><?= !empty($status_filter) ? '&status='.urlencode($status_filter) : '' ?><?= !empty($date_from) ? '&date_from='.urlencode($date_from) : '' ?><?= !empty($date_to) ? '&date_to='.urlencode($date_to) : '' ?>" class="pagination-btn">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        <?php endif; ?>
+
+                        <?php
+                        $start_page = max(1, $page - 2);
+                        $end_page = min($total_pages, $page + 2);
+                        
+                        for ($i = $start_page; $i <= $end_page; $i++):
+                        ?>
+                            <a href="?page=<?= $i ?><?= !empty($search) ? '&search='.urlencode($search) : '' ?><?= !empty($status_filter) ? '&status='.urlencode($status_filter) : '' ?><?= !empty($date_from) ? '&date_from='.urlencode($date_from) : '' ?><?= !empty($date_to) ? '&date_to='.urlencode($date_to) : '' ?>" class="pagination-btn <?= $i == $page ? 'active' : '' ?>">
+                                <?= $i ?>
+                            </a>
+                        <?php endfor; ?>
+
+                        <?php if ($page < $total_pages): ?>
+                            <a href="?page=<?= $page + 1 ?><?= !empty($search) ? '&search='.urlencode($search) : '' ?><?= !empty($status_filter) ? '&status='.urlencode($status_filter) : '' ?><?= !empty($date_from) ? '&date_from='.urlencode($date_from) : '' ?><?= !empty($date_to) ? '&date_to='.urlencode($date_to) : '' ?>" class="pagination-btn">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                            <a href="?page=<?= $total_pages ?><?= !empty($search) ? '&search='.urlencode($search) : '' ?><?= !empty($status_filter) ? '&status='.urlencode($status_filter) : '' ?><?= !empty($date_from) ? '&date_from='.urlencode($date_from) : '' ?><?= !empty($date_to) ? '&date_to='.urlencode($date_to) : '' ?>" class="pagination-btn">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+        <?php endif; ?>
     </div>
 
     <!-- Payment Proof Modal -->
@@ -629,24 +912,109 @@ while ($row = $result->fetch_assoc()) {
         .view-btn {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 0.5rem 1rem;
-            background: var(--primary-color);
-            color: white;
+            justify-content: center;
+            gap: 8px;
+            padding: 0.5rem;
+            width: 36px;
+            height: 36px;
             border: none;
             border-radius: 8px;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-family: 'Poppins', sans-serif;
             font-size: 0.9rem;
-            font-weight: 500;
-            margin-top: 0.5rem;
+            text-decoration: none;
+            background: var(--primary-color);
+            color: white;
         }
 
         .view-btn:hover {
             background: var(--secondary-color);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(60, 213, 237, 0.2);
+            box-shadow: 0 4px 12px var(--card-shadow);
+            color: var(--primary-color);
+        }
+
+        /* Filter Styles */
+        .filter-section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px var(--card-shadow);
+        }
+
+        .filter-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-input {
+            padding: 0.75rem;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .filter-input:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 2px rgba(60, 213, 237, 0.1);
+            outline: none;
+        }
+
+        .filter-btn, .reset-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .filter-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .reset-btn {
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+        }
+
+        .reset-btn:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .filter-form {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-btn, .reset-btn {
+                width: 100%;
+            }
         }
 
         @media (max-width: 768px) {
@@ -686,3 +1054,4 @@ while ($row = $result->fetch_assoc()) {
     </script>
 </body>
 </html>
+<?php $conn->close(); ?>

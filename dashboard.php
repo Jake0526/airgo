@@ -27,7 +27,9 @@ $user_full_name = 'User'; // Default value
 $user_contact = '';
 $user_district = '';
 $user_barangay = '';
-$user_query = $conn->prepare("SELECT CONCAT(fname, ' ', lname) as full_name, contact, district, barangay FROM user WHERE id = ?");
+$user_houseno = '';
+$user_street = '';
+$user_query = $conn->prepare("SELECT CONCAT(fname, ' ', lname) as full_name, contact, district, barangay, houseno, street FROM user WHERE id = ?");
 if ($user_query) {
     $user_query->bind_param("i", $user_id);
     $user_query->execute();
@@ -38,6 +40,8 @@ if ($user_query) {
         $user_contact = $user_data['contact'];
         $user_district = $user_data['district'];
         $user_barangay = $user_data['barangay'];
+        $user_houseno = $user_data['houseno'];
+        $user_street = $user_data['street'];
         error_log("Found user name: " . $user_full_name);
     } else {
         error_log("No user found for ID: " . $user_id);
@@ -67,7 +71,7 @@ while ($row = $all_result->fetch_assoc()) {
 // Get user's bookings
 $user_bookings = [];
 $user_stmt = $conn->prepare("
-    SELECT appointment_date, appointment_time, service, status 
+    SELECT id, appointment_date, appointment_time, service, status, reschedule_attempt
     FROM bookings 
     WHERE user_id = ? 
     AND status != 'Cancelled'
@@ -83,8 +87,14 @@ while ($row = $user_result->fetch_assoc()) {
     $appointmentDate = new DateTime($row['appointment_date']);
     $appointmentDate->setTime(0, 0, 0); // Set time to midnight
 
+    // Determine the display title based on status and reschedule_attempt
+    $displayTitle = $row['status'];
+    if ($row['status'] === 'Approved' && intval($row['reschedule_attempt']) > 0) {
+        $displayTitle = 'Approved Reschedule';
+    }
+
     $calendar_events[] = [
-        "title" => $row['service'] . ' (' . $row['status'] . ')',
+        "title" => $displayTitle,
         "start" => $appointmentDate->format('Y-m-d'), // Use only the date part
         "display" => "block",
         "backgroundColor" => "#0ea5e9",
@@ -93,7 +103,11 @@ while ($row = $user_result->fetch_assoc()) {
         "allDay" => true,
         "extendedProps" => [
             "type" => "user_booking",
-            "time" => $row['appointment_time']
+            "time" => $row['appointment_time'],
+            "booking_id" => $row['id'],
+            "status" => $row['status'],
+            "service" => $row['service'],
+            "reschedule_attempt" => $row['reschedule_attempt']
         ]
     ];
 }
@@ -109,8 +123,8 @@ for ($i = $range_start; $i <= $range_end; $i += 86400) {
     $booked = $date_counts[$date] ?? 0;
     $remaining = $max_slots_per_day - $booked;
 
-    if ($date < $today) {
-        $color = "#ffffff";
+    if ($date <= $today) {
+        $color = "#e5e7eb"; // Gray color for past dates and today
         $title = "";
     } elseif ($remaining <= 0) {
         $color = "#ff6b6b";
@@ -420,7 +434,7 @@ $conn->close();
     <h2>Air<span>go</span></h2>
     <div class="nav-links">
         <a href="dashboard.php" class="<?= $current_page === 'dashboard.php' ? 'active' : '' ?>"><i class="fas fa-home"></i> Dashboard</a>
-        <a href="book-now.php" class="<?= $current_page === 'book-now.php' ? 'active' : '' ?>"><i class="fas fa-calendar-alt"></i> Booking</a>
+        <a href="bookings.php" class="<?= $current_page === 'bookings.php' ? 'active' : '' ?>"><i class="fas fa-calendar-alt"></i> Booking</a>
         <a href="booking-history.php" class="<?= $current_page === 'booking-history.php' ? 'active' : '' ?>"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
     <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
@@ -660,6 +674,78 @@ $conn->close();
     </div>
 </div>
 
+<!-- Reschedule Option Modal -->
+<div class="modal fade" id="rescheduleOptionModal" tabindex="-1" aria-labelledby="rescheduleOptionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rescheduleOptionModalLabel">
+                    <i class="fas fa-calendar-check me-2"></i>
+                    Existing Booking Found
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="mb-4">
+                    <i class="fas fa-calendar-alt text-primary" style="font-size: 4rem;"></i>
+                </div>
+                <h4 class="mb-3">You have an approved booking on this date</h4>
+                <p id="rescheduleOptionMessage" class="mb-4"></p>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-primary btn-lg" id="rescheduleBookingBtn">
+                        <i class="fas fa-calendar-days me-2"></i>Reschedule This Booking
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reschedule Modal -->
+<div class="modal fade" id="rescheduleModal" tabindex="-1" aria-labelledby="rescheduleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rescheduleModalLabel">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    Reschedule Booking
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="reschedule_booking_id">
+                <input type="hidden" id="reschedule_current_date">
+                <div class="calendar-container">
+                    <div id="rescheduleCalendar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reschedule Time Slots Modal -->
+<div class="modal fade" id="rescheduleTimeSlotsModal" tabindex="-1" aria-labelledby="rescheduleTimeSlotsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rescheduleTimeSlotsModalLabel">
+                    <i class="fas fa-clock"></i>
+                    Available Time Slots
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="rescheduleTimeSlotsList">
+                    <!-- Time slots will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // Define global functions first
@@ -790,7 +876,7 @@ function showNotification(title, message, icon = 'calendar-times', type = 'warni
     // Update message if element exists
     const messageElement = document.getElementById('notificationMessage');
     if (messageElement) {
-        messageElement.textContent = message;
+        messageElement.innerHTML = message; // Changed to innerHTML to support HTML content
     }
     
     // Update icon if element exists
@@ -812,6 +898,243 @@ function showNotification(title, message, icon = 'calendar-times', type = 'warni
     }
     
     modal.show();
+}
+
+// Function to show booking details notification for all booking statuses
+function showBookingDetailsNotification(bookingTitle, formattedDate, bookingData) {
+    const servicePrices = {
+        'Aircon Check-up': 500,
+        'Aircon Relocation': 3500,
+        'Aircon Repair': 1500,
+        'Aircon cleaning (window type)': 800,
+        'Window type (inverter)': 2500,
+        'Window type (U shape)': 2300,
+        'Split type': 2800,
+        'Floormounted': 3000,
+        'Cassette': 3200,
+        'Capacitor Thermostat': 1200
+    };
+
+    const service = bookingData.service || 'Service information not available';
+    const time = bookingData.time || 'Time not available';
+    const price = servicePrices[service] || 'Price not available';
+    const status = bookingData.status || bookingTitle;
+    
+    // Format time for display
+    let displayTime = time;
+    if (time !== 'Time not available') {
+        try {
+            displayTime = new Date(`2000-01-01 ${time}`).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: 'numeric',
+                hour12: true
+            });
+        } catch (e) {
+            displayTime = time;
+        }
+    }
+
+    // Determine message based on booking status
+    let statusMessage = '';
+    let modalIcon = 'calendar-check';
+    let modalType = 'info';
+    
+    const statusLower = status.toLowerCase();
+    
+    if (statusLower.includes('pending')) {
+        statusMessage = `Your ${status} booking is awaiting confirmation.`;
+        modalIcon = 'clock';
+        modalType = 'warning';
+    } else if (statusLower.includes('approved')) {
+        statusMessage = `Your booking has been approved and confirmed.`;
+        modalIcon = 'check-circle';
+        modalType = 'success';
+    } else if (statusLower.includes('rescheduled') || statusLower.includes('reschedule')) {
+        statusMessage = `Your booking has been rescheduled and is awaiting approval.`;
+        modalIcon = 'calendar-alt';
+        modalType = 'info';
+    } else if (statusLower.includes('completed') || statusLower.includes('done')) {
+        statusMessage = `Your service has been completed successfully.`;
+        modalIcon = 'check-double';
+        modalType = 'success';
+    } else if (statusLower.includes('cancelled')) {
+        statusMessage = `Your booking has been cancelled.`;
+        modalIcon = 'times-circle';
+        modalType = 'danger';
+    } else if (statusLower.includes('rejected')) {
+        statusMessage = `Your booking request has been rejected.`;
+        modalIcon = 'exclamation-triangle';
+        modalType = 'danger';
+    } else {
+        statusMessage = `You have a ${status} booking on this date.`;
+        modalIcon = 'calendar-check';
+        modalType = 'info';
+    }
+
+    const message = `
+        <div class="mb-3">
+            <strong>${statusMessage}</strong>
+        </div>
+        <div class="booking-details-card">
+            <div class="booking-detail-row">
+                <div class="detail-icon">
+                    <i class="fas fa-info-circle"></i>
+                </div>
+                <div class="detail-content">
+                    <strong>Status:</strong><br>
+                    <span class="detail-value status-${status.toLowerCase().replace(/\s+/g, '-')}">${status}</span>
+                </div>
+            </div>
+            <div class="booking-detail-row">
+                <div class="detail-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="detail-content">
+                    <strong>Service:</strong><br>
+                    <span class="detail-value">${service}</span>
+                </div>
+            </div>
+            <div class="booking-detail-row">
+                <div class="detail-icon">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+                <div class="detail-content">
+                    <strong>Date:</strong><br>
+                    <span class="detail-value">${formattedDate}</span>
+                </div>
+            </div>
+            <div class="booking-detail-row">
+                <div class="detail-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="detail-content">
+                    <strong>Time:</strong><br>
+                    <span class="detail-value">${displayTime}</span>
+                </div>
+            </div>
+            <div class="booking-detail-row">
+                <div class="detail-icon">
+                    <i class="fas fa-peso-sign"></i>
+                </div>
+                <div class="detail-content">
+                    <strong>Price:</strong><br>
+                    <span class="detail-value price">₱${typeof price === 'number' ? price.toLocaleString() : price}</span>
+                </div>
+            </div>
+        </div>
+        <div class="mt-3 text-muted">
+            <small>Please select a different date to make a new booking.</small>
+        </div>
+    `;
+
+    showNotification(
+        'Booking Details',
+        message,
+        modalIcon,
+        modalType
+    );
+}
+
+// Function to show reschedule not available modal with booking details
+window.showRescheduleNotAvailableModal = function(formattedDate, bookingData) {
+    const servicePrices = {
+        'Aircon Check-up': 500,
+        'Aircon Relocation': 3500,
+        'Aircon Repair': 1500,
+        'Aircon cleaning (window type)': 800,
+        'Window type (inverter)': 2500,
+        'Window type (U shape)': 2300,
+        'Split type': 2800,
+        'Floormounted': 3000,
+        'Cassette': 3200,
+        'Capacitor Thermostat': 1200
+    };
+
+    const service = bookingData.service || 'Service information not available';
+    const time = bookingData.time || 'Time not available';
+    const price = servicePrices[service] || 'Price not available';
+    const status = bookingData.status || 'Approved';
+    
+    // Format time for display
+    let displayTime = time;
+    if (time !== 'Time not available') {
+        try {
+            displayTime = new Date(`2000-01-01 ${time}`).toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: 'numeric',
+                hour12: true
+            });
+        } catch (e) {
+            displayTime = time;
+        }
+    }
+
+    const message = `
+        <div class="mb-3">
+            <strong>Reschedule is no longer available for this booking.</strong>
+        </div>
+        <div class="alert alert-warning mb-3" style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 1rem;">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Note:</strong> You have already used your one-time reschedule option for this booking.
+        </div>
+        <div class="booking-details-card">
+            <div class="booking-detail-row">
+                <div class="detail-icon">
+                    <i class="fas fa-info-circle"></i>
+                </div>
+                <div class="detail-content">
+                    <strong>Status:</strong><br>
+                    <span class="detail-value status-${status.toLowerCase().replace(/\s+/g, '-')}">${status}</span>
+                </div>
+            </div>
+            <div class="booking-detail-row">
+                <div class="detail-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="detail-content">
+                    <strong>Service:</strong><br>
+                    <span class="detail-value">${service}</span>
+                </div>
+            </div>
+            <div class="booking-detail-row">
+                <div class="detail-icon">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+                <div class="detail-content">
+                    <strong>Date:</strong><br>
+                    <span class="detail-value">${formattedDate}</span>
+                </div>
+            </div>
+            <div class="booking-detail-row">
+                <div class="detail-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="detail-content">
+                    <strong>Time:</strong><br>
+                    <span class="detail-value">${displayTime}</span>
+                </div>
+            </div>
+            <div class="booking-detail-row">
+                <div class="detail-icon">
+                    <i class="fas fa-peso-sign"></i>
+                </div>
+                <div class="detail-content">
+                    <strong>Price:</strong><br>
+                    <span class="detail-value price">₱${typeof price === 'number' ? price.toLocaleString() : price}</span>
+                </div>
+            </div>
+        </div>
+        <div class="mt-3 text-muted">
+            <small>If you need to make changes to this booking, please contact our support team.</small>
+        </div>
+    `;
+
+    showNotification(
+        'Reschedule Not Available',
+        message,
+        'exclamation-triangle',
+        'warning'
+    );
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -840,6 +1163,9 @@ document.addEventListener('DOMContentLoaded', function () {
             backdrops[0].parentNode.removeChild(backdrops[0]);
         }
         document.body.classList.remove('modal-open');
+        
+        // Update modal blur effects
+        updateModalBlurEffects();
     });
 
     // Also handle confirmation modal cleanup
@@ -849,6 +1175,56 @@ document.addEventListener('DOMContentLoaded', function () {
             backdrops[0].parentNode.removeChild(backdrops[0]);
         }
         document.body.classList.remove('modal-open');
+        
+        // Update modal blur effects
+        updateModalBlurEffects();
+    });
+
+    // Function to update modal blur effects based on stacking order
+    function updateModalBlurEffects() {
+        // Use a timeout to ensure DOM has updated
+        setTimeout(() => {
+            const openModals = document.querySelectorAll('.modal.show');
+            
+            // Reset all modal dialogs first
+            openModals.forEach(modal => {
+                const modalDialog = modal.querySelector('.modal-dialog');
+                if (modalDialog) {
+                    modalDialog.style.transition = 'filter 0.3s ease, opacity 0.3s ease';
+                }
+            });
+            
+            // Apply blur effects based on z-index and position
+            openModals.forEach((modal, index) => {
+                const modalDialog = modal.querySelector('.modal-dialog');
+                if (modalDialog) {
+                    const isTopmost = (index === openModals.length - 1);
+                    
+                    if (isTopmost) {
+                        // This is the topmost modal - crystal clear
+                        modalDialog.style.filter = 'none';
+                        modalDialog.style.opacity = '1';
+                        modalDialog.style.pointerEvents = 'auto';
+                    } else {
+                        // This is a background modal - apply progressive blur
+                        const position = openModals.length - 1 - index;
+                        const blurAmount = Math.min(position * 3, 12); // Max 12px blur
+                        const opacity = Math.max(0.7, 1 - (position * 0.15)); // Min 70% opacity
+                        
+                        modalDialog.style.filter = `blur(${blurAmount}px)`;
+                        modalDialog.style.opacity = opacity.toString();
+                        modalDialog.style.pointerEvents = 'none';
+                    }
+                }
+            });
+        }, 50);
+    }
+
+    // Add event listeners to all modals for blur effect management
+    const allModals = document.querySelectorAll('.modal');
+    allModals.forEach(modal => {
+        modal.addEventListener('shown.bs.modal', updateModalBlurEffects);
+        modal.addEventListener('hidden.bs.modal', updateModalBlurEffects);
     });
 
     // Service prices for the booking form
@@ -1030,7 +1406,15 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
 
+        // Add event listener to update blur effects when confirmation modal is shown
+        document.getElementById('confirmationModal').addEventListener('shown.bs.modal', function() {
+            updateModalBlurEffects();
+        });
+
         confirmationModal.show();
+        
+        // Immediately update blur effects after showing modal
+        setTimeout(() => updateModalBlurEffects(), 100);
     };
 
     const calendar = new FullCalendar.Calendar(calendarEl, {
@@ -1102,6 +1486,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (userBookings.length > 0) {
                 const booking = userBookings[0];
+                const bookingData = booking.extendedProps;
                 const formattedDate = new Date(selectedDate).toLocaleDateString('en-US', {
                     weekday: 'long',
                     year: 'numeric',
@@ -1109,12 +1494,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     day: 'numeric'
                 });
                 
-                showNotification(
-                    'Booking Already Exists',
-                    `You already have a booking for ${booking.title} on ${formattedDate}. Please select a different date.`,
-                    'calendar-times',
-                    'warning'
-                );
+                // Check if the booking is approved and can be rescheduled
+                const bookingTitle = booking.title;
+                const isApproved = bookingTitle.includes('Approved');
+                
+                if (isApproved) {
+                    // Show option to reschedule the approved booking with details
+                    showRescheduleOption(selectedDate, booking);
+                } else {
+                    // Show booking details for all other statuses (Pending, Rescheduled, etc.)
+                    showBookingDetailsNotification(bookingTitle, formattedDate, bookingData);
+                }
                 return;
             }
 
@@ -1255,16 +1645,20 @@ window.showBookingForm = function(date, time) {
     document.getElementById('appointment_time').value = time;
 
     // Set user's information
-    document.getElementById('full_name').value = '<?= htmlspecialchars($user_full_name) ?>';
+    document.getElementById('full_name').value = <?= json_encode($user_full_name) ?>;
     
     // Set contact number (remove +639 prefix if present)
-    let contact = '<?= htmlspecialchars($user_contact) ?>';
+    let contact = <?= json_encode($user_contact) ?>;
     contact = contact.replace(/^\+639/, '');
     document.getElementById('phone').value = contact;
     
+    // Set house number and street
+    document.getElementById('house_number').value = <?= json_encode($user_houseno) ?>;
+    document.getElementById('street').value = <?= json_encode($user_street) ?>;
+    
     // Set district and trigger barangay update
     const districtSelect = document.getElementById('district');
-    const userDistrict = '<?= htmlspecialchars($user_district) ?>';
+    const userDistrict = <?= json_encode($user_district) ?>;
     if (userDistrict) {
         districtSelect.value = userDistrict;
         updateBarangays();
@@ -1272,7 +1666,7 @@ window.showBookingForm = function(date, time) {
         // Set barangay after barangays are loaded
         setTimeout(() => {
             const barangaySelect = document.getElementById('barangay');
-            const userBarangay = '<?= htmlspecialchars($user_barangay) ?>';
+            const userBarangay = <?= json_encode($user_barangay) ?>;
             if (userBarangay) {
                 barangaySelect.value = userBarangay;
             }
@@ -1318,16 +1712,428 @@ window.toggleEdit = function(fieldId) {
         updateLocation();
     }
 }
+
+// Function to show reschedule option when clicking on existing booking date
+window.showRescheduleOption = function(selectedDate, booking) {
+    const bookingData = booking.extendedProps;
+    const formattedDate = new Date(selectedDate).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    
+    const formattedTime = new Date(`2000-01-01 ${bookingData.time}`).toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true
+    });
+
+    // Check if reschedule is allowed
+    if (bookingData.reschedule_attempt > 0) {
+        showRescheduleNotAvailableModal(formattedDate, bookingData);
+        return;
+    }
+
+    // Get service price
+    const servicePrices = {
+        'Aircon Check-up': 500,
+        'Aircon Relocation': 3500,
+        'Aircon Repair': 1500,
+        'Aircon cleaning (window type)': 800,
+        'Window type (inverter)': 2500,
+        'Window type (U shape)': 2300,
+        'Split type': 2800,
+        'Floormounted': 3000,
+        'Cassette': 3200,
+        'Capacitor Thermostat': 1200
+    };
+    
+    const price = servicePrices[bookingData.service] || 'Price not available';
+    
+    // Enhanced message with booking details and reschedule option
+    const message = `
+        <div class="booking-details-card">
+            <div class="booking-detail-row">
+                <div class="detail-icon">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <div class="detail-content">
+                    <strong>Service:</strong><br>
+                    <span class="detail-value">${bookingData.service}</span>
+                </div>
+            </div>
+            <div class="booking-detail-row">
+                <div class="detail-icon">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+                <div class="detail-content">
+                    <strong>Date:</strong><br>
+                    <span class="detail-value">${formattedDate}</span>
+                </div>
+            </div>
+            <div class="booking-detail-row">
+                <div class="detail-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="detail-content">
+                    <strong>Time:</strong><br>
+                    <span class="detail-value">${formattedTime}</span>
+                </div>
+            </div>
+            <div class="booking-detail-row">
+                <div class="detail-icon">
+                    <i class="fas fa-peso-sign"></i>
+                </div>
+                <div class="detail-content">
+                    <strong>Price:</strong><br>
+                    <span class="detail-value price">₱${typeof price === 'number' ? price.toLocaleString() : price}</span>
+                </div>
+            </div>
+        </div>
+        <div class="mt-3 text-center">
+            <p><strong>Would you like to reschedule this booking to a different date and time?</strong></p>
+        </div>
+    `;
+    
+    document.getElementById('rescheduleOptionMessage').innerHTML = message;
+    
+    const modal = new bootstrap.Modal(document.getElementById('rescheduleOptionModal'));
+    
+    // Set up the reschedule button click handler
+    const rescheduleBtn = document.getElementById('rescheduleBookingBtn');
+    rescheduleBtn.onclick = function() {
+        modal.hide();
+        showRescheduleModal(bookingData.booking_id, selectedDate);
+    };
+    
+    modal.show();
+}
+
+// Function to show reschedule modal with calendar
+window.showRescheduleModal = function(bookingId, currentDate) {
+    document.getElementById('reschedule_booking_id').value = bookingId;
+    document.getElementById('reschedule_current_date').value = currentDate;
+    
+    const calendarEl = document.getElementById('rescheduleCalendar');
+    let rescheduleCalendar = null;
+
+    // Initialize the modal
+    const modal = new bootstrap.Modal(document.getElementById('rescheduleModal'));
+    
+    // Function to initialize the calendar
+    function initializeRescheduleCalendar() {
+        if (!calendarEl.classList.contains('calendar-initialized')) {
+            rescheduleCalendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                height: 650,
+                selectable: true,
+                timeZone: 'Asia/Manila',
+                events: <?= json_encode($calendar_events) ?>,
+                eventDidMount: function(info) {
+                    if (info.event.display === 'block') {
+                        info.el.title = info.event.title;
+                    }
+                },
+                dateClick: function(info) {
+                    const selectedDate = info.dateStr;
+                    const currentDate = document.getElementById('reschedule_current_date').value;
+                    
+                    // Get today's date
+                    const now = new Date();
+                    const manilaDate = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+                    const today = manilaDate.toISOString().split('T')[0];
+                    
+                    // Check if selected date is in the past
+                    if (selectedDate < today) {
+                        showNotification(
+                            'Invalid Date',
+                            'You cannot select a past date.',
+                            'calendar-times',
+                            'danger'
+                        );
+                        return;
+                    }
+
+                    // Check if trying to book for today
+                    if (selectedDate === today) {
+                        showNotification(
+                            'Same Day Booking',
+                            'Same day booking is not allowed. Please select a future date.',
+                            'clock',
+                            'warning'
+                        );
+                        return;
+                    }
+
+                    // Get all events for the selected date
+                    const dateEvents = rescheduleCalendar.getEvents().filter(event => {
+                        const eventDate = event.start.toISOString().split('T')[0];
+                        return eventDate === selectedDate;
+                    });
+
+                    // Check if the selected date has any bookings (excluding current booking and background events)
+                    const hasConflictingBookings = dateEvents.some(event => {
+                        // Skip background events
+                        if (event.display === 'background') {
+                            return false;
+                        }
+                        // Skip the current booking being rescheduled
+                        if (selectedDate === currentDate) {
+                            return false;
+                        }
+                        // Check for other bookings
+                        return true;
+                    });
+
+                    if (hasConflictingBookings) {
+                        showNotification(
+                            'Date Not Available',
+                            'This date already has a booking. Please select a different date.',
+                            'calendar-times',
+                            'warning'
+                        );
+                        return;
+                    }
+
+                    // Show time slots for the selected date
+                    showRescheduleTimeSlots(selectedDate);
+                }
+            });
+
+            rescheduleCalendar.render();
+            calendarEl.classList.add('calendar-initialized');
+        }
+        
+        if (rescheduleCalendar) {
+            rescheduleCalendar.updateSize();
+        }
+    }
+
+    // Add event listener for modal shown
+    document.getElementById('rescheduleModal').addEventListener('shown.bs.modal', initializeRescheduleCalendar, { once: true });
+    
+    modal.show();
+}
+
+// Function to show time slots for reschedule
+window.showRescheduleTimeSlots = function(date) {
+    const timeSlotsList = document.getElementById('rescheduleTimeSlotsList');
+    const timeSlotsModal = new bootstrap.Modal(document.getElementById('rescheduleTimeSlotsModal'));
+    
+    timeSlotsList.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading available time slots...</p>
+        </div>`;
+
+    // Update modal title
+    document.getElementById('rescheduleTimeSlotsModalLabel').innerHTML = `
+        <i class="fas fa-clock"></i>
+        Available Times for ${new Date(date).toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        })}`;
+
+    // Fetch available time slots
+    fetch('get_slots.php?date=' + date)
+        .then(res => {
+            if (!res.ok) throw new Error('Network response was not ok');
+            return res.json();
+        })
+        .then(data => {
+            if (data.error) throw new Error(data.error);
+            
+            const slots = data.slots || [];
+            if (slots.length === 0) {
+                timeSlotsList.innerHTML = `
+                    <div class="alert alert-info" role="alert">
+                        No time slots available for this date.
+                    </div>`;
+                return;
+            }
+
+            let html = '<div class="row g-3">';
+            slots.forEach(slot => {
+                const btnClass = slot.available ? 'available' : 'unavailable';
+                const disabled = !slot.available;
+                const remainingText = slot.available ? 
+                    `${slot.remaining} slots remaining` : 
+                    'Fully booked';
+                
+                html += `
+                    <div class="col-md-4">
+                        <button class="time-slot-btn ${btnClass}" 
+                                onclick="handleRescheduleTimeSlotSelection('${date}', '${slot.time}')"
+                                ${disabled ? 'disabled' : ''}>
+                            <div class="fw-bold">${slot.time}</div>
+                            <small>${remainingText}</small>
+                        </button>
+                    </div>`;
+            });
+            html += '</div>';
+            timeSlotsList.innerHTML = html;
+        })
+        .catch(error => {
+            timeSlotsList.innerHTML = `
+                <div class="alert alert-danger" role="alert">
+                    Error: ${error.message}
+                </div>`;
+        });
+
+    timeSlotsModal.show();
+}
+
+// Function to handle reschedule time slot selection
+window.handleRescheduleTimeSlotSelection = function(date, time) {
+    const timeSlotsModal = bootstrap.Modal.getInstance(document.getElementById('rescheduleTimeSlotsModal'));
+    timeSlotsModal.hide();
+
+    // Format date for display
+    const formattedDate = new Date(date).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+
+    // Convert time to 24-hour format for database
+    let databaseTime = time;
+    if (time.includes('AM') || time.includes('PM')) {
+        const [timePart, meridiem] = time.split(' ');
+        let [hours, minutes] = timePart.split(':');
+        hours = parseInt(hours);
+        
+        if (meridiem === 'PM' && hours !== 12) {
+            hours += 12;
+        } else if (meridiem === 'AM' && hours === 12) {
+            hours = 0;
+        }
+        
+        databaseTime = `${hours.toString().padStart(2, '0')}:${minutes}:00`;
+    } else {
+        databaseTime = time.includes(':') ? (time + ':00').substring(0, 8) : time + ':00';
+    }
+
+    // Format display time
+    const displayTime = new Date(`2000-01-01 ${databaseTime}`).toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true
+    });
+
+    // Show confirmation modal
+    const bookingDetails = `
+        <div style="background: rgba(7, 53, 63, 0.05); border-radius: 12px; padding: 1.5rem; margin: 1rem 0;">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                <i class="fas fa-calendar-day" style="color: var(--primary-color); font-size: 1.2rem; width: 24px; text-align: center;"></i>
+                <div>
+                    <strong style="color: var(--primary-color);">New Date</strong><br>
+                    <span>${formattedDate}</span>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <i class="fas fa-clock" style="color: var(--primary-color); font-size: 1.2rem; width: 24px; text-align: center;"></i>
+                <div>
+                    <strong style="color: var(--primary-color);">New Time</strong><br>
+                    <span>${displayTime}</span>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Set the modal title manually
+    document.getElementById('confirmationModalLabel').innerHTML = `
+        <i class="fas fa-question-circle me-2"></i>
+        Confirm Reschedule
+    `;
+
+    showConfirmation(
+        'Are you sure you want to reschedule this booking?',
+        bookingDetails,
+        () => {
+            const bookingId = document.getElementById('reschedule_booking_id').value;
+            const formData = new FormData();
+            formData.append('booking_id', bookingId);
+            formData.append('new_date', date);
+            formData.append('new_time', databaseTime);
+
+            // Show loading state
+            const confirmBtn = document.getElementById('confirmActionBtn');
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = `
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                Processing...
+            `;
+
+            fetch('request_reschedule.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close all modals
+                    const modals = document.querySelectorAll('.modal');
+                    modals.forEach(modalEl => {
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        if (modal) modal.hide();
+                    });
+
+                    // Show success modal
+                    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                    successModal.show();
+
+                    // Reload page to refresh calendar
+                    setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    if (data.message.includes('reschedule attempt')) {
+                        showNotification(
+                            'Reschedule Not Allowed',
+                            'You have already used your one-time reschedule for this booking.',
+                            'exclamation-triangle',
+                            'warning'
+                        );
+                    } else {
+                        throw new Error(data.message || 'Failed to reschedule booking');
+                    }
+                    
+                    // Close confirmation modal
+                    const confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'));
+                    if (confirmModal) confirmModal.hide();
+                }
+            })
+            .catch(error => {
+                showNotification(
+                    'Error',
+                    error.message || 'An error occurred while rescheduling the booking.',
+                    'exclamation-circle',
+                    'danger'
+                );
+                
+                // Close confirmation modal
+                const confirmModal = bootstrap.Modal.getInstance(document.getElementById('confirmationModal'));
+                if (confirmModal) confirmModal.hide();
+            });
+        }
+    );
+}
 </script>
 
 <style>
     /* Update modal backdrop styles */
     .modal-backdrop {
-        --bs-backdrop-opacity: 0.8;
-        --bs-backdrop-bg: #000;
+        --bs-backdrop-opacity: 0.5;
+        --bs-backdrop-bg: rgba(0, 0, 0, 0.5);
         background-color: var(--bs-backdrop-bg);
         z-index: 1040;
-        transition: opacity 0.2s ease-in-out;
+        transition: all 0.3s ease-in-out;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
     }
 
     .modal-backdrop.show {
@@ -1336,10 +2142,39 @@ window.toggleEdit = function(fieldId) {
 
     .modal-backdrop.fade {
         opacity: 0;
+        backdrop-filter: blur(0px);
+        -webkit-backdrop-filter: blur(0px);
+    }
+
+    /* Enhanced backdrop blur for stacked modals */
+    .modal-backdrop:nth-of-type(2) {
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    .modal-backdrop:nth-of-type(3) {
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+    }
+
+    .modal-backdrop:nth-of-type(4) {
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+    }
+
+    .modal-backdrop:nth-of-type(n+5) {
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
     }
 
     .modal {
         z-index: 1045;
+    }
+
+    /* Ensure content behind modal is blurred */
+    body.modal-open .main-container {
+        filter: blur(4px);
+        transition: filter 0.2s ease-in-out;
     }
 
     /* Add transition to modal itself for smoother appearance */
@@ -1509,12 +2344,82 @@ window.toggleEdit = function(fieldId) {
         pointer-events: auto; /* Re-enable pointer events for actual events */
     }
 
-    .fc-daygrid-day.fc-day-today {
-        background-color: rgba(14, 165, 233, 0.1) !important;
+    /* Gray styling for both past dates and today */
+    .fc-daygrid-day.fc-day-today,
+    .fc-daygrid-day.fc-day-past {
+        background-color: rgba(128, 128, 128, 0.1) !important;
+        color: #6b7280 !important;
+        opacity: 0.85;
+        pointer-events: none;
+        cursor: not-allowed;
+        position: relative;
     }
 
-    .fc-daygrid-day.fc-day-past {
-        background-color: rgba(0, 0, 0, 0.05);
+    /* Add diagonal lines pattern for better visual indication */
+    .fc-daygrid-day.fc-day-today::before,
+    .fc-daygrid-day.fc-day-past::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 3px,
+            rgba(156, 163, 175, 0.1) 3px,
+            rgba(156, 163, 175, 0.1) 6px
+        );
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    /* Make date numbers gray for past dates and today */
+    .fc-daygrid-day.fc-day-past .fc-daygrid-day-number,
+    .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+        color: #6b7280 !important;
+        font-weight: 500;
+        position: relative;
+        z-index: 2;
+    }
+
+    /* Make all text content gray in past dates and today */
+    .fc-daygrid-day.fc-day-past *,
+    .fc-daygrid-day.fc-day-today * {
+        color: #6b7280 !important;
+    }
+
+    /* Style for day numbers - alternative selectors */
+    .fc-daygrid-day.fc-day-past .fc-daygrid-day-top,
+    .fc-daygrid-day.fc-day-past .fc-day-number,
+    .fc-daygrid-day.fc-day-today .fc-daygrid-day-top,
+    .fc-daygrid-day.fc-day-today .fc-day-number {
+        color: #6b7280 !important;
+        font-weight: 500;
+        position: relative;
+        z-index: 2;
+    }
+
+    /* Ensure past date and today events are visible and readable */
+    .fc-daygrid-day.fc-day-past .fc-event,
+    .fc-daygrid-day.fc-day-today .fc-event {
+        opacity: 0.9;
+        filter: grayscale(30%);
+        position: relative;
+        z-index: 2;
+        border: 1px solid rgba(255, 255, 255, 0.8) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    /* Make user booking events on past dates more prominent */
+    .fc-daygrid-day.fc-day-past .fc-event.user-booking,
+    .fc-daygrid-day.fc-day-today .fc-event.user-booking {
+        opacity: 1;
+        filter: grayscale(20%);
+        border: 2px solid rgba(255, 255, 255, 0.9) !important;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+        font-weight: 600;
     }
 
     /* Calendar navigation buttons */
@@ -1575,6 +2480,350 @@ window.toggleEdit = function(fieldId) {
 
     #notificationModal .text-muted {
         color: #64748b !important;
+    }
+
+    /* Reschedule Modal Styles */
+    #rescheduleOptionModal .modal-content {
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 20px 40px var(--card-shadow);
+    }
+
+    #rescheduleOptionModal .modal-header {
+        background: var(--primary-color);
+        color: white;
+        border-radius: 20px 20px 0 0;
+        padding: 1.5rem;
+    }
+
+    #rescheduleOptionModal .modal-body {
+        padding: 2rem;
+    }
+
+    #rescheduleOptionModal .btn-lg {
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+
+    #rescheduleModal .modal-content,
+    #rescheduleTimeSlotsModal .modal-content {
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 20px 40px var(--card-shadow);
+    }
+
+    #rescheduleModal .modal-header,
+    #rescheduleTimeSlotsModal .modal-header {
+        background: var(--primary-color);
+        color: white;
+        border-radius: 20px 20px 0 0;
+        padding: 1.5rem;
+    }
+
+    #rescheduleModal .modal-body,
+    #rescheduleTimeSlotsModal .modal-body {
+        padding: 2rem;
+    }
+
+    /* Reschedule Calendar Styles */
+    #rescheduleCalendar {
+        background: white;
+        border-radius: 12px;
+        padding: 1rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Modal z-index layering */
+    #timeSlotsModal {
+        z-index: 1045;
+    }
+
+    #rescheduleOptionModal {
+        z-index: 1046;
+    }
+
+    #rescheduleModal {
+        z-index: 1047;
+    }
+
+    #rescheduleTimeSlotsModal {
+        z-index: 1048;
+    }
+
+    #notificationModal {
+        z-index: 1049;
+    }
+
+    /* Confirmation modal should be highest for all flows */
+    #confirmationModal {
+        z-index: 1050 !important;
+    }
+
+    #successModal {
+        z-index: 1051 !important;
+    }
+
+    /* Ensure proper stacking of modal backdrops */
+    .modal-backdrop {
+        z-index: auto;
+    }
+
+    #timeSlotsModal + .modal-backdrop {
+        z-index: 1044;
+    }
+
+    #confirmationModal + .modal-backdrop {
+        z-index: 1049;
+    }
+
+    /* Ensure modals stack properly */
+    .modal-backdrop:nth-of-type(2) {
+        z-index: 1041;
+    }
+
+    .modal-backdrop:nth-of-type(3) {
+        z-index: 1042;
+    }
+
+    .modal-backdrop:nth-of-type(4) {
+        z-index: 1043;
+    }
+
+    .modal-backdrop:nth-of-type(5) {
+        z-index: 1044;
+    }
+
+    /* Blur effect for background modals when overlapping */
+    .modal .modal-dialog {
+        transition: filter 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    /* Ensure smooth transitions for all modal dialogs */
+    .modal.fade .modal-dialog {
+        transition: filter 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    /* Override for better stacking visual hierarchy */
+    .modal:not(:last-of-type) .modal-dialog {
+        pointer-events: none; /* Prevent interaction with background modals */
+    }
+
+    .modal:last-of-type .modal-dialog {
+        pointer-events: auto; /* Allow interaction with top modal */
+    }
+
+    /* Specific blur effects for confirmation modal over booking form */
+    #confirmationModal.show ~ #timeSlotsModal .modal-dialog {
+        filter: blur(4px) !important;
+        opacity: 0.8 !important;
+        transition: filter 0.3s ease, opacity 0.3s ease !important;
+    }
+
+    /* Enhanced blur for deeply stacked modals */
+    body.modal-open .modal.show:not(:last-child) .modal-dialog {
+        filter: blur(3px);
+        opacity: 0.85;
+        transform: scale(0.98);
+        transition: all 0.3s ease;
+    }
+
+    /* Ensure confirmation modal is always crystal clear */
+    #confirmationModal.show .modal-dialog {
+        filter: none !important;
+        opacity: 1 !important;
+        transform: scale(1) !important;
+        transition: all 0.3s ease !important;
+    }
+
+    /* Booking Details Card Styles */
+    .booking-details-card {
+        background: rgba(7, 53, 63, 0.03);
+        border: 1px solid rgba(7, 53, 63, 0.1);
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin: 1rem 0;
+    }
+
+    .booking-detail-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease;
+    }
+
+    .booking-detail-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .booking-detail-row:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .detail-icon {
+        width: 40px;
+        height: 40px;
+        background: var(--primary-color);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .detail-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .detail-content strong {
+        color: var(--primary-color);
+        font-size: 0.875rem;
+        font-weight: 600;
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+
+    .detail-value {
+        color: var(--text-color);
+        font-size: 1rem;
+        font-weight: 500;
+        line-height: 1.4;
+    }
+
+    .detail-value.price {
+        color: var(--secondary-color);
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    /* Notification Modal Enhancements for Booking Details */
+    #notificationModal .modal-body {
+        padding: 2rem 2rem 1.5rem 2rem;
+    }
+
+    #notificationModal #notificationMessage {
+        text-align: left;
+        font-size: 1rem;
+        line-height: 1.5;
+    }
+
+    /* Booking Status Styles */
+    .detail-value.status-pending {
+        color: #f59e0b;
+        font-weight: 600;
+        background: rgba(245, 158, 11, 0.1);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        display: inline-block;
+    }
+
+    .detail-value.status-approved {
+        color: #10b981;
+        font-weight: 600;
+        background: rgba(16, 185, 129, 0.1);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        display: inline-block;
+    }
+
+    .detail-value.status-approved-reschedule {
+        color: #3b82f6;
+        font-weight: 600;
+        background: rgba(59, 130, 246, 0.1);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        display: inline-block;
+    }
+
+    .detail-value.status-rescheduled {
+        color: #8b5cf6;
+        font-weight: 600;
+        background: rgba(139, 92, 246, 0.1);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        display: inline-block;
+    }
+
+    .detail-value.status-cancelled {
+        color: #ef4444;
+        font-weight: 600;
+        background: rgba(239, 68, 68, 0.1);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        display: inline-block;
+    }
+
+    .detail-value.status-completed,
+    .detail-value.status-done {
+        color: #059669;
+        font-weight: 600;
+        background: rgba(5, 150, 105, 0.1);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        display: inline-block;
+    }
+
+    .detail-value.status-rejected {
+        color: #dc2626;
+        font-weight: 600;
+        background: rgba(220, 38, 38, 0.1);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        display: inline-block;
+    }
+
+    .detail-value.status-reschedule-requested {
+        color: #7c3aed;
+        font-weight: 600;
+        background: rgba(124, 58, 237, 0.1);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        display: inline-block;
+    }
+
+    /* Responsive adjustments for booking details */
+    @media (max-width: 768px) {
+        .booking-details-card {
+            padding: 1rem;
+        }
+        
+        .booking-detail-row {
+            gap: 0.75rem;
+            padding: 0.5rem;
+        }
+        
+        .detail-icon {
+            width: 35px;
+            height: 35px;
+            font-size: 0.9rem;
+        }
+        
+        .detail-content strong {
+            font-size: 0.8rem;
+        }
+        
+        .detail-value {
+            font-size: 0.9rem;
+        }
+        
+        .detail-value.price {
+            font-size: 1rem;
+        }
+        
+        .detail-value[class*="status-"] {
+            font-size: 0.8rem;
+            padding: 0.2rem 0.4rem;
+        }
     }
 </style>
 </body>

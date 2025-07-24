@@ -10,6 +10,18 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['needs_verification'])) {
 
 $error_message = "";
 $success_message = "";
+$otp_expiry_time = null;
+
+// Get OTP expiry time for countdown
+$conn = Database::getConnection();
+$user_id = $_SESSION['user_id'];
+$expiry_stmt = $conn->prepare("SELECT otp_expiry FROM user WHERE id = ?");
+$expiry_stmt->bind_param("i", $user_id);
+$expiry_stmt->execute();
+$expiry_result = $expiry_stmt->get_result();
+if ($expiry_row = $expiry_result->fetch_assoc()) {
+    $otp_expiry_time = $expiry_row['otp_expiry'];
+}
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -21,8 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Debug: Check user_id
     error_log("Verifying user_id: " . $user_id);
     
-    // First check if user exists without the is_verified condition
-    $check_stmt = $conn->prepare("SELECT id, is_verified, otp_code FROM user WHERE id = ?");
+    // First check if user exists and get OTP details
+    $check_stmt = $conn->prepare("SELECT id, is_verified, otp_code, otp_expiry FROM user WHERE id = ?");
     $check_stmt->bind_param("i", $user_id);
     $check_stmt->execute();
     $check_result = $check_stmt->get_result();
@@ -32,9 +44,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         // Now proceed with verification
         if ($check_row['is_verified'] == 0) {
-            if ($check_row['otp_code'] === $otp) {
-                // Update user as verified
-                $update_stmt = $conn->prepare("UPDATE user SET is_verified = 1, otp_code = NULL WHERE id = ?");
+            // Check if OTP has expired (only if expiry time exists)
+            if ($check_row['otp_expiry'] && strtotime($check_row['otp_expiry']) < time()) {
+                $error_message = "Verification code has expired. Please request a new code.";
+            } elseif ($check_row['otp_code'] === $otp) {
+                // Update user as verified and clear OTP data
+                $update_stmt = $conn->prepare("UPDATE user SET is_verified = 1, otp_code = NULL, otp_expiry = NULL WHERE id = ?");
                 $update_stmt->bind_param("i", $user_id);
                 
                 if ($update_stmt->execute()) {
@@ -211,6 +226,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         .resend-link:hover {
             color: var(--secondary-color);
         }
+
+        .countdown-container {
+            margin: 1rem 0;
+            text-align: center;
+        }
+
+        .countdown-container p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--text-color);
+        }
+
+        .expired-message {
+            background: #fff3cd;
+            color: #856404;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-disabled {
+            opacity: 0.6;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -227,23 +267,101 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div class="success-message"><?php echo $success_message; ?></div>
         <?php endif; ?>
 
-        <form method="POST" action="verify.php">
+        <?php if (!$otp_expiry_time): ?>
+            <div class="error-message">
+                ⚠️ Database needs update! <a href="run_migration.php" style="color: #07353f; text-decoration: underline;">Click here to run migration</a>
+            </div>
+        <?php endif; ?>
+        
+        <form method="POST" action="verify.php" id="verifyForm">
             <div class="otp-input">
                 <input type="text" name="otp" maxlength="6" pattern="[0-9]{6}" required
-                       placeholder="Enter OTP" style="width: 200px;">
+                       placeholder="Enter OTP" style="width: 200px;" id="otpInput">
             </div>
-            <button type="submit">Verify Email</button>
+            <div class="countdown-container" id="countdownContainer">
+                <p>Code expires in: <span id="countdown" style="color: var(--secondary-color); font-weight: 600;"></span></p>
+            </div>
+            <button type="submit" id="verifyButton">Verify Email</button>
         </form>
         
-        <a href="resend_otp.php" class="resend-link">Didn't receive the code? Resend</a>
+        <a href="resend_otp.php" class="resend-link" id="resendLink">Didn't receive the code? Resend</a>
     </div>
 
     <script>
+        // Get OTP expiry time from PHP
+        const otpExpiryTime = <?php echo $otp_expiry_time ? "'" . $otp_expiry_time . "'" : 'null'; ?>;
+        let countdownInterval;
+        
+        // Debug logging
+        console.log('OTP Expiry Time from PHP:', otpExpiryTime);
+        console.log('Type of otpExpiryTime:', typeof otpExpiryTime);
+        <?php if ($otp_expiry_time): ?>
+        console.log('PHP says expiry time exists:', '<?php echo $otp_expiry_time; ?>');
+        <?php else: ?>
+        console.log('PHP says expiry time is NULL - database field might not exist!');
+        <?php endif; ?>
+
+        function startCountdown() {
+            if (!otpExpiryTime) {
+                console.log('No expiry time available - hiding countdown');
+                document.getElementById('countdown').textContent = 'Unknown';
+                document.getElementById('countdownContainer').innerHTML = '<p style="color: orange;">⚠️ Timer unavailable - database needs update</p>';
+                return;
+            }
+
+            // Parse the datetime string properly for timezone
+            const expiryDate = new Date(otpExpiryTime.replace(' ', 'T') + '+08:00').getTime();
+            const countdownElement = document.getElementById('countdown');
+            const form = document.getElementById('verifyForm');
+            const otpInput = document.getElementById('otpInput');
+            const verifyButton = document.getElementById('verifyButton');
+            const resendLink = document.getElementById('resendLink');
+            
+            console.log('Parsed expiry date:', new Date(expiryDate));
+
+            countdownInterval = setInterval(function() {
+                const now = new Date().getTime();
+                const timeLeft = expiryDate - now;
+
+                if (timeLeft > 0) {
+                    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                    
+                    countdownElement.textContent = 
+                        String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+                } else {
+                    // Time's up
+                    clearInterval(countdownInterval);
+                    countdownElement.textContent = '00:00';
+                    
+                    // Disable form
+                    form.classList.add('form-disabled');
+                    otpInput.disabled = true;
+                    verifyButton.disabled = true;
+                    
+                    // Show expiry message
+                    const expiredDiv = document.createElement('div');
+                    expiredDiv.className = 'expired-message';
+                    expiredDiv.textContent = 'Verification code has expired. Please request a new code.';
+                    form.parentNode.insertBefore(expiredDiv, form);
+                    
+                    // Update resend link text
+                    resendLink.textContent = 'Get New Code';
+                    resendLink.style.fontWeight = '600';
+                }
+            }, 1000);
+        }
+
         // Auto-submit form when all digits are entered
-        document.querySelector('input[name="otp"]').addEventListener('input', function(e) {
-            if (this.value.length === 6) {
+        document.getElementById('otpInput').addEventListener('input', function(e) {
+            if (this.value.length === 6 && !this.disabled) {
                 this.form.submit();
             }
+        });
+
+        // Start countdown when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            startCountdown();
         });
     </script>
 </body>

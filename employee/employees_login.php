@@ -155,7 +155,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         input[type="number"],
-        input[type="password"] {
+        input[type="password"],
+        input[type="text"] {
             width: 100%;
             padding: 0.875rem 1rem;
             border-radius: 12px;
@@ -172,7 +173,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         input[type="number"]:focus,
-        input[type="password"]:focus {
+        input[type="password"]:focus,
+        input[type="text"]:focus {
             outline: none;
             border-color: var(--secondary-color);
             box-shadow: 0 0 0 4px rgba(60, 213, 237, 0.1);
@@ -183,7 +185,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             opacity: 1;
         }
 
-        button {
+        button[type="submit"] {
             width: 100%;
             background: var(--primary-color);
             color: white;
@@ -204,13 +206,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             margin-top: 1rem;
         }
 
-        button:hover {
+        button[type="submit"]:hover {
             background: var(--secondary-color);
             transform: translateY(-2px);
             box-shadow: 0 10px 20px var(--card-shadow);
         }
 
-        button:active {
+        button[type="submit"]:active {
             transform: translateY(0);
             box-shadow: 0 5px 10px var(--card-shadow);
         }
@@ -227,7 +229,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             transform: translateY(-50%);
             background: none;
             border: none;
-            padding: 0;
+            padding: 0.25rem 0.5rem;
             margin: 0;
             cursor: pointer;
             color: var(--text-color);
@@ -235,6 +237,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             transition: opacity 0.3s ease;
             width: auto;
             font-size: 0.9rem;
+            box-shadow: none;
         }
 
         .password-toggle:hover {
@@ -242,6 +245,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             background: none;
             transform: translateY(-50%);
             box-shadow: none;
+            color: var(--primary-color);
         }
 
         .error {
@@ -276,7 +280,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
 
             input[type="number"],
-            input[type="password"] {
+            input[type="password"],
+            input[type="text"] {
                 padding: 0.875rem;
                 font-size: 16px;
                 width: 100%;
@@ -287,7 +292,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 width: 100%;
             }
 
-            button {
+            button[type="submit"] {
                 padding: 0.875rem;
             }
         }

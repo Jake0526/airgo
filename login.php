@@ -39,9 +39,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     // Generate new OTP
                     $otp = sprintf("%06d", mt_rand(0, 999999));
                     
-                    // Update OTP in database
-                    $update_stmt = $conn->prepare("UPDATE user SET otp_code = ? WHERE id = ?");
-                    $update_stmt->bind_param("si", $otp, $user['id']);
+                    // Update OTP in database with expiration time
+                    $otp_expiry = date('Y-m-d H:i:s', strtotime('+2 minutes'));
+                    $update_stmt = $conn->prepare("UPDATE user SET otp_code = ?, otp_expiry = ? WHERE id = ?");
+                    $update_stmt->bind_param("ssi", $otp, $otp_expiry, $user['id']);
                     
                     if ($update_stmt->execute()) {
                         // Send verification email
@@ -344,6 +345,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             content: '⚠️';
         }
 
+        .forgot-password {
+            text-align: right;
+            margin-bottom: 1rem;
+        }
+
+        .forgot-password a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .forgot-password a:hover {
+            color: var(--secondary-color);
+        }
+
         @media (max-width: 480px) {
             #login {
                 padding: 0;
@@ -415,6 +433,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <input type="password" id="password" name="password" required placeholder="Enter your password" />
                         <button type="button" class="password-toggle" onclick="togglePassword('password')">Show</button>
                     </div>
+                </div>
+
+                <div class="forgot-password">
+                    <a href="forgot_password.php">Forgot Password?</a>
                 </div>
 
                 <button type="submit">

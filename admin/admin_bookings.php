@@ -96,6 +96,14 @@ $result = $conn->query($sql);
 if (!$result) {
     die("Query failed: " . $conn->error);
 }
+
+// Get unique services for dropdown
+$services_sql = "SELECT DISTINCT service FROM bookings ORDER BY service";
+$services_result = $conn->query($services_sql);
+$services = [];
+while ($row = $services_result->fetch_assoc()) {
+    $services[] = $row['service'];
+}
 ?>
 
 <!DOCTYPE html>
@@ -375,7 +383,7 @@ if (!$result) {
         /* Column widths */
         th:nth-child(1), td:nth-child(1) { width: 10%; } /* Name */
         th:nth-child(2), td:nth-child(2) { width: 5%; }  /* User ID */
-        th:nth-child(3), td:nth-child(3) { width: 12%; } /* Service */
+        th:nth-child(3), td:nth-child(3) { width: 10%; } /* Service */
         th:nth-child(4), td:nth-child(4) { width: 15%; } /* Location */
         th:nth-child(5), td:nth-child(5) { width: 8%; }  /* Contact */
         th:nth-child(6), td:nth-child(6) { width: 8%; }  /* Date */
@@ -383,7 +391,7 @@ if (!$result) {
         th:nth-child(8), td:nth-child(8) { width: 12%; } /* Note */
         th:nth-child(9), td:nth-child(9) { width: 8%; }  /* Status */
         th:nth-child(10), td:nth-child(10) { width: 8%; } /* Technician */
-        th:nth-child(11), td:nth-child(11) { width: 6%; } /* Actions */
+        th:nth-child(11), td:nth-child(11) { width: 8%; } /* Actions */
 
         td {
             line-height: 1.2;
@@ -399,7 +407,9 @@ if (!$result) {
             position: sticky;
             top: 0;
             z-index: 10;
-            padding: 0.5rem;
+            padding: 1rem;
+            white-space: nowrap;
+            text-align: left;
         }
 
         tr:nth-child(even) {
@@ -1044,7 +1054,14 @@ if (!$result) {
                     </div>
                     <div class="form-group">
                         <label for="filter_service">Service</label>
-                        <input type="text" id="filter_service" name="filter_service" value="<?= htmlspecialchars($_GET['filter_service'] ?? '') ?>" placeholder="Search by service..."/>
+                        <select id="filter_service" name="filter_service">
+                            <option value="">All Services</option>
+                            <?php foreach ($services as $service): ?>
+                                <option value="<?= htmlspecialchars($service) ?>" <?= (isset($_GET['filter_service']) && $_GET['filter_service'] === $service) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($service) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label for="filter_location">Location</label>
@@ -1192,17 +1209,19 @@ if (!$result) {
             <table>
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>User ID</th>
-                        <th>Service</th>
-                        <th>Location</th>
-                        <th>Contact</th>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Note</th>
-                        <th>Status</th>
-                        <th>Technician</th>
-                        <th>Actions</th>
+                        <th>NAME</th>
+                        <th>USER ID</th>
+                        <th>SERVICE</th>
+                        <th>LOCATION</th>
+                        <th>CONTACT</th>
+                        <th>DATE</th>
+                        <th>TIME</th>
+                        <th>NOTE</th>
+                        <th>STATUS</th>
+                        <?php if ($tab !== 'cancelled'): ?>
+                            <th>TECHNICIAN</th>
+                            <th>ACTIONS</th>
+                        <?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
@@ -1220,27 +1239,29 @@ if (!$result) {
                             <td data-label="Status" data-status="<?= htmlspecialchars($row['status'] ?? '') ?>">
                                 <span><?= htmlspecialchars($row['status'] ?? '') ?></span>
                             </td>
-                            <td data-label="Technician"><?php
-                                if (in_array(strtolower($row['status'] ?? ''), ['rejected', 'cancelled'])) {
-                                    echo 'N/A';
-                                } else {
-                                    echo $row['employee_name'] ? htmlspecialchars($row['employee_name']) : 'To be assigned';
-                                }
-                            ?></td>
-                            <td data-label="Actions">
-                                <button class="button edit-btn" onclick="openEditModal(<?= htmlspecialchars(json_encode($row)) ?>)">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <?php if (!empty($row['payment_proof'])): ?>
-                                    <button class="button view-image-btn" onclick="openImageModal('../<?= htmlspecialchars($row['payment_proof']) ?>')">
-                                        <i class="fas fa-image"></i>
+                            <?php if ($tab !== 'cancelled'): ?>
+                                <td data-label="Technician"><?php
+                                    if (in_array(strtolower($row['status'] ?? ''), ['rejected', 'cancelled'])) {
+                                        echo 'N/A';
+                                    } else {
+                                        echo $row['employee_name'] ? htmlspecialchars($row['employee_name']) : 'To be assigned';
+                                    }
+                                ?></td>
+                                <td data-label="Actions">
+                                    <button class="button edit-btn" onclick="openEditModal(<?= htmlspecialchars(json_encode($row)) ?>)">
+                                        <i class="fas fa-edit"></i>
                                     </button>
-                                <?php endif; ?>
-                            </td>
+                                    <?php if ($tab === 'completed' && !empty($row['payment_proof'])): ?>
+                                        <button class="button view-image-btn" onclick="openImageModal('../<?= htmlspecialchars($row['payment_proof']) ?>')">
+                                            <i class="fas fa-image"></i>
+                                        </button>
+                                    <?php endif; ?>
+                                </td>
+                            <?php endif; ?>
                         </tr>
                         <?php endwhile; ?>
                     <?php else: ?>
-                        <tr><td colspan="10" style="text-align:center;">No bookings found.</td></tr>
+                        <tr><td colspan="<?= ($tab === 'cancelled' ? '9' : '11') ?>" style="text-align:center;">No bookings found.</td></tr>
                     <?php endif; ?>
                 </tbody>
             </table>
@@ -1347,7 +1368,7 @@ if (!$result) {
                             <label for="note">Customer Notes</label>
                             <textarea id="note" name="note" rows="3" readonly></textarea>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group payment-proof-group" style="display: none;">
                             <label for="payment_proof">Proof of Payment</label>
                             <div class="upload-container">
                                 <input type="file" id="payment_proof" name="payment_proof" accept="image/*" class="file-input">
@@ -1905,12 +1926,25 @@ if (!$result) {
             document.getElementById('employee_id').value = booking.employee_id || '';
             document.getElementById('note').value = booking.note || '';
 
+            // Show/hide payment proof field based on status
+            const paymentProofGroup = document.querySelector('.payment-proof-group');
+            if (booking.status === 'Completed') {
+                paymentProofGroup.style.display = 'block';
+            } else {
+                paymentProofGroup.style.display = 'none';
+            }
+
             // Show existing payment proof if available
             const imagePreview = document.getElementById('image-preview');
-            if (booking.payment_proof) {
-                const imagePath = '../' + booking.payment_proof;
+            if (booking.payment_proof && booking.status === 'Completed') {
+                // Add a timestamp to prevent caching
+                const timestamp = new Date().getTime();
+                const imagePath = `../${booking.payment_proof}?t=${timestamp}`;
                 imagePreview.innerHTML = `<img src="${imagePath}" alt="Payment Proof">`;
                 imagePreview.style.display = 'block';
+                
+                // Log the image path for debugging
+                console.log('Existing image path:', imagePath);
             } else {
                 imagePreview.style.display = 'none';
                 imagePreview.innerHTML = '';
@@ -1919,10 +1953,6 @@ if (!$result) {
             const modal = document.getElementById('editBookingModal');
             modal.style.display = 'block';
             setTimeout(() => modal.classList.add('active'), 10);
-
-            // Add submit event listener to the form
-            // const form = document.getElementById('editBookingForm');
-            // form.onsubmit = handleFormSubmit; // This line is removed as per the new_code
         }
 
         function handleSaveClick() {
@@ -1962,11 +1992,6 @@ if (!$result) {
             const form = document.getElementById('editBookingForm');
             const formData = new FormData(form);
 
-            console.log('Submitting form data:');
-            for (let pair of formData.entries()) {
-                console.log(pair[0] + ': ' + pair[1]);
-            }
-
             try {
                 const response = await fetch('update_booking.php', {
                     method: 'POST',
@@ -1977,11 +2002,28 @@ if (!$result) {
                 console.log('Server response:', result);
 
                 if (result.success) {
-                    closeEditModal();
+                    // If there's a new payment proof path in the response, update the preview
+                    if (result.payment_proof) {
+                        const imagePreview = document.getElementById('image-preview');
+                        // Add a timestamp to prevent caching
+                        const timestamp = new Date().getTime();
+                        imagePreview.innerHTML = `<img src="../${result.payment_proof}?t=${timestamp}" alt="Payment Proof">`;
+                        imagePreview.style.display = 'block';
+                        
+                        // Update the file name display
+                        const fileNameDisplay = document.querySelector('.file-name');
+                        const fileName = result.payment_proof.split('/').pop();
+                        fileNameDisplay.textContent = fileName;
+
+                        // Log the image path for debugging
+                        console.log('New image path:', `../${result.payment_proof}`);
+                    }
+                    
                     showSuccessMessage('Booking updated successfully!');
+                    // Increase the timeout to give more time to see the preview
                     setTimeout(() => {
                         window.location.reload();
-                    }, 1500);
+                    }, 2000);
                 } else {
                     showErrorMessage(result.message || 'Error updating booking');
                 }
@@ -2119,6 +2161,21 @@ if (!$result) {
                 closeImageModal();
             }
         }
+
+        // Add this function to handle status change
+        document.getElementById('status').addEventListener('change', function() {
+            const paymentProofGroup = document.querySelector('.payment-proof-group');
+            if (this.value === 'Completed') {
+                paymentProofGroup.style.display = 'block';
+            } else {
+                paymentProofGroup.style.display = 'none';
+                // Clear the file input and preview when status is not completed
+                document.getElementById('payment_proof').value = '';
+                document.getElementById('image-preview').style.display = 'none';
+                document.getElementById('image-preview').innerHTML = '';
+                document.querySelector('.file-name').textContent = 'No file chosen';
+            }
+        });
     </script>
 </body>
 </html>

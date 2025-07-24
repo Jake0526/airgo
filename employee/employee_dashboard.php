@@ -79,7 +79,7 @@ $result = $stmt->get_result();
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%2307353f'/%3E%3Cpath d='M30 50c0-11 9-20 20-20s20 9 20 20-9 20-20 20-20-9-20-20zm35 0c0-8.3-6.7-15-15-15s-15 6.7-15 15 6.7 15 15 15 15-6.7 15-15z' fill='%233cd5ed'/%3E%3Cpath d='M50 60c-5.5 0-10-4.5-10-10s4.5-10 10-10 10 4.5 10 10-4.5 10-10 10z' fill='white'/%3E%3C/svg%3E" />
     <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAABKhJREFUWEe9V21sU2UUfu7H3a7dmDAgKgwQPxAkKAYnJsyPGCGK0ZAQFfEHJGpigkT8gYrxB5pI/GD+QBNjNCr+ICYaEzWBRDBRIQQIiCIIKLIvGIPtbrfb7b3XnHPvbVc2trs3bU/S7H7c877Pec95z3veK+AeHOIe4MN/B0CWZVkQhHui3LquX5YkSboXk+u6PqwoCud3HEAkEuH8qqrS0NBQYWxsLDY2NhaNRqNRVVVjmqYpuq4rpHwwGHQHAgG3y+VyezweN/1yu91uQRDcBIr+CoIgCILAf222GfRqgKZpGsdHYDRNm6Xr+llZlr1/CcDQ0BCNjZumxXVdVxVFiWmaFlVVNaooSjQejxPQEUVRYpqmxXRd5+vpuu5yOBwet9vtczgcPofD4SWQBMjpdLodDofL6XS6nE4nARFFUeR7QRAIJIMxAVJVVWPQODNBkiSvLMsDkiTJt23BwMAAjVEURY3H4zFFUaKqqkYJiKqqUU3T6G9UVdW4pmkxAqfrOgMWRdHjdDq9BNDhcPgcDofX5XL5XS6Xz+12+10ul9fpdHoJqMvlcjudTjcBJVOYQOm6rsXjcS0Wi8UjkUiU/kYikWgsFovF4/F4LBaLxePxeDQaZUDWFPT39xMAVVVVWCwWVRQlqihKhEAqihIxmUxRXdf52WQyEQCPKIo+URR9BNDpdPqtVqvfYrH4rFar3263++12u89ms3ltNpvXZrN5rFYrAXWRDgioYU7DnMSUoihsXkVRFPJEJBKJRKPR8O0a6O3tNQNgJlRVNayqaphAEgOSJIUlSQobDLgoK0RR9JEGLBaL32q1+m02m5/AEli73e6z2+0+q9Xqc7lcXrvd7rFarW6r1eq2WCwExk2ZQCDJ75IkhXVdD+u6HtZ1PazrehiYEtZ1XTYykCRJYdu27du3j8YbIAJGbIQJpKqqYUmSwgTSYMFNLJAGHA6H32Kx+G02m5/AElgCabfbfTabzWu1Wj0ul8tjs9k8VqvVbbFY3E6n0+10Ot0EkjQgSVKY7qmqGqbxkiSFVVUNU8FTVTVEz7IsywkNbN682QyAM0BV1RCZkEBKkhTSNC0kSVKIGHA4HD6n0+mzWCw+AksmtNlsXpvN5rXb7R6Xy+UhoFar1W21Wl0EkoAaZg1rmhYi89F4TdNCmqaFVFUNkXkTNZHNZvts27aNxhuNCIEI0T2ZkN4bLLhEUfQaueAjDdhsNi+BJD0QUKfT6SYdEFDKAEmSQoqihOjeAJG4/gQ7W7duzQXwP9cBnNexpjhBAAAAAElFTkSuQmCC" />
-    <link rel="icon" type="image/png" sizes="16x16" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAlpJREFUOE+Nk0tIVFEYx//n3jtz544z4zg6OuqoqKVp9LDUMAqKFtGiWtSiWkQkEUEtahERRBQVLYJoUW2iRdCiKKJFD4JqE0REDxQfw1hq5DiOztz5mHvPPeeMjlr2wVl8fN/v+z++c87HsB8f24d9+H8A0un0IcbYUdd1PSLyiIg8z3MJyPU8zyEix/M8h4hcz/McInI9z7WJyLJt27IsS7YsW2aMWbZtW5ZlWaZpEsdxEgghDCGEwRjbBpBKpQ4yxo66rusRkedRwQQgEpHreZ5DRK7neQ4RuZ7nOZ7n2a7rWo7jWLZtW47jyI7jSLZtW47jSI7jSJZlSYwxadOvCSGMbQDJZPIQY+yI67qe53ke/QsgItf1XIeIHNd1Hdd1Hc/zbNu2Ldu2ZMexJMexJNu2JcaYtAXAGDM2AWKx2GHG2BEiIiLPIyLPdd0CQK7ruq7ruq5t25Zt25LjOLLjOJLjOJLjOJLjOBJjTNoUlzFmbAJEo9EjjLHDRERE5BERua7rFgByXdd1Xde1bdu2bNuWHceWHceWHMeSHMeSbNuWGGPSFgBjzNgEiEQihxljh4iIiMgjInJd1y0A5Lqu67qu69i2bdm2LTmOLTmOLTmOJTmOJdm2LTHGpC1xGWPGJkA4HD7CGDtIRJ7neUREnut6BYBc13Ud27Yt27Ylx7Elx7Ekx7Ekx7Ek27YlxpgkSRJjjBkbAMFg8BBj7IDruh4ReUREnut6BYBc13Ud27Yt27Ylx7Elx7Ekx7Ek27YlxpgkSRJjjBl/AQgEAgcZY/uJyPsJ8AOvgZzXMm3oPQAAAABJRU5ErkJggg==" />
+    <link rel="icon" type="image/png" sizes="16x16" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAlpJREFUOE+Nk0tIVFEYx//n3jtz544z4zg6OuqoqKVp9LDUMAqKFtGiWtSiWkQkEUEtahERRBQVLYJoUW2iRdCiKKJFD4JqE0REDxQfw1hq5DiOztz5mHvPPeeMjlr2wVl8fN/v+z++c87HsB8f24d9+H8A0un0IcbYUdd1PSLyiIg8z3MJyPU8zyEix/M8h4hcz/McInI9z7WJyLJt27IsS7YsW2aMWbZtW5ZlWaZpEsdxEgghDCGEwRjbBpBKpQ4yxo66rusRkedRwQQgEpHreZ5DRK7neQ4RuZ7nOZ7n2a7rWo7jWLZtW47jSI7jSLZtW47jSI7jSJZlSYwxadOvCSGMbQDJZPIQY+yI67qe53ke/QsgItf1XIeIHNd1Hdd1Hc/zbNu2Ldu2ZMexJMexJNu2JcaYtAXAGDM2AWKx2GHG2BEiIiLPIyLPdd0CQK7ruq7ruq5t25Zt25LjOLLjOJLjOJLjOJLjOBJjTNoUlzFmbAJEo9EjjLHDRERE5BERua7rFgByXdd1Xde1bdu2bNuWHceWHceWHMeSHMeSbNuWGGPSFgBjzNgEiEQihxljh4iIiMgjInJd1y0A5Lqu67qu69i2bdm2LTmOLTmOLTmOJTmOJdm2LTHGpC1xGWPGJkA4HD7CGDtIRJ7neUREnut6BYBc13Ud27Yt27Ylx7Elx7Ekx7Ekx7Ek27YlxpgkSRJjjBkbAMFg8BBj7IDruh4ReUREnut6BYBc13Ud27Yt27Ylx7Elx7Ekx7Ek27YlxpgkSRJjjBl/AQgEAgcZY/uJyPsJ8AOvgZzXMm3oPQAAAABJRU5ErkJggg==" />
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -158,13 +158,6 @@ $result = $stmt->get_result();
             margin: 0;
         }
 
-        .sidebar a i {
-            font-size: 1.2rem;
-            width: 24px;
-            text-align: center;
-            transition: transform 0.3s ease;
-        }
-
         .sidebar a::before {
             content: '';
             position: absolute;
@@ -188,6 +181,17 @@ $result = $stmt->get_result();
         .sidebar a:hover::before {
             transform: scaleX(1);
             transform-origin: left;
+        }
+
+        .sidebar a i {
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar a:hover i {
+            transform: scale(1.1);
         }
 
         .sidebar a.active {
@@ -216,7 +220,7 @@ $result = $stmt->get_result();
             font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 0.8rem;
+            gap: 12px;
         }
 
         .main-content h1 i {
@@ -239,6 +243,7 @@ $result = $stmt->get_result();
             box-shadow: 0 10px 30px var(--card-shadow);
             overflow: hidden;
             margin-bottom: 2rem;
+            transition: all 0.3s ease;
         }
 
         table {
@@ -249,18 +254,20 @@ $result = $stmt->get_result();
         th {
             background: var(--primary-color);
             color: white;
-            padding: 1rem;
+            padding: 0.75rem;
             text-align: left;
             font-weight: 500;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         td {
-            padding: 1rem;
+            padding: 0.75rem;
             border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            word-break: break-word;
         }
 
         tr:hover td {
@@ -271,10 +278,23 @@ $result = $stmt->get_result();
             border-bottom: none;
         }
 
+        /* Column widths */
+        th:nth-child(1), td:nth-child(1) { width: 12%; } /* Customer */
+        th:nth-child(2), td:nth-child(2) { width: 8%; }  /* User ID */
+        th:nth-child(3), td:nth-child(3) { width: 12%; } /* Service */
+        th:nth-child(4), td:nth-child(4) { width: 12%; } /* Location */
+        th:nth-child(5), td:nth-child(5) { width: 10%; } /* Contact */
+        th:nth-child(6), td:nth-child(6) { width: 8%; }  /* Date */
+        th:nth-child(7), td:nth-child(7) { width: 8%; }  /* Time */
+        th:nth-child(8), td:nth-child(8) { width: 10%; } /* Note */
+        th:nth-child(9), td:nth-child(9) { width: 8%; }  /* Status */
+        th:nth-child(10), td:nth-child(10) { width: 6%; } /* Price */
+        th:nth-child(11), td:nth-child(11) { width: 6%; } /* Actions */
+
         .status-badge {
-            padding: 0.4rem 0.8rem;
+            padding: 0.3rem 0.6rem;
             border-radius: 20px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 500;
             text-transform: uppercase;
             display: inline-block;
@@ -298,8 +318,11 @@ $result = $stmt->get_result();
         .button {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
-            padding: 0.5rem 1rem;
+            padding: 0.5rem;
+            width: 36px;
+            height: 36px;
             border: none;
             border-radius: 8px;
             font-weight: 500;
@@ -385,26 +408,129 @@ $result = $stmt->get_result();
             flex-wrap: wrap;
         }
 
-        .button {
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border: none;
+            border-radius: 6px;
             background: var(--primary-color);
             color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
             transition: all 0.3s ease;
-            font-weight: 500;
             font-size: 0.9rem;
+        }
+
+        .action-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            color: var(--primary-color);
+        }
+
+        .action-btn.complete {
+            background: #28a745;
+        }
+
+        .action-btn.complete:hover {
+            background: #34ce57;
+            color: white;
+        }
+
+        .action-btn.upload {
+            background: #007bff;
+        }
+
+        .action-btn.upload:hover {
+            background: #3498db;
+            color: white;
+        }
+
+        .action-btn.view {
+            background: #6c757d;
+        }
+
+        .action-btn.view:hover {
+            background: #848e97;
+            color: white;
+        }
+
+        /* Tooltip Styles */
+        [data-tooltip] {
+            position: relative;
+            cursor: pointer;
+        }
+
+        [data-tooltip]:before,
+        [data-tooltip]:after {
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.15s ease;
+            position: absolute;
+            z-index: 1;
+        }
+
+        [data-tooltip]:before {
+            content: attr(data-tooltip);
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            background: var(--primary-color);
+            color: white;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-tooltip]:after {
+            content: '';
+            border: 6px solid transparent;
+            border-top-color: var(--primary-color);
+            bottom: 110%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        [data-tooltip]:hover:before,
+        [data-tooltip]:hover:after {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .button {
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
+            justify-content: center;
+            gap: 8px;
+            padding: 0.5rem;
+            width: 36px;
+            height: 36px;
             border: none;
+            border-radius: 8px;
+            font-weight: 500;
             cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            text-decoration: none;
+            background: var(--primary-color);
+            color: white;
         }
 
         .button:hover {
             background: var(--secondary-color);
             transform: translateY(-2px);
-            box-shadow: 0 4px 10px var(--card-shadow);
+            box-shadow: 0 4px 12px var(--card-shadow);
             color: var(--primary-color);
         }
 
@@ -492,13 +618,24 @@ $result = $stmt->get_result();
             padding: 2rem;
         }
 
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--primary-color);
+        }
+
         /* File Upload Styles */
         .upload-container {
             position: relative;
             margin-top: 0.5rem;
             border: 2px dashed var(--primary-color);
             border-radius: 8px;
-            padding: 1rem;
+            padding: 1.5rem;
             text-align: center;
             transition: all 0.3s ease;
             background: rgba(7, 53, 63, 0.02);
@@ -529,11 +666,12 @@ $result = $stmt->get_result();
             background-color: var(--primary-color);
             color: white;
             border-radius: 8px;
-            font-size: 0.9rem;
+            font-size: 1rem;
             font-weight: 500;
             transition: all 0.3s ease;
             margin: 0 auto;
-            max-width: 200px;
+            width: 100%;
+            max-width: 250px;
         }
 
         .upload-button i {
@@ -548,9 +686,36 @@ $result = $stmt->get_result();
 
         .file-name {
             margin-top: 1rem;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             color: var(--text-color);
             word-break: break-all;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .form-actions .button {
+            flex: 1;
+            width: auto;
+            height: auto;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .form-actions .button:last-child {
+            background: #6c757d;
+        }
+
+        .form-actions .button:last-child:hover {
+            background: #5a6268;
+            color: white;
         }
 
         .image-preview {
@@ -567,7 +732,7 @@ $result = $stmt->get_result();
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        @media (max-width: 991px) {
+        @media (max-width: 1100px) {
             body {
                 background: #f5f9fc;
                 min-height: 100vh;
@@ -590,9 +755,10 @@ $result = $stmt->get_result();
 
             .nav-links {
                 display: grid;
-                grid-template-columns: repeat(3, 1fr);
+                grid-template-columns: repeat(2, 1fr);
                 gap: 0.75rem;
                 padding: 0;
+                margin-top: 0;
             }
 
             .nav-links a {
@@ -612,6 +778,7 @@ $result = $stmt->get_result();
 
             .nav-links a i {
                 font-size: 1.1rem;
+                width: auto;
             }
 
             .nav-links a.active {
@@ -624,6 +791,15 @@ $result = $stmt->get_result();
                 margin-left: 0;
                 width: 100%;
                 padding: 1rem;
+                background: #f5f9fc;
+                min-height: calc(100vh - 80px);
+                flex: 1;
+            }
+
+            .main-content h1 {
+                font-size: 1.5rem;
+                margin-bottom: 1.25rem;
+                padding: 0;
             }
 
             .employee-name {
@@ -631,72 +807,196 @@ $result = $stmt->get_result();
                 text-align: center;
             }
 
-            /* Card style for table rows */
-            table, thead, tbody, th, td, tr {
-                display: block;
+            .table-container {
+                margin: 0 -1rem;
+                width: calc(100% + 2rem);
+                border-radius: 0;
+                background: transparent;
+                box-shadow: none;
             }
 
-            thead {
+            table, thead, tbody, th, td, tr {
+                display: block;
+                width: 100%;
+            }
+
+            thead tr {
                 display: none;
             }
 
             tr {
-                margin-bottom: 1rem;
+                margin: 0.75rem;
                 background: white;
                 border-radius: 12px;
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-                overflow: hidden;
                 position: relative;
+                padding: 0.75rem;
             }
 
             td {
-                padding: 0.75rem 1rem;
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
+                display: flex !important;
+                width: 100% !important;
+                padding: 0.75rem !important;
                 border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+                align-items: center;
+                font-size: 0.85rem;
+                line-height: 1.4;
+                min-height: auto !important;
             }
 
             td:before {
                 content: attr(data-label);
-                font-weight: 500;
+                width: 120px;
+                min-width: 120px;
+                font-weight: 600;
                 color: var(--primary-color);
-                min-width: 100px;
+                font-size: 0.85rem;
             }
 
             td:last-child {
                 border-bottom: none;
             }
 
-            .button {
-                width: 100%;
-                justify-content: center;
+            td[data-label="Actions"] {
+                justify-content: flex-start;
+                padding: 0.75rem !important;
+            }
+
+            .action-buttons {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 0.5rem;
             }
         }
 
-        @media (max-width: 768px) {
-            .upload-container {
-                padding: 0.75rem;
+        @media (min-width: 1101px) {
+            .table-container {
+                overflow-x: auto;
             }
 
-            .upload-button {
-                padding: 0.6rem 1rem;
-                font-size: 0.85rem;
+            table {
+                min-width: 100%;
             }
 
-            .image-preview {
-                max-width: 100%;
+            .action-buttons {
+                white-space: nowrap;
+                display: flex;
+                gap: 0.5rem;
             }
 
             .action-buttons {
                 flex-direction: column;
+                gap: 0.4rem;
+                align-items: center;
+            }
+
+            td[data-label="Actions"] {
+                vertical-align: middle;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .table-container {
+                margin: 0 -0.5rem;
+                width: calc(100% + 1rem);
+            }
+
+            tr {
+                margin: 0.5rem;
+                padding: 0.5rem;
+            }
+
+            td {
+                padding: 0.6rem !important;
+                font-size: 0.8rem;
+            }
+
+            td:before {
+                width: 100px;
+                min-width: 100px;
+                font-size: 0.8rem;
             }
 
             .button {
+                width: 32px;
+                height: 32px;
+                padding: 0.35rem;
+            }
+
+            .status-badge {
+                font-size: 0.7rem;
+                padding: 0.25rem 0.5rem;
+            }
+
+            .nav-links {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+
+            .nav-links a {
+                padding: 0.6rem;
+                font-size: 0.85rem;
+            }
+
+            .nav-links a i {
+                font-size: 1rem;
+            }
+
+            .modal-body {
+                padding: 1.5rem;
+            }
+
+            .upload-container {
+                padding: 1rem;
+            }
+
+            .upload-button {
+                padding: 0.6rem 1rem;
+                font-size: 0.95rem;
+            }
+
+            .form-actions {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .form-actions .button {
                 width: 100%;
-                justify-content: center;
+                padding: 0.75rem 1rem;
+            }
+
+            .action-buttons {
+                flex-direction: row;
+                gap: 0.4rem;
             }
         }
+
+        @media (max-width: 575px) {
+            .nav-links {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .nav-links a {
+                padding: 0.6rem;
+                font-size: 0.85rem;
+            }
+
+            .nav-links a i {
+                font-size: 1rem;
+            }
+
+            .main-content {
+                padding: 0.75rem;
+            }
+
+            .main-content h1 {
+                font-size: 1.25rem;
+                margin-bottom: 1rem;
+            }
+        }
+
+        /* Remove the min-width: 992px media query that had horizontal scroll */
     </style>
 </head>
 <body>
@@ -761,16 +1061,25 @@ $result = $stmt->get_result();
                                 <td data-label="Price">₱<?= number_format($row['price'], 2) ?></td>
                                 <td data-label="Actions" class="action-buttons">
                                     <?php if (strtolower($row['status']) === 'approved'): ?>
-                                        <a href="?done_id=<?= $row['id'] ?>" class="button" onclick="return confirm('Mark this booking as done?');">
-                                            <i class="fas fa-check"></i> Complete
-                                        </a>
+                                        <button 
+                                            onclick="if(confirm('Mark this booking as done?')) window.location.href='?done_id=<?= $row['id'] ?>'" 
+                                            class="button" 
+                                            data-tooltip="Complete">
+                                            <i class="fas fa-check"></i>
+                                        </button>
                                     <?php endif; ?>
-                                    <button class="button" onclick="openUploadModal(<?= htmlspecialchars(json_encode($row)) ?>)">
-                                        <i class="fas fa-upload"></i> Upload
+                                    <button 
+                                        class="button" 
+                                        onclick="openUploadModal(<?= htmlspecialchars(json_encode($row)) ?>)"
+                                        data-tooltip="Upload">
+                                        <i class="fas fa-upload"></i>
                                     </button>
                                     <?php if ($row['payment_proof']): ?>
-                                        <button class="button" onclick="openViewImageModal('<?= htmlspecialchars($row['payment_proof']) ?>')">
-                                            <i class="fas fa-image"></i> View
+                                        <button 
+                                            class="button" 
+                                            onclick="openViewImageModal('<?= htmlspecialchars($row['payment_proof']) ?>')"
+                                            data-tooltip="View">
+                                            <i class="fas fa-image"></i>
                                         </button>
                                     <?php endif; ?>
                                 </td>
@@ -854,7 +1163,7 @@ $result = $stmt->get_result();
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="button">
-                            <i class="fas fa-save"></i> Save
+                            <i class="fas fa-save"></i> Save Changes
                         </button>
                         <button type="button" class="button" onclick="closeUploadModal()">
                             <i class="fas fa-times"></i> Cancel
